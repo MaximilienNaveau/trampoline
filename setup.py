@@ -14,18 +14,13 @@ def find_resources(package_name):
     """ Find the relative path of files under the resource folder. """
     resources = []
     package_dir = path.join("src", package_name)
-    resources_dir = path.join(package_dir, package_name)
+    resources_dir = path.join(package_dir, "resources")
 
     for (root, _, files) in walk(resources_dir):
         for afile in files:
-            if (
-                afile != package_name
-                and not afile.endswith(".DS_Store")
-                and not afile.endswith(".py")
-            ):
-                rel_dir = path.relpath(root, package_dir)
-                src = path.join(rel_dir, afile)
-                resources.append(src)
+            rel_dir = path.relpath(root, package_dir)
+            src = path.join(rel_dir, afile)
+            resources.append(src)
     return resources
 
 
@@ -33,13 +28,15 @@ def find_resources(package_name):
 package_name = "trampoline"
 
 # Long description from the readme.
-with open("readme.md", "r") as fh:
-    long_description = fh.read()
+long_description = ""
+if path.exists("readme.md"):
+    with open("readme.md", "r") as fh:
+        long_description = fh.read()
 
 # Find the resource files.
 resources = find_resources(package_name)
 
-# Install the package.xml.
+# Install data
 data_files_to_install = []
 
 # Install nodes and demos.
