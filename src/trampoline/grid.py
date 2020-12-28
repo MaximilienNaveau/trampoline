@@ -10,18 +10,21 @@ class GridParams(object):
 
 class Grid(object):
     def __init__(
-        self, surface, cell_size=30, margin=0, color=Colors.black, axis_labels=False
+        self, surface, size=(400, 300), margin=0, color=Colors.black, axis_labels=False
     ):
         # Arguments:
         self.surface = surface
-        self.cell_size = cell_size
         self.margin = margin
+        self.size = size
         self.color = color
         self.axis_labels = axis_labels
 
         self.cols = 9  # max(0, (surface.get_width() - 4 * self.margin) // cell_size)
         self.rows = 13  # max(0, (surface.get_height() - 4 * self.margin) // cell_size)
-        self.line_width = 3
+        self.line_width = 5
+
+        # set cell_size.
+        self.resize(size)
 
         self.grid = [[None for i in range(self.cols)] for j in range(self.rows)]
         self.font = pygame.font.SysFont("arial", 12, False)
@@ -35,15 +38,31 @@ class Grid(object):
         self.y_max_surface = self.surface.get_height() - self.margin
         self.y_max = 0  # updated online
 
-        print("cols = ", self.cols)
-        print("rows = ", self.rows)
+    def resize(self, size):
+        self.size = size
+        self.cell_size = min(self.size[0] // self.rows, self.size[1] // self.cols)
 
-    def set_letter(self, letter, x, y):
-        """  """
-        self.grid[x][y] = letter
+    def set_letter(self, letter, row, col):
+        """ Save the pointer to the letter in the grid to draw it. """
+        if not (row >= 0 and row < self.rows):
+            raise RuntimeError("Letter set outside of the grid.")
+        if not (col >= 0 and col < self.cols):
+            raise RuntimeError("Letter set outside of the grid.")
+        self.grid[row][col] = letter
+
+    def unset_letter(self, letter, row, col):
+        """ Save the pointer to the letter in the grid to draw it. """
+        if not (row > 0 and row < self.rows):
+            raise RuntimeError("Letter set outside of the grid.")
+        if not (col > 0 and col < self.cols):
+            raise RuntimeError("Letter set outside of the grid.")
+        self.grid[row][col] = None
 
     def draw(self, x, y):
         """ Draw the grid on the given surface. """
+
+        self.x_max_surface = self.surface.get_width() - self.margin
+        self.y_max_surface = self.surface.get_height() - self.margin
 
         # Determin the origin of the grid using the margin.
         self.x_min = max(self.margin, x)
@@ -94,8 +113,8 @@ class Grid(object):
         for row in range(self.rows):
             for col in range(self.cols):
                 if self.grid[row][col] is not None:
-                    self.grid[row][col].resize(self.cell_size)
+                    self.grid[row][col].resize(self.cell_size - self.line_width)
                     self.grid[row][col].draw(
-                        self.x_min + col * self.cell_size,
-                        self.y_min + row * self.cell_size,
+                        self.x_min + col * self.cell_size + self.line_width // 2 + 1,
+                        self.y_min + row * self.cell_size + self.line_width // 2 + 1,
                     )
