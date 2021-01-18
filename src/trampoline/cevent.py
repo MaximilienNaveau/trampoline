@@ -1,5 +1,6 @@
 #! /usr/env/bin python
 
+import threading
 import sys
 import pygame
 from pygame.locals import (
@@ -19,8 +20,7 @@ from pygame.locals import (
 
 class TrampolineCEvent:
     def __init__(self):
-        # print("triggered event: __init__")
-        pass
+        self._click_clock = pygame.time.Clock()
 
     def on_input_focus(self):
         # print("triggered event: on_input_focus")
@@ -64,6 +64,10 @@ class TrampolineCEvent:
         # print("triggered event: on_lbutton_down")
         pass
 
+    def on_double_lbutton(self, event):
+        # print("triggered event: on_double_click")
+        pass
+
     def on_rbutton_up(self, event):
         # print("triggered event: on_rbutton_up")
         pass
@@ -97,7 +101,7 @@ class TrampolineCEvent:
         pass
 
     def on_exit(self):
-        self._running = False
+        pass
 
     def on_user(self, event):
         # print("triggered event: on_user")
@@ -157,8 +161,13 @@ class TrampolineCEvent:
                 self.on_rbutton_up(event)
 
         elif event.type == MOUSEBUTTONDOWN:
+            # on left click
             if event.button == 1:
-                self.on_lbutton_down(event)
+                if self._click_clock.tick() <= 500:
+                    self.on_double_lbutton(event)
+                else:
+                    self.on_lbutton_down(event)
+
             elif event.button == 2:
                 self.on_mbutton_down(event)
             elif event.button == 3:

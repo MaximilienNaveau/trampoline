@@ -4,18 +4,47 @@ import pygame
 from trampoline.colors import Colors
 
 
-class GridParams(object):
-    pass
+class Cell(object):
+    def __init__(self):
+        self.size = 0
+        self.rect = pygame.Rect(0, 0, 0, 0)
+        self.letter = None
+
+    def update(self, x, y, size):
+        self.rect.x = x
+        self.rect.y = y
+        self.rect.width = size
+        self.rect.height = size
+        if not self.is_empty():
+            self.letter.resize(size)
+
+    def set_letter(self, letter):
+        self.letter = letter
+
+    def unset_letter(self):
+        self.letter = None
+
+    def draw(self, x, y):
+        if not self.is_empty():
+            self.letter.draw(x, y)
+
+    def is_empty():
+        return True if self.letter is None else False
+
+    def collidepoint(self, point):
+        return self.rect.collidepoint(point)
 
 
 class Grid(object):
     def __init__(
-        self, surface, size=(400, 300), margin=0, color=Colors.black, axis_labels=False
+        self,
+        surface,
+        color=Colors.black,
+        axis_labels=False,
     ):
         # Arguments:
         self.surface = surface
-        self.margin = margin
-        self.size = size
+        self.margin = 0
         self.color = color
         self.axis_labels = axis_labels
 
@@ -24,11 +53,10 @@ class Grid(object):
         self.line_width = 5
 
         # set cell_size.
-        self.resize(size)
+        self.update((400, 300), (0, 0))
 
-        self.grid = [[None for i in range(self.cols)] for j in range(self.rows)]
-        self.font = pygame.font.SysFont("arial", 12, False)
-        self.color = color
+        # order row major
+        self.grid = [Cell() for _ in range(self.rows * self.cols)]
 
         self.x_min = self.margin
         self.x_max_surface = self.surface.get_width() - self.margin
@@ -38,50 +66,49 @@ class Grid(object):
         self.y_max_surface = self.surface.get_height() - self.margin
         self.y_max = 0  # updated online
 
-    def resize(self, size):
-        self.size = size
-        self.cell_size = min(self.size[0] // self.rows, self.size[1] // self.cols)
+    def __getitem__(self, key: tuple):
+        row, col = key
+        pose = col * self.cols + row
+        return self.grid[pose]
 
-    def set_letter(self, letter, row, col):
-        """ Save the pointer to the letter in the grid to draw it. """
-        if not (row >= 0 and row < self.rows):
-            raise RuntimeError("Letter set outside of the grid.")
-        if not (col >= 0 and col < self.cols):
-            raise RuntimeError("Letter set outside of the grid.")
-        self.grid[row][col] = letter
+    def which_cell(self, mouse_pos):
+        for col in range(self.cols):
+            for row in range(self.rows):
+                if self[row, col].collidepoint(mouse_pos):
+                    return (row, col)
+                else:
+                    return None
 
-    def unset_letter(self, letter, row, col):
-        """ Save the pointer to the letter in the grid to draw it. """
-        if not (row > 0 and row < self.rows):
-            raise RuntimeError("Letter set outside of the grid.")
-        if not (col > 0 and col < self.cols):
-            raise RuntimeError("Letter set outside of the grid.")
-        self.grid[row][col] = None
+    def update(self, grid_size: tuple, pos: tuple):
+        """[summary]
 
-    def draw(self, x, y):
-        """ Draw the grid on the given surface. """
+        Args:
+            grid_size (tuple): (width, height)
+            x ([type]): [description]
+            y ([type]): [description]
+            surface ([type]): [description]
+        """
+        self.cell_size = min(grid_size[0] // self.cols, grid_size[1] // self.rows)
+        self.width = self.cols * self.cell_size
+        self.height = self.rows * self.cell_size
 
         self.x_max_surface = self.surface.get_width() - self.margin
         self.y_max_surface = self.surface.get_height() - self.margin
 
         # Determin the origin of the grid using the margin.
-        self.x_min = max(self.margin, x)
-        self.y_min = max(self.margin, y)
+        self.x, self.y = pos
+        self.x_min = max(self.margin, self.x)
+        self.y_min = max(self.margin, self.y)
 
         self.x_max = min(self.x_max_surface, self.x_min + self.cols * self.cell_size)
         self.y_max = min(self.y_max_surface, self.y_min + self.rows * self.cell_size)
 
+    def draw(self):
+        """ Draw the grid on the given surface. """
+
         # Draw horizontal lines.
         for li in range(self.rows + 1):
             li_coord = self.y_min + li * self.cell_size
-            # Add the labels at every line drawn.
-            if self.axis_labels:
-                if li < 10:
-                    indent = "   "
-                else:
-                    indent = "  "
-                text = self.font.render(indent + str(li), 1, (0, 0, 0))
-                self.surface.blit(text, (0, li_coord))
             # Draw the lines.
             pygame.draw.line(
                 self.surface,
@@ -93,14 +120,6 @@ class Grid(object):
         # Draw the vertical lines.
         for co in range(self.cols + 1):
             colCoord = self.x_min + co * self.cell_size
-            # Add the labels at every line drawn.# Draw the lines.
-            if self.axis_labels:
-                if co < 10:
-                    ident = "  "
-                else:
-                    ident = " "
-                text = self.font.render(ident + str(co), 1, (0, 0, 0))
-                self.surface.blit(text, (colCoord, 1))
             # Draw the lines.
             pygame.draw.line(
                 self.surface,
@@ -112,7 +131,7 @@ class Grid(object):
 
         for row in range(self.rows):
             for col in range(self.cols):
-                if self.grid[row][col] is not None:
+                self.grid[row, col].draw()
                     self.grid[row][col].resize(self.cell_size - self.line_width)
                     self.grid[row][col].draw(
                         self.x_min + col * self.cell_size + self.line_width // 2 + 1,

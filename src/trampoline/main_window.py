@@ -7,7 +7,7 @@ import pkg_resources
 from pygame.locals import QUIT
 from trampoline.cevent import TrampolineCEvent
 from trampoline.grid import Grid
-from trampoline.letter import Letter
+from trampoline.letter import AllLetters
 from trampoline.colors import Colors
 
 
@@ -19,56 +19,102 @@ class Trampoline(TrampolineCEvent):
         self._display_surface = None
         self._image_surf = None
 
+        super().__init__()
+
     def on_init(self):
         pygame.init()
         pygame.display.set_caption("Trampoline")
-        self._display_surface = pygame.display.set_mode((1000, 500), RESIZABLE)
+        self._display_surface = pygame.display.set_mode((2000, 1000), RESIZABLE)
         self._running = True
-        image_path = pkg_resources.resource_filename(
-            "trampoline", path.join("resources", "images", "thumbnail.jpeg")
+
+        self.grid_to_be_filled = Grid(
+            surface=self._display_surface, color=Colors.burlywood
         )
 
-        # self._image_surf = pygame.image.load(image_path).convert()
-        self.grid1 = Grid(
-            surface=self._display_surface,
-            size=(30 * 13, 30 * 9),
-            color=Colors.burlywood,
+        self.grid_with_letter = Grid(
+            surface=self._display_surface, color=Colors.burlywood
         )
 
-        self.grid2 = Grid(surface=self._display_surface, color=Colors.burlywood)
+        self.letters = AllLetters(self._display_surface)
 
-        self.row_numbers = [
-            Letter(self._display_surface, str(i), "R") for i in range(self.grid1.rows)
-        ]
-        self.col_numbers = [
-            Letter(self._display_surface, str(i), "R") for i in range(self.grid1.cols)
-        ]
-
-        self.letter = Letter(self._display_surface, "A", "R")
-        self.letter_flipped = Letter(self._display_surface, "A", "R")
-        self.letter_flipped.flip()
+        for row in range(self.grid_with_letter.rows):
+            for col in range(self.grid_with_letter.cols):
+                self.grid_with_letter[row, col].set_letter(self.letters[row, col])
 
     def on_loop(self):
-        # self.grid1.set_letter(self.letter, 5, 8)
-        # self.grid2.set_letter(self.letter, 2, 3)
-        # self.grid1.set_letter(self.letter_flipped, 3, 6)
-        for i in range(self.grid1.rows):
-            self.grid1.set_letter(self.row_numbers[i], i, 0)
-            self.grid2.set_letter(self.row_numbers[i], i, 0)
+        # Quit on "ctrl + q".
+        all_keys = pygame.key.get_pressed()
+        if all_keys[pygame.K_q] and (
+            all_keys[pygame.K_LCTRL] or all_keys[pygame.K_RCTRL]
+        ):
+            self._running = False
 
-        for i in range(self.grid1.cols):
-            self.grid1.set_letter(self.col_numbers[i], 0, i)
-            self.grid2.set_letter(self.col_numbers[i], 0, i)
+        # update the grid placement
+        height = self._display_surface.get_height()
+        half_height = height // 2
+        half_width = self._display_surface.get_width() // 2
+
+        # Resize the grids and place them.
+        grid_height = 0.9 * height
+        grid_width = 0.9 * half_width
+        x = (half_width - self.grid_to_be_filled.width) // 2
+        y = (height - self.grid_to_be_filled.height) // 2
+        self.grid_to_be_filled.update((grid_width, grid_height), (x, y))
+        x += half_width
+        self.grid_with_letter.update((grid_width, grid_height), (x, y))
+
+    def on_double_lbutton(self, event):
+        mouse_pos = pygame.mouse.get_pos()
+        for row in self.letters.all_letters:
+            for letter in row:
+                if letter.main_rectangle.collidepoint(mouse_pos):
+                    letter.flip()
+
+    def on_lbutton_up(self, event):
+        mouse_pos = pygame.mouse.get_pos()
+        for row in self.letters.all_letters:
+            for letter in row:
+                letter.selected = False
+                if letter.main_rectangle.collidepoint(mouse_pos):
+                    letter.selected = True
+
+        which_cell = self.grid_to_be_filled.which_cell(mouse_pos)
+        if which_cell is not None:
+            print("grid_to_be_filled: ", which_cell)
+
+        which_cell = self.grid_with_letter.which_cell(mouse_pos)
+        if which_cell is not None:
+            print("grid_with_letter: ", which_cell)
 
     def on_render(self):
-        self._display_surface.fill(Colors.white)
-        self.grid1.draw(20, 10)
-        self.grid2.draw(500, 10)
-        # self.letter.draw(0, 0)
-        # self.letter.draw(10, 10)
 
-        # display
+        # Reset the screen in white.
+        self._display_surface.fill(Colors.white)
+
+        # Drw the grids.
+        self.grid_to_be_filled.draw()
+        self.grid_with_letter.draw()
+
+        # draw middle line.
+        pygame.draw.line(
+            self._display_surface,
+            Colors.black,
+            (half_width, 0),
+            (
+                half_width,
+                height,
+            ),
+            2,
+        )
+
+        # update display
         pygame.display.flip()
+
+    def on_exit(self):
+        self._running = False
+
+    def on_key_up(self, event):
+        pass
 
     def on_cleanup(self):
         pygame.quit()
