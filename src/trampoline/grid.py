@@ -7,14 +7,18 @@ from trampoline.colors import Colors
 class Cell(object):
     def __init__(self):
         self.size = 0
-        self.rect = pygame.Rect(0, 0, 0, 0)
+        self.x = 0
+        self.y = 0
+        self.rectangle = pygame.Rect(0,0,0,0)
         self.letter = None
 
     def update(self, x, y, size):
-        self.rect.x = x
-        self.rect.y = y
-        self.rect.width = size
-        self.rect.height = size
+        self.x = x
+        self.y = y
+        self.rectangle.x = x
+        self.rectangle.y = y
+        self.rectangle.width = size
+        self.rectangle.height = size
         if not self.is_empty():
             self.letter.resize(size)
 
@@ -24,15 +28,21 @@ class Cell(object):
     def unset_letter(self):
         self.letter = None
 
-    def draw(self, x, y):
+    def draw(self):
         if not self.is_empty():
-            self.letter.draw(x, y)
+            self.letter.draw(self.x, self.y)
 
-    def is_empty():
-        return True if self.letter is None else False
+    def is_empty(self):
+        if self.letter is None:
+            return True
+        else: 
+            return False
 
     def collidepoint(self, point):
-        return self.rect.collidepoint(point)
+        if not self.is_empty():
+            return self.letter.main_rectangle.collidepoint(point)
+        else:
+            return self.rectangle.collidepoint(point)
 
 
 class Grid(object):
@@ -52,32 +62,25 @@ class Grid(object):
         self.rows = 13  # max(0, (surface.get_height() - 4 * self.margin) // cell_size)
         self.line_width = 5
 
-        # set cell_size.
-        self.update((400, 300), (0, 0))
-
         # order row major
         self.grid = [Cell() for _ in range(self.rows * self.cols)]
 
-        self.x_min = self.margin
-        self.x_max_surface = self.surface.get_width() - self.margin
-        self.x_max = 0  # updated online
+        # set cell_size.
+        self.update(grid_size=(400, 300), pos=(0, 0))
 
-        self.y_min = self.margin
-        self.y_max_surface = self.surface.get_height() - self.margin
-        self.y_max = 0  # updated online
+    def _get_cell_index(self, key: tuple):
+        row, col = key
+        return row * self.cols + col
 
     def __getitem__(self, key: tuple):
-        row, col = key
-        pose = col * self.cols + row
-        return self.grid[pose]
+        return self.grid[self._get_cell_index(key)]
 
     def which_cell(self, mouse_pos):
-        for col in range(self.cols):
-            for row in range(self.rows):
+        for row in range(self.rows):
+            for col in range(self.cols):
                 if self[row, col].collidepoint(mouse_pos):
                     return (row, col)
-                else:
-                    return None
+        return None
 
     def update(self, grid_size: tuple, pos: tuple):
         """[summary]
@@ -102,6 +105,14 @@ class Grid(object):
 
         self.x_max = min(self.x_max_surface, self.x_min + self.cols * self.cell_size)
         self.y_max = min(self.y_max_surface, self.y_min + self.rows * self.cell_size)
+
+        for row in range(self.rows):
+            for col in range(self.cols):
+                self[row, col].update(
+                    self.x_min + col * self.cell_size + self.line_width // 2 + 1,
+                    self.y_min + row * self.cell_size + self.line_width // 2 + 1,
+                    self.cell_size - self.line_width,
+                )
 
     def draw(self):
         """ Draw the grid on the given surface. """
@@ -131,9 +142,4 @@ class Grid(object):
 
         for row in range(self.rows):
             for col in range(self.cols):
-                self.grid[row, col].draw()
-                    self.grid[row][col].resize(self.cell_size - self.line_width)
-                    self.grid[row][col].draw(
-                        self.x_min + col * self.cell_size + self.line_width // 2 + 1,
-                        self.y_min + row * self.cell_size + self.line_width // 2 + 1,
-                    )
+                self[row, col].draw()

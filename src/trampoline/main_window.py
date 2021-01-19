@@ -65,26 +65,26 @@ class Trampoline(TrampolineCEvent):
 
     def on_double_lbutton(self, event):
         mouse_pos = pygame.mouse.get_pos()
-        for row in self.letters.all_letters:
-            for letter in row:
-                if letter.main_rectangle.collidepoint(mouse_pos):
-                    letter.flip()
+        for letter in self.letters.all_letters:
+            if letter.main_rectangle.collidepoint(mouse_pos):
+                letter.flip()
 
     def on_lbutton_up(self, event):
         mouse_pos = pygame.mouse.get_pos()
-        for row in self.letters.all_letters:
-            for letter in row:
-                letter.selected = False
-                if letter.main_rectangle.collidepoint(mouse_pos):
-                    letter.selected = True
+        for letter in self.letters.all_letters:
+            letter.selected = False
+            if letter.main_rectangle.collidepoint(mouse_pos):
+                letter.selected = True
 
         which_cell = self.grid_to_be_filled.which_cell(mouse_pos)
+        print("grid_to_be_filled: ", which_cell)
         if which_cell is not None:
-            print("grid_to_be_filled: ", which_cell)
+            pass
 
         which_cell = self.grid_with_letter.which_cell(mouse_pos)
+        print("grid_with_letter: ", which_cell)
         if which_cell is not None:
-            print("grid_with_letter: ", which_cell)
+            pass
 
     def on_render(self):
 
@@ -96,13 +96,14 @@ class Trampoline(TrampolineCEvent):
         self.grid_with_letter.draw()
 
         # draw middle line.
+        half_width = self._display_surface.get_width() // 2
         pygame.draw.line(
             self._display_surface,
             Colors.black,
             (half_width, 0),
             (
                 half_width,
-                height,
+                self._display_surface.get_height(),
             ),
             2,
         )

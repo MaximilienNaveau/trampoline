@@ -112,7 +112,7 @@ class AllLetters(object):
         self.all_letters[7].set_letters("A", "U")
         self.all_letters[8].set_letters("B", "E")
 
-        # row 0
+        # row 1
         self.all_letters[self.cols + 0].set_letters("B", "N")
         self.all_letters[self.cols + 1].set_letters("B", "T")
         self.all_letters[self.cols + 2].set_letters("C", "A")
@@ -248,5 +248,5 @@ class AllLetters(object):
 
     def __getitem__(self, key: tuple):
         row, col = key
-        pose = col * self.cols + row
+        pose = row * self.cols + col
         return self.all_letters[pose]
