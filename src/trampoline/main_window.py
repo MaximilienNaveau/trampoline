@@ -18,6 +18,7 @@ class Trampoline(TrampolineCEvent):
         self._running = True
         self._display_surface = None
         self._image_surf = None
+        self._selected_letter = None
 
         super().__init__()
 
@@ -71,20 +72,37 @@ class Trampoline(TrampolineCEvent):
 
     def on_lbutton_up(self, event):
         mouse_pos = pygame.mouse.get_pos()
+
+        # try to fetch the selected letter.
+        cell_selected = self.grid_with_letter.which_cell_selected()
+        if cell_selected is None:
+            cell_selected = self.grid_to_be_filled.which_cell_selected()
+
+        # unselect all letters.
         for letter in self.letters.all_letters:
             letter.selected = False
+
+        # have we clicked on a letter just now?
+        for letter in self.letters.all_letters:
             if letter.main_rectangle.collidepoint(mouse_pos):
                 letter.selected = True
+                return
 
-        which_cell = self.grid_to_be_filled.which_cell(mouse_pos)
-        print("grid_to_be_filled: ", which_cell)
-        if which_cell is not None:
-            pass
+        # do we have a selected letter?
+        if cell_selected is None:
+            return
 
-        which_cell = self.grid_with_letter.which_cell(mouse_pos)
-        print("grid_with_letter: ", which_cell)
-        if which_cell is not None:
-            pass
+        # did we clicked on an empty cell?
+        cell_clicked = self.grid_with_letter.which_cell_clicked(mouse_pos)
+        if cell_clicked is None:
+            cell_clicked = self.grid_to_be_filled.which_cell_clicked(mouse_pos)
+            if cell_clicked is None:
+                return
+        assert cell_clicked.is_empty()
+
+        # A letter has been selected and an empty cell has been clicked on:
+        cell_clicked.set_letter(cell_selected.letter)
+        cell_selected.unset_letter()
 
     def on_render(self):
 

@@ -28,6 +28,12 @@ class Cell(object):
     def unset_letter(self):
         self.letter = None
 
+    def has_selected_letter(self):
+        if not self.is_empty():
+            return self.letter.selected
+        else:
+            return False
+
     def draw(self):
         if not self.is_empty():
             self.letter.draw(self.x, self.y)
@@ -75,11 +81,18 @@ class Grid(object):
     def __getitem__(self, key: tuple):
         return self.grid[self._get_cell_index(key)]
 
-    def which_cell(self, mouse_pos):
+    def which_cell_clicked(self, mouse_pos):
         for row in range(self.rows):
             for col in range(self.cols):
                 if self[row, col].collidepoint(mouse_pos):
-                    return (row, col)
+                    return self[row, col]
+        return None
+
+    def which_cell_selected(self):
+        for row in range(self.rows):
+            for col in range(self.cols):
+                if self[row, col].has_selected_letter():
+                    return self[row, col]
         return None
 
     def update(self, grid_size: tuple, pos: tuple):
