@@ -31,10 +31,10 @@ class Trampoline(TrampolineCEvent):
 
         super().__init__()
 
-    def on_init(self, for_android):
+    def on_init(self, full_screen):
         pygame.init()
         pygame.display.set_caption("Trampoline")
-        if for_android:
+        if full_screen:
             self._display_surface = pygame.display.set_mode((2000, 1000), FULLSCREEN)
         else:
             self._display_surface = pygame.display.set_mode((2000, 1000), RESIZABLE)
@@ -150,8 +150,8 @@ class Trampoline(TrampolineCEvent):
     def on_cleanup(self):
         pygame.quit()
 
-    def on_execute(self, for_android=False):
-        if self.on_init(for_android) == False:
+    def on_execute(self, full_screen=False):
+        if self.on_init(full_screen) == False:
             self._running = False
 
         while self._running:

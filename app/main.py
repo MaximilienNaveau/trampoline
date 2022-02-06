@@ -4,13 +4,16 @@
 from trampoline.main_window import Trampoline
 
 
-def start_ubuntu():
+def start_full_screen():
     trampoline = Trampoline()
-    trampoline.on_execute(for_android=False)
+    trampoline.on_execute(full_screen=True)
 
-def start_android():
+def start_window_mode():
     trampoline = Trampoline()
-    trampoline.on_execute(for_android=True)
+    trampoline.on_execute(full_screen=False)
+
+start_android=start_full_screen
+start_ubuntu=start_window_mode
 
 
 if __name__ == "__main__":
