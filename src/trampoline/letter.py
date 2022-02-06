@@ -31,6 +31,9 @@ class Letter(object):
         self.size = 40
         self.resize(self.size)
 
+        # Initialize the main and secondary objects
+        self._update(0, 0)
+
     def set_letters(self, face1_letter, face2_letter):
         self.face1_letter = face1_letter
         self.face2_letter = face2_letter
@@ -49,7 +52,7 @@ class Letter(object):
     def flip(self):
         self._visible_face = not self._visible_face
 
-    def draw(self, x, y):
+    def _update(self, x, y):
         self.main_rectangle.x = x
         self.main_rectangle.y = y
         self.small_rectangle.x = (
@@ -58,39 +61,44 @@ class Letter(object):
         self.small_rectangle.y = self.main_rectangle.topright[1]
 
         if self._visible_face == self._face1_visible:
-            main_letter = self.face1_letter
-            main_color = self.face1_color
-            secondary_letter = self.face2_letter
-            secondary_color = self.face2_color
+            self.main_letter = self.face1_letter
+            self.main_color = self.face1_color
+            self.secondary_letter = self.face2_letter
+            self.secondary_color = self.face2_color
         else:
-            main_letter = self.face2_letter
-            main_color = self.face2_color
-            secondary_letter = self.face1_letter
-            secondary_color = Colors.yellow
+            self.main_letter = self.face2_letter
+            self.main_color = self.face2_color
+            self.secondary_letter = self.face1_letter
+            self.secondary_color = Colors.yellow
 
-        main_letter_color = Colors.black
-        # if main_color == Colors.green:
-        #     main_letter_color = Colors.white
-        secondary_letter_color = Colors.black
-        # if secondary_color == Colors.green:
-        #     secondary_letter_color = Colors.white
+        self.main_letter_color = Colors.black
+        self.secondary_letter_color = Colors.black
 
-        self.surface.fill(main_color, self.main_rectangle)
-        self.surface.fill(secondary_color, self.small_rectangle)
+    def draw(self, x, y):
+        self._update(x, y)
+
+        self.surface.fill(self.main_color, self.main_rectangle)
+        self.surface.fill(self.secondary_color, self.small_rectangle)
         ptext.drawbox(
-            main_letter,
+            self.main_letter,
             self.main_rectangle.inflate(
                 int(-0.3 * self.main_rectangle.width),
                 int(-0.3 * self.main_rectangle.height),
             ).move(int(-0.18 * self.main_rectangle.width), 0),
-            color=main_letter_color,
+            color=self.main_letter_color,
         )
         ptext.drawbox(
-            secondary_letter, self.small_rectangle, color=secondary_letter_color
+            self.secondary_letter,
+            self.small_rectangle,
+            color=self.secondary_letter_color,
         )
-        pygame.draw.rect(self.surface, Colors.black, self.small_rectangle, width=1)
+        pygame.draw.rect(
+            self.surface, Colors.black, self.small_rectangle, width=1
+        )
         if self.selected:
-            pygame.draw.rect(self.surface, Colors.blue, self.main_rectangle, width=3)
+            pygame.draw.rect(
+                self.surface, Colors.blue, self.main_rectangle, width=3
+            )
 
 
 class AllLetters(object):
@@ -166,7 +174,9 @@ class AllLetters(object):
         self.all_letters[5 * self.cols + 6].set_letters("I", "U")
         self.all_letters[5 * self.cols + 7].set_letters("J", "E")
         self.all_letters[5 * self.cols + 8].set_letters("K", "U")
-        self.all_letters[5 * self.cols + 8].set_colors(Colors.yellow, Colors.yellow)
+        self.all_letters[5 * self.cols + 8].set_colors(
+            Colors.yellow, Colors.yellow
+        )
 
         # row 6
         self.all_letters[6 * self.cols + 0].set_letters("L", "A")
@@ -241,7 +251,9 @@ class AllLetters(object):
         self.all_letters[12 * self.cols + 3].set_letters("V", "E")
         self.all_letters[12 * self.cols + 4].set_letters("V", "S")
         self.all_letters[12 * self.cols + 5].set_letters("W", "S")
-        self.all_letters[12 * self.cols + 5].set_colors(Colors.yellow, Colors.yellow)
+        self.all_letters[12 * self.cols + 5].set_colors(
+            Colors.yellow, Colors.yellow
+        )
         self.all_letters[12 * self.cols + 6].set_letters("X", "E")
         self.all_letters[12 * self.cols + 7].set_letters("Y", "O")
         self.all_letters[12 * self.cols + 8].set_letters("Z", "R")
