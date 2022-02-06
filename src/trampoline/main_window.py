@@ -2,13 +2,22 @@
 
 from os import path
 import pygame
-from pygame.locals import RESIZABLE
+from pygame.locals import RESIZABLE, FULLSCREEN
 import pkg_resources
 from pygame.locals import QUIT
 from trampoline.cevent import TrampolineCEvent
 from trampoline.grid import Grid
 from trampoline.letter import AllLetters
 from trampoline.colors import Colors
+
+
+def platform():
+    if 'ANDROID_ARGUMENT' in environ:
+        return "android"
+    elif _sys_platform in ('linux', 'linux2','linux3'):
+        return "linux"
+    elif _sys_platform in ('win32', 'cygwin'):
+        return 'win'
 
 
 class Trampoline(TrampolineCEvent):
@@ -22,10 +31,13 @@ class Trampoline(TrampolineCEvent):
 
         super().__init__()
 
-    def on_init(self):
+    def on_init(self, for_android):
         pygame.init()
         pygame.display.set_caption("Trampoline")
-        self._display_surface = pygame.display.set_mode((2000, 1000), RESIZABLE)
+        if for_android:
+            self._display_surface = pygame.display.set_mode((2000, 1000), FULLSCREEN)
+        else:
+            self._display_surface = pygame.display.set_mode((2000, 1000), RESIZABLE)
         self._running = True
 
         self.grid_to_be_filled = Grid(
@@ -138,8 +150,8 @@ class Trampoline(TrampolineCEvent):
     def on_cleanup(self):
         pygame.quit()
 
-    def on_execute(self):
-        if self.on_init() == False:
+    def on_execute(self, for_android=False):
+        if self.on_init(for_android) == False:
             self._running = False
 
         while self._running:
