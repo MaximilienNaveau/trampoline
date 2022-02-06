@@ -1,27 +1,25 @@
 #! /usr/env/bin python
 
-from os import path
 import pygame
 from pygame.locals import RESIZABLE, FULLSCREEN
-import pkg_resources
-from pygame.locals import QUIT
 from trampoline.cevent import TrampolineCEvent
 from trampoline.grid import Grid
 from trampoline.letter import AllLetters
 from trampoline.colors import Colors
+from trampoline.word_checker import WordChecker
 
 
 def platform():
-    if 'ANDROID_ARGUMENT' in environ:
+    if "ANDROID_ARGUMENT" in environ:
         return "android"
-    elif _sys_platform in ('linux', 'linux2','linux3'):
+    elif _sys_platform in ("linux", "linux2", "linux3"):
         return "linux"
-    elif _sys_platform in ('win32', 'cygwin'):
-        return 'win'
+    elif _sys_platform in ("win32", "cygwin"):
+        return "win"
 
 
 class Trampoline(TrampolineCEvent):
-    """Un jeu pour faire rebondir les mots. """
+    """Un jeu pour faire rebondir les mots."""
 
     def __init__(self):
         self._running = True
@@ -40,19 +38,21 @@ class Trampoline(TrampolineCEvent):
             self._display_surface = pygame.display.set_mode((2000, 1000), RESIZABLE)
         self._running = True
 
-        self.grid_to_be_filled = Grid(
+        self._grid_to_be_filled = Grid(
             surface=self._display_surface, color=Colors.burlywood
         )
 
-        self.grid_with_letter = Grid(
+        self._grid_with_letter = Grid(
             surface=self._display_surface, color=Colors.burlywood
         )
+
+        self._word_checker = WordChecker(self._grid_to_be_filled)
 
         self.letters = AllLetters(self._display_surface)
 
-        for row in range(self.grid_with_letter.rows):
-            for col in range(self.grid_with_letter.cols):
-                self.grid_with_letter[row, col].set_letter(self.letters[row, col])
+        for row in range(self._grid_with_letter.rows):
+            for col in range(self._grid_with_letter.cols):
+                self._grid_with_letter[row, col].set_letter(self.letters[row, col])
 
     def on_loop(self):
         # Quit on "ctrl + q".
@@ -68,13 +68,18 @@ class Trampoline(TrampolineCEvent):
         half_width = self._display_surface.get_width() // 2
 
         # Resize the grids and place them.
-        grid_height = 0.9 * height
-        grid_width = 0.9 * half_width
-        x = (half_width - self.grid_to_be_filled.width) // 2
-        y = (height - self.grid_to_be_filled.height) // 2
-        self.grid_to_be_filled.update((grid_width, grid_height), (x, y))
+        grid_height = 0.8 * height
+        grid_width = 0.8 * half_width
+        x = (half_width - self._grid_to_be_filled.width) // 2
+        y = (height - self._grid_to_be_filled.height) // 2
+        self._grid_to_be_filled.update((grid_width, grid_height), (x, y))
         x += half_width
-        self.grid_with_letter.update((grid_width, grid_height), (x, y))
+        self._grid_with_letter.update((grid_width, grid_height), (x, y))
+
+        # Check the words
+        self._word_checker.check_words()
+
+        # Apply the rules.
 
     def on_double_lbutton(self, event):
         mouse_pos = pygame.mouse.get_pos()
@@ -86,9 +91,9 @@ class Trampoline(TrampolineCEvent):
         mouse_pos = pygame.mouse.get_pos()
 
         # try to fetch the selected letter.
-        cell_selected = self.grid_with_letter.which_cell_selected()
+        cell_selected = self._grid_with_letter.which_cell_selected()
         if cell_selected is None:
-            cell_selected = self.grid_to_be_filled.which_cell_selected()
+            cell_selected = self._grid_to_be_filled.which_cell_selected()
 
         # unselect all letters.
         for letter in self.letters.all_letters:
@@ -105,9 +110,9 @@ class Trampoline(TrampolineCEvent):
             return
 
         # did we clicked on an empty cell?
-        cell_clicked = self.grid_with_letter.which_cell_clicked(mouse_pos)
+        cell_clicked = self._grid_with_letter.which_cell_clicked(mouse_pos)
         if cell_clicked is None:
-            cell_clicked = self.grid_to_be_filled.which_cell_clicked(mouse_pos)
+            cell_clicked = self._grid_to_be_filled.which_cell_clicked(mouse_pos)
             if cell_clicked is None:
                 return
         assert cell_clicked.is_empty()
@@ -122,8 +127,8 @@ class Trampoline(TrampolineCEvent):
         self._display_surface.fill(Colors.white)
 
         # Drw the grids.
-        self.grid_to_be_filled.draw()
-        self.grid_with_letter.draw()
+        self._grid_to_be_filled.draw()
+        self._grid_with_letter.draw()
 
         # draw middle line.
         half_width = self._display_surface.get_width() // 2
@@ -137,6 +142,9 @@ class Trampoline(TrampolineCEvent):
             ),
             2,
         )
+
+        # Draw if the words are valid or not.
+        self._word_checker.draw()
 
         # update display
         pygame.display.flip()
