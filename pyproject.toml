@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "trampoline"
 version = "0.1.0"
-description = ""
+description = "Un jeux pour faire rebondir les mots"
 authors = ["MaximilienNaveau <maximilien.naveau@gmail.com>"]
 
 [build-system]

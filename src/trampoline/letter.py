@@ -2,7 +2,7 @@
 
 import pygame
 from trampoline.colors import Colors
-from trampoline import pygame_text as ptext
+from trampoline.pygame import pygame_text as ptext
 
 
 class Letter(object):

@@ -1,7 +1,7 @@
 #! /usr/env/bin python
 
 
-from trampoline.main_window import Trampoline
+from trampoline.pygame.main_window import Trampoline
 
 
 def start_full_screen():
