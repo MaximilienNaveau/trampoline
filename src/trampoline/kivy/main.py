@@ -1,13 +1,11 @@
 from kivy.app import App
-from kivy.uix.widget import Widget
-from kivy.properties import (
-    NumericProperty, ReferenceListProperty, ObjectProperty
-)
-from kivy.vector import Vector
 from kivy.clock import Clock
+from kivy.uix.widget import Widget
+from kivy.properties import ObjectProperty, NumericProperty, ReferenceListProperty
+from kivy.vector import Vector
 
 
-class PongPaddle(Widget):
+class TrampolinePaddle(Widget):
     score = NumericProperty(0)
 
     def bounce_ball(self, ball):
@@ -19,7 +17,7 @@ class PongPaddle(Widget):
             ball.velocity = vel.x, vel.y + offset
 
 
-class PongBall(Widget):
+class TrampolineBall(Widget):
     velocity_x = NumericProperty(0)
     velocity_y = NumericProperty(0)
     velocity = ReferenceListProperty(velocity_x, velocity_y)
@@ -28,7 +26,7 @@ class PongBall(Widget):
         self.pos = Vector(*self.velocity) + self.pos
 
 
-class PongGame(Widget):
+class TrampolineGame(Widget):
     ball = ObjectProperty(None)
     player1 = ObjectProperty(None)
     player2 = ObjectProperty(None)
@@ -63,13 +61,17 @@ class PongGame(Widget):
             self.player2.center_y = touch.y
 
 
-class PongApp(App):
+class TrampolineApp(App):
     def build(self):
-        game = PongGame()
+        game = TrampolineGame()
         game.serve_ball()
         Clock.schedule_interval(game.update, 1.0 / 60.0)
         return game
 
 
-if __name__ == '__main__':
-    PongApp().run()
+def start():
+    TrampolineApp().run()
+
+
+if __name__ == "__main__":
+    start()

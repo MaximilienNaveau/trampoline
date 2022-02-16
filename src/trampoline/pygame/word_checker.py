@@ -1,8 +1,8 @@
 #! /usr/env/bin python
 
 import pygame
-from trampoline.colors import Colors
-from trampoline.dictionary_checker import DictionaryChecker
+from trampoline.pygame.colors import Colors
+from trampoline.pygame.dictionary_checker import DictionaryChecker
 
 
 class Word(object):

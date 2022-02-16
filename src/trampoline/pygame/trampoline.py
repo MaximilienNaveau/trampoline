@@ -3,9 +3,9 @@
 import pygame
 from pygame.locals import RESIZABLE, FULLSCREEN
 from trampoline.pygame.cevent import TrampolineCEvent
-from trampoline.grid import Grid
-from trampoline.letter import AllLetters
-from trampoline.colors import Colors
+from trampoline.pygame.grid import Grid
+from trampoline.pygame.letter import AllLetters
+from trampoline.pygame.colors import Colors
 from trampoline.pygame.word_checker import WordChecker
 
 

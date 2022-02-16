@@ -36,3 +36,15 @@ In order to create an android apk on Ubuntu18.04 we use
 cd trampoline
 buildozer -v android debug # or buildozer -v android release
 ```
+
+# Technology used
+
+This started as a pygame application. Though one unsaid requirement for this
+video game is to be able to run as well on Linux (Ubuntu latest, targeted 20.04)
+as on Android.
+
+The Python language is very nice but apparently limited when it comes to
+video games on android.
+
+Hence the pipeline is changing from Pygame to Kivy. And we use Buildozer in oder
+to cross-compile the code into APK (Android applications).

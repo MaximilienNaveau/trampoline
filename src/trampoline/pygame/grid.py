@@ -1,7 +1,7 @@
 #! /usr/env/bin python
 
 import pygame
-from trampoline.colors import Colors
+from trampoline.pygame.colors import Colors
 
 
 class Cell(object):

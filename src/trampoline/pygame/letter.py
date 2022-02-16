@@ -1,7 +1,7 @@
 #! /usr/env/bin python
 
 import pygame
-from trampoline.colors import Colors
+from trampoline.pygame.colors import Colors
 from trampoline.pygame import pygame_text as ptext
 
 

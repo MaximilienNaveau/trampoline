@@ -1,21 +1,21 @@
 #:kivy 1.0.9
 
-<PongBall>:
+<TrampolineBall>:
     size: 50, 50 
     canvas:
         Ellipse:
             pos: self.pos
             size: self.size          
 
-<PongPaddle>:
+<TrampolinePaddle>:
     size: 25, 200
     canvas:
         Rectangle:
             pos: self.pos
             size: self.size
 
-<PongGame>:
-    ball: pong_ball
+<TrampolineGame>:
+    ball: trampoline_ball
     player1: player_left
     player2: player_right
     
@@ -36,16 +36,16 @@
         top: root.top - 50
         text: str(root.player2.score)
     
-    PongBall:
-        id: pong_ball
+    TrampolineBall:
+        id: trampoline_ball
         center: self.parent.center
         
-    PongPaddle:
+    TrampolinePaddle:
         id: player_left
         x: root.x
         center_y: root.center_y
         
-    PongPaddle:
+    TrampolinePaddle:
         id: player_right
         x: root.width - self.width
         center_y: root.center_y
