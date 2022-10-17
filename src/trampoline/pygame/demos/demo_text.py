@@ -16,7 +16,8 @@ if __name__ == "__main__":
         "Font decoration",
         (300, 180),
         sysfontname="freesans",
-        italic=True,fontsize=60
+        italic=True,
+        fontsize=60,
         underline=True,
     )
     ptext.draw("Positioned text", topright=(840, 20))

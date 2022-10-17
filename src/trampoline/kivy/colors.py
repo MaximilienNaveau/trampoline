@@ -10,6 +10,7 @@ def to_kivy_format(r,g,b,a):
 class Colors(object):
     """Collection of all the colors used in the game. """
 
+    transparent_black = to_kivy_format(0, 0, 0, 0)
     black = to_kivy_format(0, 0, 0, 255)
     white = to_kivy_format(255, 255, 255, 255)
     green = to_kivy_format(154, 205, 50, 255)
