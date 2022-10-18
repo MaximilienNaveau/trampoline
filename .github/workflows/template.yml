@@ -102,6 +102,8 @@ jobs:
       - uses: webbertakken/unity-builder@v2
         with:
           targetPlatform: ${{ matrix.targetPlatform }}
+          projectPath: trampoline_unity/trampoline
+
 
       - uses: actions/upload-artifact@v2
         with:
