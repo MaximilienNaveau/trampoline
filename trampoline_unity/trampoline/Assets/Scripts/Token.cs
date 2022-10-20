@@ -44,6 +44,25 @@ public class Token : MonoBehaviour
         }
     }
 
+    public void Resize(float size)
+    {
+        transform.localScale *= size / _spriteRenderer.size.x;
+    }
+
+    public void SetLetters(string mainLetter, string secondaryLetter)
+    {
+        _letters[0] = mainLetter;
+        _letters[1] = secondaryLetter;
+        UpdateContent();
+    }
+
+    public void SetSprites(Sprite mainSprite, Sprite secondarySprite)
+    {
+        _sprites[0] = mainSprite;
+        _sprites[1] = secondarySprite;
+        UpdateContent();
+    }
+
     IEnumerator Wait(float duration, float size)
     {
         while (size > 0.1)
@@ -53,7 +72,6 @@ public class Token : MonoBehaviour
             yield return new WaitForSeconds(duration);
         }
         SwapSide();
-
         while (size < 0.99)
         {
             size += 0.07f;
