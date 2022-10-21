@@ -7,7 +7,7 @@ public class Token : MonoBehaviour
 {
     private void OnMouseDown()
     {
-        StartCoroutine(this.Wait(0.01f, 1.0f));
+        StartCoroutine(this.Wait(0.1f));
     }
 
     private void Awake()
@@ -63,21 +63,25 @@ public class Token : MonoBehaviour
         UpdateContent();
     }
 
-    IEnumerator Wait(float duration, float size)
+    IEnumerator Wait(float duration)
     {
+        float delta_test = 0.1f;
+        Vector3 initScale = transform.localScale;
+        float size = initScale.x;
         while (size > 0.1)
         {
-            size -= 0.07f;
-            transform.localScale = new Vector3(size, 1, 1);
+            size -= delta_test;
+            transform.localScale = new Vector3(size, initScale.y, initScale.z);
             yield return new WaitForSeconds(duration);
         }
         SwapSide();
-        while (size < 0.99)
+        while (size < initScale.x)
         {
-            size += 0.07f;
-            transform.localScale = new Vector3(size, 1, 1);
+            size += delta_test;
+            transform.localScale = new Vector3(size, initScale.y, initScale.z);
             yield return new WaitForSeconds(duration);
         }
+        transform.localScale = initScale;
     }
 
     private SpriteRenderer _spriteRenderer;
