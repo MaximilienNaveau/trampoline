@@ -153,7 +153,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _tokenType: {fileID: 5962055710956183222, guid: 93023f209d753f73b9018a491e20e453, type: 3}
-  _tokenYellowYellowType: {fileID: 0}
+  _tokenYellowYellowType: {fileID: 21300000, guid: cec33186560b05769bf5db2887baad55, type: 3}
   _interval: 0.2
   _lowerLeftCorner: {x: 0.7, y: -3.5}
   _upperRightCorner: {x: 7, y: 4.3}
