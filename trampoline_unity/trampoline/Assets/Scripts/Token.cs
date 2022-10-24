@@ -7,7 +7,34 @@ public class Token : MonoBehaviour
 {
     private void OnMouseDown()
     {
-        StartCoroutine(this.Wait(0.1f));
+        _dragOffset = transform.position -
+                      Camera.main.ScreenToWorldPoint(Input.mousePosition);
+    }
+
+    private void OnMouseDrag()
+    {
+        if (!_BeingDragged)
+        {
+            _initDraggedPosition = transform.position;
+        }
+        _BeingDragged = true;
+        _clickPosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+        _draggedPosition = _clickPosition + _dragOffset;
+        _draggedPosition.z = 0;
+        transform.position = _draggedPosition;
+    }
+
+    private void OnMouseUp()
+    {
+        if (_clickEnable)
+        {
+            _clickEnable = false;
+            StartCoroutine(TrapDoubleClicks(_doubleClickTimeout));
+        }
+        if (_missplaced)
+        {
+            transform.position = _initDraggedPosition;
+        }
     }
 
     private void Awake()
@@ -17,6 +44,42 @@ public class Token : MonoBehaviour
         _secondaryLetter = letters[1];
         _spriteRenderer = GetComponent<SpriteRenderer>();
         UpdateContent();
+    }
+
+    public void OnDoubleClick()
+    {
+        StartCoroutine(this.Wait(0.1f));
+    }
+
+    IEnumerator TrapDoubleClicks(float timer)
+    {
+        // Debug.Log("Starting to listen for double clicks");
+        float endTime = Time.time + timer;
+        while (Time.time < endTime)
+        {
+            if (Input.GetMouseButtonDown(0))
+            {
+                // Debug.Log("Double click!");
+                OnDoubleClick();
+                yield return new WaitForSeconds(0.4f);
+                _clickEnable = true;
+                _doubleClick = true;
+
+            }
+            yield return 0;
+        }
+
+        if (!_doubleClick)
+        {
+            // Debug.Log("Single click");
+        }
+        else
+        {
+            _doubleClick = false;
+        }
+
+        _clickEnable = true;
+        yield return 0;
     }
 
     private void UpdateContent()
@@ -84,13 +147,22 @@ public class Token : MonoBehaviour
         transform.localScale = initScale;
     }
 
-    private SpriteRenderer _spriteRenderer;
     [SerializeField] private List<Sprite> _sprites;
     [SerializeField] private List<string> _letters;
+    [SerializeField] private float _doubleClickTimeout = 0.2f;
 
+    private SpriteRenderer _spriteRenderer;
     private int _sideShown = 0;
     private const int _front = 1;
     private const int _back = 0;
-    TextMeshProUGUI _mainLetter;
-    TextMeshProUGUI _secondaryLetter;
+    private TextMeshProUGUI _mainLetter;
+    private TextMeshProUGUI _secondaryLetter;
+    private Vector3 _dragOffset;
+    private Vector3 _draggedPosition;
+    private Vector3 _initDraggedPosition;
+    private Vector3 _clickPosition;
+    private bool _BeingDragged = false;
+    private bool _clickEnable = true;
+    private bool _doubleClick = false;
+    private bool _missplaced = true;
 }
