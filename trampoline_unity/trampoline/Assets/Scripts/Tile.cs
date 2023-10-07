@@ -31,7 +31,7 @@ public class Tile : MonoBehaviour, IDropHandler
     {
     }
 
-    public void updateAbsolutePosition()
+    public void UpdateAbsolutePosition()
     {
         boardTopLeftCorner_.x = boardRectTransform_.anchoredPosition.x - 0.5f * boardRectTransform_.sizeDelta.x;
         boardTopLeftCorner_.y = boardRectTransform_.anchoredPosition.y + 0.5f * boardRectTransform_.sizeDelta.y;
@@ -45,7 +45,7 @@ public class Tile : MonoBehaviour, IDropHandler
         Debug.Log("Dropped on a Tile");
         if (eventData.pointerDrag != null)
         {   
-            updateAbsolutePosition();
+            UpdateAbsolutePosition();
             eventData.pointerDrag.GetComponent<RectTransform>().
                 anchoredPosition = absolutePosition_;
             eventData.pointerDrag.GetComponent<DragAndDrop>().setDraggedOnTile(true);
