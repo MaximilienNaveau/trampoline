@@ -10,6 +10,9 @@ on:
 
 env:
   UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+  UNITY_EMAIL: ${{ secrets.UNITY_LICENSE }}
+  UNITY_PASSWORD: ${{ secrets.UNITY_LICENSE }}
+  UNITY_PROJECT_PATH: trampoline_unity/trampoline
 
 jobs:
   checkLicense:
@@ -61,6 +64,7 @@ jobs:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
         with:
           githubToken: ${{ secrets.GITHUB_TOKEN }}
+          projectPath: ${{ env.UNITY_PROJECT_PATH }}
 
       # Build
       - name: Build project
@@ -71,6 +75,7 @@ jobs:
           UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
         with:
           targetPlatform: WebGL
+          projectPath: ${{ env.UNITY_PROJECT_PATH }}
 
       # Output
       - uses: actions/upload-artifact@v3
@@ -129,6 +134,7 @@ jobs:
           UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
         with:
           targetPlatform: ${{ matrix.targetPlatform }}
+          projectPath: ${{ env.UNITY_PROJECT_PATH }}
 
       # Output
       - uses: actions/upload-artifact@v3
