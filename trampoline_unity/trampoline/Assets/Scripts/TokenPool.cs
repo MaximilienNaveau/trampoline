@@ -1,222 +1,172 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 public class TokenPool : MonoBehaviour
 {
     private void Awake()
     {
-        ComputeGridParams();
         _tokenPool.Clear();
         _tokenObjPool.Clear();
-        Vector3 position = Vector3.zero;
-        Quaternion orientation = Quaternion.identity;
-
+        Vector3 position = new();
+        Quaternion orientation = new();
+        GameObject _tokenType = new ();
+        
         for (int i = 0; i < _nbLetter * _nbWord; i++)
         {
             GameObject newObj = Instantiate(_tokenType, position, orientation);
-            Token newToken = newObj.GetComponent<Token>();
-            newToken.Resize(_tokenSize);
+            BasicToken newToken = newObj.GetComponent<BasicToken>();
             _tokenObjPool.Add(newObj);
             _tokenPool.Add(newToken);
         }
 
         // Replace letters and sprites if needed
         // row 0
-        _tokenPool[0].SetLetters("A", "E");
-        _tokenPool[1].SetLetters("A", "I");
-        _tokenPool[2].SetLetters("A", "M");
-        _tokenPool[3].SetLetters("A", "O");
-        _tokenPool[4].SetLetters("A", "R");
-        _tokenPool[5].SetLetters("A", "S");
-        _tokenPool[6].SetLetters("A", "T");
-        _tokenPool[7].SetLetters("A", "U");
-        _tokenPool[8].SetLetters("B", "E");
+        _tokenPool[0].SetParameters("A", "E", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[1].SetParameters("A", "I", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[2].SetParameters("A", "M", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[3].SetParameters("A", "O", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[4].SetParameters("A", "R", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[5].SetParameters("A", "S", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[6].SetParameters("A", "T", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[7].SetParameters("A", "U", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[8].SetParameters("B", "E", MyGameColors.GetYellow(), MyGameColors.GetGreen());
 
         // row 1
-        _tokenPool[_nbLetter + 0].SetLetters("B", "N");
-        _tokenPool[_nbLetter + 1].SetLetters("B", "T");
-        _tokenPool[_nbLetter + 2].SetLetters("C", "A");
-        _tokenPool[_nbLetter + 3].SetLetters("C", "I");
-        _tokenPool[_nbLetter + 4].SetLetters("C", "N");
-        _tokenPool[_nbLetter + 5].SetLetters("C", "T");
-        _tokenPool[_nbLetter + 6].SetLetters("D", "C");
-        _tokenPool[_nbLetter + 7].SetLetters("D", "N");
-        _tokenPool[_nbLetter + 8].SetLetters("D", "R");
+        _tokenPool[_nbLetter + 0].SetParameters("B", "N", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[_nbLetter + 1].SetParameters("B", "T", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[_nbLetter + 2].SetParameters("C", "A", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[_nbLetter + 3].SetParameters("C", "I", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[_nbLetter + 4].SetParameters("C", "N", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[_nbLetter + 5].SetParameters("C", "T", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[_nbLetter + 6].SetParameters("D", "C", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[_nbLetter + 7].SetParameters("D", "N", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[_nbLetter + 8].SetParameters("D", "R", MyGameColors.GetYellow(), MyGameColors.GetGreen());
 
         // row 2
-        _tokenPool[2 * _nbLetter + 0].SetLetters("E", "-");
-        _tokenPool[2 * _nbLetter + 1].SetLetters("E", "-");
-        _tokenPool[2 * _nbLetter + 2].SetLetters("E", "-");
-        _tokenPool[2 * _nbLetter + 3].SetLetters("E", "-");
-        _tokenPool[2 * _nbLetter + 4].SetLetters("E", "-");
-        _tokenPool[2 * _nbLetter + 5].SetLetters("E", "-");
-        _tokenPool[2 * _nbLetter + 6].SetLetters("E", "-");
-        _tokenPool[2 * _nbLetter + 7].SetLetters("E", "C");
-        _tokenPool[2 * _nbLetter + 8].SetLetters("E", "D");
+        _tokenPool[2 * _nbLetter + 0].SetParameters("E", "-", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[2 * _nbLetter + 1].SetParameters("E", "-", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[2 * _nbLetter + 2].SetParameters("E", "-", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[2 * _nbLetter + 3].SetParameters("E", "-", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[2 * _nbLetter + 4].SetParameters("E", "-", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[2 * _nbLetter + 5].SetParameters("E", "-", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[2 * _nbLetter + 6].SetParameters("E", "-", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[2 * _nbLetter + 7].SetParameters("E", "C", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[2 * _nbLetter + 8].SetParameters("E", "D", MyGameColors.GetYellow(), MyGameColors.GetGreen());
 
         // row 3
-        _tokenPool[3 * _nbLetter + 0].SetLetters("E", "G");
-        _tokenPool[3 * _nbLetter + 1].SetLetters("E", "H");
-        _tokenPool[3 * _nbLetter + 2].SetLetters("E", "L");
-        _tokenPool[3 * _nbLetter + 3].SetLetters("E", "N");
-        _tokenPool[3 * _nbLetter + 4].SetLetters("E", "O");
-        _tokenPool[3 * _nbLetter + 5].SetLetters("E", "S");
-        _tokenPool[3 * _nbLetter + 6].SetLetters("E", "T");
-        _tokenPool[3 * _nbLetter + 7].SetLetters("E", "Y");
-        _tokenPool[3 * _nbLetter + 8].SetLetters("E", "Z");
+        _tokenPool[3 * _nbLetter + 0].SetParameters("E", "G", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[3 * _nbLetter + 1].SetParameters("E", "H", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[3 * _nbLetter + 2].SetParameters("E", "L", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[3 * _nbLetter + 3].SetParameters("E", "N", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[3 * _nbLetter + 4].SetParameters("E", "O", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[3 * _nbLetter + 5].SetParameters("E", "S", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[3 * _nbLetter + 6].SetParameters("E", "T", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[3 * _nbLetter + 7].SetParameters("E", "Y", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[3 * _nbLetter + 8].SetParameters("E", "Z", MyGameColors.GetYellow(), MyGameColors.GetGreen());
 
         // row 4
-        _tokenPool[4 * _nbLetter + 0].SetLetters("F", "A");
-        _tokenPool[4 * _nbLetter + 1].SetLetters("F", "E");
-        _tokenPool[4 * _nbLetter + 2].SetLetters("F", "T");
-        _tokenPool[4 * _nbLetter + 3].SetLetters("G", "A");
-        _tokenPool[4 * _nbLetter + 4].SetLetters("G", "I");
-        _tokenPool[4 * _nbLetter + 5].SetLetters("H", "A");
-        _tokenPool[4 * _nbLetter + 6].SetLetters("H", "T");
-        _tokenPool[4 * _nbLetter + 7].SetLetters("I", "B");
-        _tokenPool[4 * _nbLetter + 8].SetLetters("I", "D");
+        _tokenPool[4 * _nbLetter + 0].SetParameters("F", "A", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[4 * _nbLetter + 1].SetParameters("F", "E", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[4 * _nbLetter + 2].SetParameters("F", "T", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[4 * _nbLetter + 3].SetParameters("G", "A", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[4 * _nbLetter + 4].SetParameters("G", "I", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[4 * _nbLetter + 5].SetParameters("H", "A", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[4 * _nbLetter + 6].SetParameters("H", "T", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[4 * _nbLetter + 7].SetParameters("I", "B", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[4 * _nbLetter + 8].SetParameters("I", "D", MyGameColors.GetYellow(), MyGameColors.GetGreen());
 
         // row 5
-        _tokenPool[5 * _nbLetter + 0].SetLetters("I", "E");
-        _tokenPool[5 * _nbLetter + 1].SetLetters("I", "F");
-        _tokenPool[5 * _nbLetter + 2].SetLetters("I", "M");
-        _tokenPool[5 * _nbLetter + 3].SetLetters("I", "O");
-        _tokenPool[5 * _nbLetter + 4].SetLetters("I", "R");
-        _tokenPool[5 * _nbLetter + 5].SetLetters("I", "S");
-        _tokenPool[5 * _nbLetter + 6].SetLetters("I", "U");
-        _tokenPool[5 * _nbLetter + 7].SetLetters("J", "E");
-        _tokenPool[5 * _nbLetter + 8].SetLetters("K", "U");
-        _tokenPool[5 * _nbLetter + 8].SetSprites(
-            _tokenYellowYellowType, _tokenYellowYellowType
-        );
+        _tokenPool[5 * _nbLetter + 0].SetParameters("I", "E", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[5 * _nbLetter + 1].SetParameters("I", "F", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[5 * _nbLetter + 2].SetParameters("I", "M", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[5 * _nbLetter + 3].SetParameters("I", "O", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[5 * _nbLetter + 4].SetParameters("I", "R", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[5 * _nbLetter + 5].SetParameters("I", "S", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[5 * _nbLetter + 6].SetParameters("I", "U", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[5 * _nbLetter + 7].SetParameters("J", "E", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[5 * _nbLetter + 8].SetParameters("K", "U", MyGameColors.GetYellow(), MyGameColors.GetYellow());
 
         // row 6
-        _tokenPool[6 * _nbLetter + 0].SetLetters("L", "A");
-        _tokenPool[6 * _nbLetter + 1].SetLetters("L", "D");
-        _tokenPool[6 * _nbLetter + 2].SetLetters("L", "I");
-        _tokenPool[6 * _nbLetter + 3].SetLetters("L", "S");
-        _tokenPool[6 * _nbLetter + 4].SetLetters("M", "E");
-        _tokenPool[6 * _nbLetter + 5].SetLetters("M", "S");
-        _tokenPool[6 * _nbLetter + 6].SetLetters("M", "U");
-        _tokenPool[6 * _nbLetter + 7].SetLetters("N", "-");
-        _tokenPool[6 * _nbLetter + 8].SetLetters("N", "A");
+        _tokenPool[6 * _nbLetter + 0].SetParameters("L", "A", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[6 * _nbLetter + 1].SetParameters("L", "D", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[6 * _nbLetter + 2].SetParameters("L", "I", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[6 * _nbLetter + 3].SetParameters("L", "S", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[6 * _nbLetter + 4].SetParameters("M", "E", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[6 * _nbLetter + 5].SetParameters("M", "S", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[6 * _nbLetter + 6].SetParameters("M", "U", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[6 * _nbLetter + 7].SetParameters("N", "-", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[6 * _nbLetter + 8].SetParameters("N", "A", MyGameColors.GetYellow(), MyGameColors.GetGreen());
 
         // row 7
-        _tokenPool[7 * _nbLetter + 0].SetLetters("N", "F");
-        _tokenPool[7 * _nbLetter + 1].SetLetters("N", "I");
-        _tokenPool[7 * _nbLetter + 2].SetLetters("N", "L");
-        _tokenPool[7 * _nbLetter + 3].SetLetters("N", "P");
-        _tokenPool[7 * _nbLetter + 4].SetLetters("N", "Q");
-        _tokenPool[7 * _nbLetter + 5].SetLetters("N", "T");
-        _tokenPool[7 * _nbLetter + 6].SetLetters("O", "-");
-        _tokenPool[7 * _nbLetter + 7].SetLetters("O", "C");
-        _tokenPool[7 * _nbLetter + 8].SetLetters("O", "F");
+        _tokenPool[7 * _nbLetter + 0].SetParameters("N", "F", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[7 * _nbLetter + 1].SetParameters("N", "I", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[7 * _nbLetter + 2].SetParameters("N", "L", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[7 * _nbLetter + 3].SetParameters("N", "P", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[7 * _nbLetter + 4].SetParameters("N", "Q", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[7 * _nbLetter + 5].SetParameters("N", "T", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[7 * _nbLetter + 6].SetParameters("O", "-", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[7 * _nbLetter + 7].SetParameters("O", "C", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[7 * _nbLetter + 8].SetParameters("O", "F", MyGameColors.GetYellow(), MyGameColors.GetGreen());
 
         // row 8
-        _tokenPool[8 * _nbLetter + 0].SetLetters("O", "J");
-        _tokenPool[8 * _nbLetter + 1].SetLetters("O", "R");
-        _tokenPool[8 * _nbLetter + 2].SetLetters("O", "U");
-        _tokenPool[8 * _nbLetter + 3].SetLetters("P", "A");
-        _tokenPool[8 * _nbLetter + 4].SetLetters("P", "E");
-        _tokenPool[8 * _nbLetter + 5].SetLetters("P", "I");
-        _tokenPool[8 * _nbLetter + 6].SetLetters("Q", "E");
-        _tokenPool[8 * _nbLetter + 7].SetLetters("Q", "I");
-        _tokenPool[8 * _nbLetter + 8].SetLetters("R", "B");
+        _tokenPool[8 * _nbLetter + 0].SetParameters("O", "J", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[8 * _nbLetter + 1].SetParameters("O", "R", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[8 * _nbLetter + 2].SetParameters("O", "U", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[8 * _nbLetter + 3].SetParameters("P", "A", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[8 * _nbLetter + 4].SetParameters("P", "E", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[8 * _nbLetter + 5].SetParameters("P", "I", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[8 * _nbLetter + 6].SetParameters("Q", "E", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[8 * _nbLetter + 7].SetParameters("Q", "I", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[8 * _nbLetter + 8].SetParameters("R", "B", MyGameColors.GetYellow(), MyGameColors.GetGreen());
 
         // row 9
-        _tokenPool[9 * _nbLetter + 0].SetLetters("R", "C");
-        _tokenPool[9 * _nbLetter + 1].SetLetters("R", "E");
-        _tokenPool[9 * _nbLetter + 2].SetLetters("R", "G");
-        _tokenPool[9 * _nbLetter + 3].SetLetters("R", "H");
-        _tokenPool[9 * _nbLetter + 4].SetLetters("R", "M");
-        _tokenPool[9 * _nbLetter + 5].SetLetters("R", "N");
-        _tokenPool[9 * _nbLetter + 6].SetLetters("R", "P");
-        _tokenPool[9 * _nbLetter + 7].SetLetters("R", "V");
-        _tokenPool[9 * _nbLetter + 8].SetLetters("S", "-");
+        _tokenPool[9 * _nbLetter + 0].SetParameters("R", "C", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[9 * _nbLetter + 1].SetParameters("R", "E", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[9 * _nbLetter + 2].SetParameters("R", "G", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[9 * _nbLetter + 3].SetParameters("R", "H", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[9 * _nbLetter + 4].SetParameters("R", "M", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[9 * _nbLetter + 5].SetParameters("R", "N", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[9 * _nbLetter + 6].SetParameters("R", "P", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[9 * _nbLetter + 7].SetParameters("R", "V", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[9 * _nbLetter + 8].SetParameters("S", "-", MyGameColors.GetYellow(), MyGameColors.GetGreen());
 
         // row 10
-        _tokenPool[10 * _nbLetter + 0].SetLetters("S", "-");
-        _tokenPool[10 * _nbLetter + 1].SetLetters("S", "B");
-        _tokenPool[10 * _nbLetter + 2].SetLetters("S", "N");
-        _tokenPool[10 * _nbLetter + 3].SetLetters("S", "O");
-        _tokenPool[10 * _nbLetter + 4].SetLetters("S", "R");
-        _tokenPool[10 * _nbLetter + 5].SetLetters("S", "U");
-        _tokenPool[10 * _nbLetter + 6].SetLetters("S", "X");
-        _tokenPool[10 * _nbLetter + 7].SetLetters("T", "-");
-        _tokenPool[10 * _nbLetter + 8].SetLetters("T", "I");
+        _tokenPool[10 * _nbLetter + 0].SetParameters("S", "-", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[10 * _nbLetter + 1].SetParameters("S", "B", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[10 * _nbLetter + 2].SetParameters("S", "N", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[10 * _nbLetter + 3].SetParameters("S", "O", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[10 * _nbLetter + 4].SetParameters("S", "R", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[10 * _nbLetter + 5].SetParameters("S", "U", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[10 * _nbLetter + 6].SetParameters("S", "X", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[10 * _nbLetter + 7].SetParameters("T", "-", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[10 * _nbLetter + 8].SetParameters("T", "I", MyGameColors.GetYellow(), MyGameColors.GetGreen());
 
         // row 11
-        _tokenPool[11 * _nbLetter + 0].SetLetters("T", "L");
-        _tokenPool[11 * _nbLetter + 1].SetLetters("T", "O");
-        _tokenPool[11 * _nbLetter + 2].SetLetters("T", "R");
-        _tokenPool[11 * _nbLetter + 3].SetLetters("T", "S");
-        _tokenPool[11 * _nbLetter + 4].SetLetters("T", "U");
-        _tokenPool[11 * _nbLetter + 5].SetLetters("T", "V");
-        _tokenPool[11 * _nbLetter + 6].SetLetters("U", "E");
-        _tokenPool[11 * _nbLetter + 7].SetLetters("U", "L");
-        _tokenPool[11 * _nbLetter + 8].SetLetters("U", "N");
+        _tokenPool[11 * _nbLetter + 0].SetParameters("T", "L", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[11 * _nbLetter + 1].SetParameters("T", "O", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[11 * _nbLetter + 2].SetParameters("T", "R", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[11 * _nbLetter + 3].SetParameters("T", "S", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[11 * _nbLetter + 4].SetParameters("T", "U", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[11 * _nbLetter + 5].SetParameters("T", "V", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[11 * _nbLetter + 6].SetParameters("U", "E", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[11 * _nbLetter + 7].SetParameters("U", "L", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[11 * _nbLetter + 8].SetParameters("U", "N", MyGameColors.GetYellow(), MyGameColors.GetGreen());
 
         // row 12
-        _tokenPool[12 * _nbLetter + 0].SetLetters("U", "P");
-        _tokenPool[12 * _nbLetter + 1].SetLetters("U", "Q");
-        _tokenPool[12 * _nbLetter + 2].SetLetters("U", "R");
-        _tokenPool[12 * _nbLetter + 3].SetLetters("V", "E");
-        _tokenPool[12 * _nbLetter + 4].SetLetters("V", "S");
-        _tokenPool[12 * _nbLetter + 5].SetLetters("W", "S");
-        _tokenPool[12 * _nbLetter + 5].SetSprites(
-            _tokenYellowYellowType, _tokenYellowYellowType
-        );
-        _tokenPool[12 * _nbLetter + 6].SetLetters("X", "E");
-        _tokenPool[12 * _nbLetter + 7].SetLetters("Y", "O");
-        _tokenPool[12 * _nbLetter + 8].SetLetters("Z", "R");
-
-
-        _topLeft = new Vector2(_grid.xMin, _grid.yMax);
-        for (int i = 0; i < _nbWord; i++)
-        {
-            for (int j = 0; j < _nbLetter; j++)
-            {
-                position = _topLeft;
-                position = position +
-                           new Vector3(_tokenSize * (j + 0.5f) + j * _interval,
-                                       -(_tokenSize * (i + 0.5f) + i * _interval),
-                                       0);
-                _tokenPool[i * _nbLetter + j].transform.position = position;
-            }
-        }
-
-    }
-
-    private void ComputeGridParams()
-    {
-        _grid.size = _upperRightCorner - _lowerLeftCorner;
-        _grid.center = 0.5f * (_lowerLeftCorner + _upperRightCorner);
-        _tokenSize = Mathf.Min(ComputeTokenDim(_grid.width, _interval, _nbLetter),
-                               ComputeTokenDim(_grid.height, _interval, _nbWord));
-        _grid.width = _tokenSize * _nbLetter + (_nbLetter - 1) * _interval;
-        _grid.height = _tokenSize * _nbWord + (_nbWord - 1) * _interval;
-        _grid.center = 0.5f * (_lowerLeftCorner + _upperRightCorner);
-    }
-
-    private float ComputeTokenDim(float size, float interval, int nb_token)
-    {
-        float gridSize = size - (nb_token - 1) * interval;
-        return gridSize / nb_token;
+        _tokenPool[12 * _nbLetter + 0].SetParameters("U", "P", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[12 * _nbLetter + 1].SetParameters("U", "Q", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[12 * _nbLetter + 2].SetParameters("U", "R", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[12 * _nbLetter + 3].SetParameters("V", "E", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[12 * _nbLetter + 4].SetParameters("V", "S", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[12 * _nbLetter + 5].SetParameters("W", "S", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[12 * _nbLetter + 6].SetParameters("X", "E", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[12 * _nbLetter + 7].SetParameters("Y", "O", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        _tokenPool[12 * _nbLetter + 8].SetParameters("Z", "R", MyGameColors.GetYellow(), MyGameColors.GetGreen());
     }
 
     private List<GameObject> _tokenObjPool = new List<GameObject>();
-    private List<Token> _tokenPool = new List<Token>();
-
-    // Grid params
-    private Rect _grid;
-    private Vector2 _topLeft;
-    private float _tokenSize = 0;
+    private List<BasicToken> _tokenPool = new List<BasicToken>();
     private const int _nbWord = 13;
     private const int _nbLetter = 9;
-
-    [SerializeField] private GameObject _tokenType;
-    [SerializeField] private Sprite _tokenYellowYellowType;
-    [SerializeField] private float _interval = 0.2f;
-    [SerializeField] private Vector2 _lowerLeftCorner = Vector2.zero;
-    [SerializeField] private Vector2 _upperRightCorner = Vector2.zero;
 }
