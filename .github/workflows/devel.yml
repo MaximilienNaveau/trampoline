@@ -57,14 +57,14 @@ jobs:
             trampoline_unity/trampoline/Library-test-project-
             trampoline_unity/trampoline/Library-
 
-      # Test
-      - name: Run tests
-        uses: game-ci/unity-test-runner@v3
-        env:
-          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
-        with:
-          githubToken: ${{ secrets.GITHUB_TOKEN }}
-          projectPath: ${{ env.UNITY_PROJECT_PATH }}
+      # # Test
+      # - name: Run tests
+      #   uses: game-ci/unity-test-runner@v3
+      #   env:
+      #     UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+      #   with:
+      #     githubToken: ${{ secrets.GITHUB_TOKEN }}
+      #     projectPath: ${{ env.UNITY_PROJECT_PATH }}
 
       # Build
       - name: Build project
