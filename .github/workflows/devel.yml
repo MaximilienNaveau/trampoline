@@ -26,13 +26,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Create LFS file list
         run: git lfs ls-files -l | cut -d' ' -f1 | sort > .lfs-assets-id
 
       - name: Restore LFS cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         id: lfs-cache
         with:
           path: .git/lfs
@@ -44,26 +44,39 @@ jobs:
           git add .
           git reset --hard
 
+      # Cache
       - name: Restore Library cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: trampoline_unity/trampoline/Library
-          key: Library-test-project
+          key: trampoline_unity/trampoline/Library-test-project
           restore-keys: |
-            Library-test-project-
-            Library-
+            trampoline_unity/trampoline/Library-test-project-
+            trampoline_unity/trampoline/Library-
 
-      - uses: webbertakken/unity-test-runner@v2
-        id: testRunner
+      # Test
+      - name: Run tests
+        uses: game-ci/unity-test-runner@v3
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
         with:
-          testMode: all
-          projectPath: trampoline_unity/trampoline
           githubToken: ${{ secrets.GITHUB_TOKEN }}
 
-      - uses: actions/upload-artifact@v2
+      # Build
+      - name: Build project
+        uses: game-ci/unity-builder@v3
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
         with:
-          name: Test results (all modes)
-          path: ${{ steps.testRunner.outputs.artifactsPath }}
+          targetPlatform: WebGL
+
+      # Output
+      - uses: actions/upload-artifact@v3
+        with:
+          name: build
+          path: build/
 
   buildForAllSupportedPlatforms:
     needs: testRunner
@@ -79,40 +92,46 @@ jobs:
           - WebGL # WebGL.
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
-      
+        uses: actions/checkout@v3
+
       - name: Create LFS file list
         run: git lfs ls-files -l | cut -d' ' -f1 | sort > .lfs-assets-id
-      
+
       - name: Restore LFS cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         id: lfs-cache
         with:
           path: .git/lfs
           key: ${{ runner.os }}-lfs-${{ hashFiles('.lfs-assets-id') }}
-      
+
       - name: Git LFS Pull
         run: |
           git lfs pull
           git add .
           git reset --hard
 
+      # Cache
       - name: Restore Library cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: trampoline_unity/trampoline/Library
-          key: Library-build-${{ matrix.targetPlatform }}
+          key: trampoline_unity/trampoline/Library-test-project
           restore-keys: |
-            Library-build-
-            Library-
+            trampoline_unity/trampoline/Library-test-project-
+            trampoline_unity/trampoline/Library-
 
-      - uses: webbertakken/unity-builder@v2
+      # Build
+      - name: Build project
+        uses: game-ci/unity-builder@v3
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
         with:
           targetPlatform: ${{ matrix.targetPlatform }}
-          projectPath: trampoline_unity/trampoline
 
-
-      - uses: actions/upload-artifact@v2
+      # Output
+      - uses: actions/upload-artifact@v3
         with:
           name: build-${{ matrix.targetPlatform }}
           path: build/${{ matrix.targetPlatform }}
