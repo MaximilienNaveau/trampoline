@@ -1,18 +1,28 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Assertions;
 
 public class Row : MonoBehaviour
 {
-    // Start is called before the first frame update
-    void Start()
+    private Tile[] tiles_;
+
+    private void Awake()
     {
-        
+        tiles_ = GetComponentsInChildren<Tile>();
+        Assert.AreEqual(tiles_.Length, 9);
     }
 
-    // Update is called once per frame
-    void Update()
+    public string ExtractCurrentWord()
     {
+        string word = "";
         
+        for(int i = 0; i < tiles_.Length; i++)
+        {
+            if(!tiles_[i].HasToken())
+            {
+                break;
+            }
+            word += tiles_[i].GetToken().GetLetter();
+        }
+        return word;
     }
 }

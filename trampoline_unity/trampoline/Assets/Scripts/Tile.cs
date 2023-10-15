@@ -1,6 +1,7 @@
 // using System.Collections;
 // using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Assertions;
 using UnityEngine.EventSystems;
 
 public class Tile : MonoBehaviour, IDropHandler
@@ -12,23 +13,13 @@ public class Tile : MonoBehaviour, IDropHandler
     private Vector2 rowTopLeftCorner_;
     private Vector2 boardTopLeftCorner_;
     private Vector2 absolutePosition_;
-    private GameObject attachedToken_;
+    private BasicToken attachedToken_;
 
     private void Awake()
     {
         rowRectTransform_ = transform.parent.gameObject.GetComponent<RectTransform>();
         boardRectTransform_ = transform.parent.parent.gameObject.GetComponent<RectTransform>();
         rectTransform_ = GetComponent<RectTransform>();
-    }
-
-    // Start is called before the first frame update
-    private void Start()
-    {
-    }
-
-    // Update is called once per frame
-    private void Update()
-    {
     }
 
     public void UpdateAbsolutePosition()
@@ -54,15 +45,17 @@ public class Tile : MonoBehaviour, IDropHandler
 
     public void OnDrop(PointerEventData eventData)
     {
-        UpdateAbsolutePosition();
         if (eventData.pointerDrag != null)
         {   
-            attachedToken_ = eventData.pointerDrag;
-            attachedToken_.GetComponent<RectTransform>().
+            // Relocate the Token.
+            UpdateAbsolutePosition();
+            eventData.pointerDrag.GetComponent<RectTransform>().
                 anchoredPosition = absolutePosition_;
-            BasicToken token_dropped = attachedToken_.GetComponent<BasicToken>();
-            token_dropped.SetDraggedOnTile(true);
-            token_dropped.SwapTileUnder(this);
+
+            // Store a reference.
+            attachedToken_ = eventData.pointerDrag.GetComponent<BasicToken>();
+            attachedToken_.SetDraggedOnTile(true);
+            attachedToken_.SwapTileUnder(this);
         }
     }
 
@@ -74,5 +67,10 @@ public class Tile : MonoBehaviour, IDropHandler
     public bool HasToken()
     {
         return attachedToken_ != null;
+    }
+
+    public BasicToken GetToken()
+    {
+        return attachedToken_;
     }
 }

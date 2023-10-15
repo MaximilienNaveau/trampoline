@@ -136,6 +136,16 @@ public class BasicToken : MonoBehaviour, IPointerDownHandler, IBeginDragHandler,
         guiLetters_[1].text = letters_[GetOppositeSide()];
     }
 
+    public string GetLetter()
+    {
+        return letters_[sideShown_];
+    }
+
+    public bool IsOnYellowFace()
+    {
+        return colors_[sideShown_] == MyGameColors.GetYellow();
+    }
+
     private void SwapSide()
     {
         sideShown_ = GetOppositeSide();
