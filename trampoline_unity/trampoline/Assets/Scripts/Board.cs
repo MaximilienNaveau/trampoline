@@ -16,10 +16,10 @@ public class Board : MonoBehaviour
     // Update is called once per frame
     public void Update()
     {
-        Debug.Log("Number of rows = " + rows_.Length);
-        for(int i = 0; i < rows_.Length; i++)
-        {
-            Debug.Log("Row["+i.ToString()+"] = " +rows_[i].ExtractCurrentWord());
-        }
+        // Debug.Log("Number of rows = " + rows_.Length);
+        // for(int i = 0; i < rows_.Length; i++)
+        // {
+        //     Debug.Log("Row["+i.ToString()+"] = " +rows_[i].ExtractCurrentWord());
+        // }
     }
 }

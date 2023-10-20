@@ -7,9 +7,11 @@ using UnityEngine.EventSystems;
 public class Tile : MonoBehaviour, IDropHandler
 {
     // Attributes
-    private RectTransform rectTransform_;
+    private RectTransform tileRectTransform_;
     private RectTransform rowRectTransform_;
     private RectTransform boardRectTransform_;
+    private RectTransform staticCanvasRectTransform_;
+    private RectTransform gameCanvasRectTransform_;
     private Vector2 rowTopLeftCorner_;
     private Vector2 boardTopLeftCorner_;
     private Vector2 absolutePosition_;
@@ -17,25 +19,19 @@ public class Tile : MonoBehaviour, IDropHandler
 
     private void Awake()
     {
-        rowRectTransform_ = transform.parent.gameObject.GetComponent<RectTransform>();
+        gameCanvasRectTransform_ = transform.parent.parent.parent.parent.gameObject.GetComponent<RectTransform>();
+        staticCanvasRectTransform_ = transform.parent.parent.parent.gameObject.GetComponent<RectTransform>();
         boardRectTransform_ = transform.parent.parent.gameObject.GetComponent<RectTransform>();
-        rectTransform_ = GetComponent<RectTransform>();
+        rowRectTransform_ = transform.parent.gameObject.GetComponent<RectTransform>();
+        tileRectTransform_ = GetComponent<RectTransform>();
     }
 
     public void UpdateAbsolutePosition()
     {
-        boardTopLeftCorner_.x = boardRectTransform_.anchoredPosition.x -
-                                0.5f * boardRectTransform_.sizeDelta.x;
-        boardTopLeftCorner_.y = boardRectTransform_.anchoredPosition.y +
-                                0.5f * boardRectTransform_.sizeDelta.y;
-        rowTopLeftCorner_.x = boardTopLeftCorner_.x +
-                                rowRectTransform_.anchoredPosition.x -
-                                0.5f * rowRectTransform_.sizeDelta.x;
-        rowTopLeftCorner_.y = boardTopLeftCorner_.y +
-                                rowRectTransform_.anchoredPosition.y +
-                                0.5f * rowRectTransform_.sizeDelta.y;
-        absolutePosition_ = rowTopLeftCorner_ +
-                            rectTransform_.anchoredPosition;
+        absolutePosition_ = staticCanvasRectTransform_.anchoredPosition +
+                            boardRectTransform_.anchoredPosition +
+                            rowRectTransform_.anchoredPosition +
+                            tileRectTransform_.anchoredPosition;
     }
 
     public Vector2 GetAbsolutePosition()
