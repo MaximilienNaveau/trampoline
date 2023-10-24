@@ -1,7 +1,6 @@
 // using System.Collections;
 // using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Assertions;
 using UnityEngine.EventSystems;
 
 public class Tile : MonoBehaviour, IDropHandler
@@ -11,15 +10,11 @@ public class Tile : MonoBehaviour, IDropHandler
     private RectTransform rowRectTransform_;
     private RectTransform boardRectTransform_;
     private RectTransform staticCanvasRectTransform_;
-    private RectTransform gameCanvasRectTransform_;
-    private Vector2 rowTopLeftCorner_;
-    private Vector2 boardTopLeftCorner_;
     private Vector2 absolutePosition_;
     private BasicToken attachedToken_;
 
     private void Awake()
     {
-        gameCanvasRectTransform_ = transform.parent.parent.parent.parent.gameObject.GetComponent<RectTransform>();
         staticCanvasRectTransform_ = transform.parent.parent.parent.gameObject.GetComponent<RectTransform>();
         boardRectTransform_ = transform.parent.parent.gameObject.GetComponent<RectTransform>();
         rowRectTransform_ = transform.parent.gameObject.GetComponent<RectTransform>();
