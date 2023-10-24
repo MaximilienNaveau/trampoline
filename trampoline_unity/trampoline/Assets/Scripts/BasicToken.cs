@@ -8,7 +8,7 @@ using UnityEngine.Assertions;
 public class BasicToken : MonoBehaviour, IPointerDownHandler, IBeginDragHandler, IEndDragHandler, IDragHandler, IPointerClickHandler
 {
     // Drag and drop variables
-    private Vector2 startDragPosition_ = new (0f, 0f);
+    private Vector2 startDragPosition_ = new Vector2(0f, 0f);
     private Tile tile_under_ = null;
     private bool draggedOnTile_ = false;
     private RectTransform rectTransform_;
