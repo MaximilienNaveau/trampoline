@@ -17,16 +17,13 @@ public class Board : MonoBehaviour
         //Load a text file (Assets/Resources/Text/textFile01.txt)
         TextAsset textFile = Resources.Load<TextAsset>("dictionary");
         Assert.IsNotNull(textFile);
-        Debug.Log("textFile = " + textFile.ToString());
         // Creates the hashset data set at the start of the game.
         dictionnary_ = new HashSet<string>();
         string[] words = textFile.text.Split ( new [ ] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries );
         for ( int i = 0, count = words.Length; i < count; i++ )
         {
-            Debug.Log ( $"Read {words[i]} from the words list." );
             dictionnary_.Add ( useCase_ ? words [ i ] : words [ i ].ToLower ( ) );
         }
-        Debug.Log ( $"Hashset contains One : {ValidWord ( "One" )}" );
     }
 
     public bool ValidWord ( string word )
