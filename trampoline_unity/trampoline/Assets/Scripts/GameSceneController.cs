@@ -3,8 +3,14 @@ using UnityEngine.SceneManagement;
 
 public class GameSceneController : MonoBehaviour
 {
-    private void OnEnable()
+    // private void OnEnable()
+    // {
+    //     SceneManager.LoadScene("main_scene");
+    // }
+
+    public void QuitGame()
     {
-        SceneManager.LoadScene("main_scene");
+        Application.Quit();
+        Debug.Log("Quit!");
     }
 }
