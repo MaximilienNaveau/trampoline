@@ -41,15 +41,15 @@ public class Board : MonoBehaviour
         for (int i = 0; i < rows_.Length; i++)
         {
             String word = rows_[i].ExtractCurrentWord();
-            Debug.Log("Row[" + i.ToString() + "] Testing word: \"" + word + "\"");
+            // Debug.Log("Row[" + i.ToString() + "] Testing word: \"" + word + "\"");
             if (dictionnary_.ValidWord(word))
             {
-                Debug.Log("Row[" + i.ToString() + "] has a valid word: " + word);
+                // Debug.Log("Row[" + i.ToString() + "] has a valid word: " + word);
                 list_of_valid_words_.Add(word);
             }
         }
         int new_score = ComputeScore();
-        Debug.Log("Current score is: " + new_score.ToString());
+        // Debug.Log("Current score is: " + new_score.ToString());
         score_.SetScore(new_score);
     }
 }

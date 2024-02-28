@@ -1432,7 +1432,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c2df58a621b6aab459560390969d0793, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  useCase_: 0
 --- !u!4 &392384402
 Transform:
   m_ObjectHideFlags: 0
@@ -1879,6 +1878,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 23aad458e3e8384e4bd625a09d50f99e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  score_object_: {fileID: 520444677}
 --- !u!1001 &464410811
 PrefabInstance:
   m_ObjectHideFlags: 0

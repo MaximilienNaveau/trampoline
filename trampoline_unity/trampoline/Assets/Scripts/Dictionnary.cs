@@ -12,12 +12,12 @@ public class Dictionnary : MonoBehaviour
         //Load a text file (Assets/Resources/Text/textFile01.txt)
         TextAsset textFile = Resources.Load<TextAsset>("dictionary");
         Assert.IsNotNull(textFile);
+        Debug.Log("Dictionnary contains: " + textFile.text);
         // Creates the hashset data set at the start of the game.
-        dictionnary_ = new HashSet<string>();
-        string[] words = textFile.text.Split(new[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
-        for (int i = 0, count = words.Length; i < count; i++)
-        {
-            dictionnary_.Add(words[i].ToLower());
+        dictionnary_ = new HashSet<string>(textFile.text.Split(new[] { "\n" }, StringSplitOptions.RemoveEmptyEntries));
+        
+        foreach (string word in dictionnary_) {
+            Debug.Log("Word in dict: \"" + word + "\"");
         }
     }
 
@@ -26,7 +26,7 @@ public class Dictionnary : MonoBehaviour
     {
         String test_word = word.ToLower();
         bool is_word_valid = dictionnary_.Contains(test_word);
-        Debug.Log("The word [" + test_word + "] is valid ? " + is_word_valid.ToString());
+        // Debug.Log("The word [" + test_word + "] is valid ? " + is_word_valid.ToString());
         return is_word_valid;
     }
 }
