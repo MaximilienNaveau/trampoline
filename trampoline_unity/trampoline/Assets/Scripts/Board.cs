@@ -5,51 +5,32 @@ using System.Collections.Generic;
 
 public class Board : MonoBehaviour
 {
-    [SerializeField] private GameObject score_object_;
     private Row[] rows_;
-    private Dictionnary dictionnary_;
-    private Score score_;
-    List<String> list_of_valid_words_ = new List<String>();
-
+    List<String> listOfWords_ = new List<String>();
 
     private void Awake()
     {
-        list_of_valid_words_.Clear();
-        dictionnary_ = FindObjectOfType<Dictionnary>();
+        listOfWords_.Clear();
         rows_ = GetComponentsInChildren<Row>();
         Assert.AreEqual(rows_.Length, 13);
-        score_ = score_object_.GetComponent<Score>();
-        score_.SetScore(0);
+        for (int i = 0 ; i < rows_.Length ; i++)
+        {
+            listOfWords_.Add("");
+        }
     }
 
-    // Compute score
-    private int ComputeScore()
+    public List<String> GetListOfWords()
     {
-        int score = 0;
-        for (int i = 0; i < list_of_valid_words_.Count; i++)
+        // Update the list of valid words and update score.
+        for (int i = 0; i < rows_.Length; i++)
         {
-            int n = list_of_valid_words_[i].Length;
-            score += n * (n + 1) / 2;
+            listOfWords_[i] = rows_[i].ExtractCurrentWord();
         }
-        return score;
+        return listOfWords_;
     }
 
     // Update is called once per frame
     public void Update()
     {
-        list_of_valid_words_.Clear();
-        for (int i = 0; i < rows_.Length; i++)
-        {
-            String word = rows_[i].ExtractCurrentWord();
-            // Debug.Log("Row[" + i.ToString() + "] Testing word: \"" + word + "\"");
-            if (dictionnary_.ValidWord(word))
-            {
-                // Debug.Log("Row[" + i.ToString() + "] has a valid word: " + word);
-                list_of_valid_words_.Add(word);
-            }
-        }
-        int new_score = ComputeScore();
-        // Debug.Log("Current score is: " + new_score.ToString());
-        score_.SetScore(new_score);
     }
 }

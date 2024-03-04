@@ -25,4 +25,9 @@ public class Row : MonoBehaviour
         }
         return word;
     }
+
+    public Tile[] GetTiles()
+    {
+        return tiles_;
+    }
 }

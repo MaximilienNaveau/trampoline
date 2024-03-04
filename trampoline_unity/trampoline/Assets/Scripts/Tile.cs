@@ -12,6 +12,7 @@ public class Tile : MonoBehaviour, IDropHandler
     private RectTransform staticCanvasRectTransform_;
     private Vector2 absolutePosition_;
     private BasicToken attachedToken_;
+    private GameController gameController_;
 
     private void Awake()
     {
@@ -19,6 +20,11 @@ public class Tile : MonoBehaviour, IDropHandler
         boardRectTransform_ = transform.parent.parent.gameObject.GetComponent<RectTransform>();
         rowRectTransform_ = transform.parent.gameObject.GetComponent<RectTransform>();
         tileRectTransform_ = GetComponent<RectTransform>();
+    }
+
+    private void Start()
+    {
+        gameController_ = FindObjectOfType<GameController>();
     }
 
     public void UpdateAbsolutePosition()
@@ -47,6 +53,9 @@ public class Tile : MonoBehaviour, IDropHandler
             attachedToken_ = eventData.pointerDrag.GetComponent<BasicToken>();
             attachedToken_.SetDraggedOnTile(true);
             attachedToken_.SwapTileUnder(this);
+
+            // Update the game status.
+            gameController_.AskUpdate();
         }
     }
 
