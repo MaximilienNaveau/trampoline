@@ -15,7 +15,6 @@ public class Dictionnary : MonoBehaviour
         //Load a text file (Assets/Resources/Text/textFile01.txt)
         resourceRequest_ = Resources.LoadAsync<TextAsset>("dictionary");
         resourceRequest_.completed += DictionnaryLoaded_Completed;
-        yield;
     }
 
     // Update is called once per frame
@@ -36,15 +35,17 @@ public class Dictionnary : MonoBehaviour
         Assert.IsTrue(handle.isDone);
         Assert.IsTrue(resourceRequest_.isDone);
         Assert.IsNotNull(resourceRequest_.asset);
-        
+
         // Creates the hashset data set at the start of the game.
         dictionnary_ = new HashSet<string>(
             (resourceRequest_.asset as TextAsset).text.Split(new[] { "\n" },
             StringSplitOptions.RemoveEmptyEntries));
-        
+
         // Check the dictionnary content.
-        foreach (string word in dictionnary_) {
-            Debug.Log("Word in dict: \"" + word + "\"");
-        }
+        // foreach (string word in dictionnary_) {
+        //     Debug.Log("Word in dict: \"" + word + "\"");
+        // }
+
+        dictionaryLoaded_ = true;
     }
 }
