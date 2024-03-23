@@ -1,6 +1,9 @@
-name: GameCI Template 🎮
+name: GameCI Trampoline, build, test, deploy 🎮
 
-on: push
+on:
+  push:
+    branches:
+    - main
 
 env:
   UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
@@ -67,8 +70,9 @@ jobs:
       fail-fast: false
       matrix:
         targetPlatform:
-          - StandaloneLinux64 # Build a Linux 64-bit standalone.
-          - Android # Build an Android .apk standalone app.
+          # - StandaloneWindows64 # Build a Windows 64-bit standalone.
+          # - StandaloneLinux64 # Build a Linux 64-bit standalone.
+          # - Android # Build an Android .apk standalone app.
           - WebGL # WebGL.
     steps:
       - name: Checkout code
@@ -110,7 +114,7 @@ jobs:
           name: build-${{ matrix.targetPlatform }}
           path: build/${{ matrix.targetPlatform }}
 
-  deployPages:
+  deployWebGL:
     needs: buildForAllSupportedPlatforms
     name: Deploy to Github Pages 🚀
     runs-on: ubuntu-latest
