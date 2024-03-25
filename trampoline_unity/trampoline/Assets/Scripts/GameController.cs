@@ -68,6 +68,7 @@ public class GameController : MonoBehaviour
             List<String> listOfValidWords = ComputeListOfValidWords(listOfWords);
             int score = ComputeScore(listOfValidWords);
             score_.SetScore(score);
+            store_.UpdateStorage();
         }
         updateAsked_ = false;
     }

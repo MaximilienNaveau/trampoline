@@ -4,11 +4,23 @@ using UnityEngine.Assertions;
 public class Row : MonoBehaviour
 {
     private Tile[] tiles_;
+    public int Length;
 
     private void Awake()
     {
         tiles_ = GetComponentsInChildren<Tile>();
         Assert.AreEqual(tiles_.Length, 9);
+    }
+
+    public Tile this[int i]
+    {
+        get { return tiles_[i]; }
+        set { tiles_[i] = value; }
+    }
+
+    private void Start()
+    {
+        Length = tiles_.Length;
     }
 
     public string ExtractCurrentWord()
