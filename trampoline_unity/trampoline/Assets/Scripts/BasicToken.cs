@@ -50,6 +50,8 @@ public class BasicToken : MonoBehaviour, IPointerDownHandler, IBeginDragHandler,
 
     private void Awake()
     {
+        flipDeltaDuration_ = 0.01f;
+        flipDeltaScale_ = 0.1f;
         rectTransform_ = GetComponent<RectTransform>();
         canvasGroup_ = GetComponent<CanvasGroup>();
         canvas_ = GameObject.FindGameObjectWithTag(

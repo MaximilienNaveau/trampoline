@@ -53,6 +53,7 @@ public class Tile : MonoBehaviour, IDropHandler
             attachedToken_ = eventData.pointerDrag.GetComponent<BasicToken>();
             attachedToken_.SetDraggedOnTile(true);
             attachedToken_.SwapTileUnder(this);
+            attachedToken_.SetInBoard(transform.parent.parent.gameObject.name == "Board");
 
             // Update the game status.
             gameController_.AskUpdate();
