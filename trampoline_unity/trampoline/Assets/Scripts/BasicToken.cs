@@ -176,6 +176,11 @@ public class BasicToken : MonoBehaviour, IPointerDownHandler, IBeginDragHandler,
         UpdateContent();
     }
 
+    public bool isOnTile()
+    {
+        return tile_under_ != null;
+    }
+
     public void SwapTileUnder(Tile tile)
     {
         if(tile_under_ != null)

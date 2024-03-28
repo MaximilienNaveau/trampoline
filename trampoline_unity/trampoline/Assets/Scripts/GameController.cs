@@ -11,7 +11,7 @@ public class GameController : MonoBehaviour
     private Board board_;
     private Store store_;
     private TokenPool tokenPool_;
-    private bool updateAsked_ = false;
+    private bool updateAsked_ = true;
 
     public void AskUpdate()
     {
@@ -57,6 +57,7 @@ public class GameController : MonoBehaviour
         board_ = FindObjectOfType<Board>();
         store_ = FindObjectOfType<Store>();
         tokenPool_ = FindObjectOfType<TokenPool>();
+        tokenPool_.DeactivateAllInactiveTokens();
     }
 
     // Update is called once per frame

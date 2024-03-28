@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.UI;
 using UnityEngine.Assertions;
 
 public class Row : MonoBehaviour
@@ -8,8 +9,13 @@ public class Row : MonoBehaviour
 
     private void Awake()
     {
-        tiles_ = GetComponentsInChildren<Tile>();
-        Assert.AreEqual(tiles_.Length, 9);
+        // Force the update of the layout at the beginning of the game
+        // to compute the anchor_position properly.
+        HorizontalLayoutGroup layout = GetComponent<HorizontalLayoutGroup>();
+        layout.CalculateLayoutInputHorizontal();
+        layout.CalculateLayoutInputVertical();
+        layout.SetLayoutHorizontal();
+        layout.SetLayoutVertical();
     }
 
     public Tile this[int i]
@@ -20,6 +26,8 @@ public class Row : MonoBehaviour
 
     private void Start()
     {
+        tiles_ = GetComponentsInChildren<Tile>();
+        Assert.AreEqual(tiles_.Length, 9);
         Length = tiles_.Length;
     }
 

@@ -29,6 +29,10 @@ public class Tile : MonoBehaviour, IDropHandler
 
     public void UpdateAbsolutePosition()
     {
+        Debug.Log("staticCanvasRectTransform_.anchoredPosition = " + staticCanvasRectTransform_.anchoredPosition.ToString());
+        Debug.Log("boardRectTransform_.anchoredPosition = " + boardRectTransform_.anchoredPosition.ToString());
+        Debug.Log("rowRectTransform_.anchoredPosition = " + rowRectTransform_.anchoredPosition.ToString());
+        Debug.Log("tileRectTransform_.anchoredPosition = " + tileRectTransform_.anchoredPosition.ToString());
         absolutePosition_ = staticCanvasRectTransform_.anchoredPosition +
                             boardRectTransform_.anchoredPosition +
                             rowRectTransform_.anchoredPosition +
@@ -52,9 +56,9 @@ public class Tile : MonoBehaviour, IDropHandler
             // Store a reference.
             attachedToken_ = eventData.pointerDrag.GetComponent<BasicToken>();
             attachedToken_.SetDraggedOnTile(true);
-            attachedToken_.SwapTileUnder(this);
             attachedToken_.SetInBoard(transform.parent.parent.gameObject.name == "Board");
-
+            attachedToken_.SwapTileUnder(this);
+            
             // Update the game status.
             gameController_.AskUpdate();
         }

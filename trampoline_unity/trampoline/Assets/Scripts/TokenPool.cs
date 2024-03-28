@@ -15,7 +15,9 @@ public class TokenPool : MonoBehaviour
     {
         BasicToken newToken = new_token_object.GetComponent<BasicToken>();
         RectTransform newTokenRect = newToken.GetComponent<RectTransform>();
-        newTokenRect.sizeDelta = new Vector2(60, 60);
+        RectTransform a_tile_rect = FindObjectOfType<Tile>().GetComponent<RectTransform>();
+        Debug.Log("a_tile_rect.sizeDelta = " + a_tile_rect.sizeDelta.ToString());
+        newTokenRect.sizeDelta = a_tile_rect.sizeDelta;
         return newToken;
     }
 
@@ -24,11 +26,30 @@ public class TokenPool : MonoBehaviour
         return tokenPool_;
     }
 
+    public List<GameObject> GetGameObjectPool()
+    {
+        return tokenObjPool_;
+    }
+
+    public void DeactivateAllInactiveTokens()
+    {
+        for (int i = 0; i < tokenObjPool_.Count; i++) 
+        {
+            tokenObjPool_[i].SetActive(tokenPool_[i].isOnTile());
+        }
+    }
+
+    private void start()
+    {
+        DeactivateAllInactiveTokens();
+    }
+
     private void Awake()
     {
         tokenPool_.Clear();
         tokenObjPool_.Clear();
-        for (int i = 0; i < _nbLetter * _nbWord; i++)
+        // for (int i = 0; i < _nbLetter * _nbWord; i++)
+        for (int i = 0; i < 1; i++)
         {
             GameObject newBasicTokenObject = SpawnNewTokenObject();
             BasicToken newBasicToken = GetBasicTokenFromObject(newBasicTokenObject);
@@ -36,6 +57,11 @@ public class TokenPool : MonoBehaviour
             tokenPool_.Add(newBasicToken);
         }
 
+        // InitializeTokens();
+    }
+
+    private void InitializeTokens()
+    {
         // Replace letters and sprites if needed
         // row 0
         tokenPool_[0].SetParameters("A", "E", MyGameColors.GetYellow(), MyGameColors.GetGreen());
@@ -179,7 +205,6 @@ public class TokenPool : MonoBehaviour
         tokenPool_[12 * _nbLetter + 6].SetParameters("X", "E", MyGameColors.GetYellow(), MyGameColors.GetGreen());
         tokenPool_[12 * _nbLetter + 7].SetParameters("Y", "O", MyGameColors.GetYellow(), MyGameColors.GetGreen());
         tokenPool_[12 * _nbLetter + 8].SetParameters("Z", "R", MyGameColors.GetYellow(), MyGameColors.GetGreen());
-
     }
 
     [SerializeField] private GameObject tilePrefab_;
