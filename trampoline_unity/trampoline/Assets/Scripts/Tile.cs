@@ -6,42 +6,12 @@ using UnityEngine.EventSystems;
 public class Tile : MonoBehaviour, IDropHandler
 {
     // Attributes
-    private RectTransform tileRectTransform_;
-    private RectTransform rowRectTransform_;
-    private RectTransform boardRectTransform_;
-    private RectTransform staticCanvasRectTransform_;
-    private Vector2 absolutePosition_;
     private BasicToken attachedToken_;
     private GameController gameController_;
-
-    private void Awake()
-    {
-        staticCanvasRectTransform_ = transform.parent.parent.parent.gameObject.GetComponent<RectTransform>();
-        boardRectTransform_ = transform.parent.parent.gameObject.GetComponent<RectTransform>();
-        rowRectTransform_ = transform.parent.gameObject.GetComponent<RectTransform>();
-        tileRectTransform_ = GetComponent<RectTransform>();
-    }
 
     private void Start()
     {
         gameController_ = FindObjectOfType<GameController>();
-    }
-
-    public void UpdateAbsolutePosition()
-    {
-        Debug.Log("staticCanvasRectTransform_.anchoredPosition = " + staticCanvasRectTransform_.anchoredPosition.ToString());
-        Debug.Log("boardRectTransform_.anchoredPosition = " + boardRectTransform_.anchoredPosition.ToString());
-        Debug.Log("rowRectTransform_.anchoredPosition = " + rowRectTransform_.anchoredPosition.ToString());
-        Debug.Log("tileRectTransform_.anchoredPosition = " + tileRectTransform_.anchoredPosition.ToString());
-        absolutePosition_ = staticCanvasRectTransform_.anchoredPosition +
-                            boardRectTransform_.anchoredPosition +
-                            rowRectTransform_.anchoredPosition +
-                            tileRectTransform_.anchoredPosition;
-    }
-
-    public Vector2 GetAbsolutePosition()
-    {
-        return absolutePosition_;
     }
 
     public void OnDrop(PointerEventData eventData)
@@ -49,14 +19,13 @@ public class Tile : MonoBehaviour, IDropHandler
         if (eventData.pointerDrag != null)
         {   
             // Relocate the Token.
-            UpdateAbsolutePosition();
-            eventData.pointerDrag.GetComponent<RectTransform>().
-                anchoredPosition = absolutePosition_;
+            eventData.pointerDrag.transform.position = transform.position;
 
             // Store a reference.
             attachedToken_ = eventData.pointerDrag.GetComponent<BasicToken>();
             attachedToken_.SetDraggedOnTile(true);
             attachedToken_.SetInBoard(transform.parent.parent.gameObject.name == "Board");
+            // attachedToken_.UpdateSize(tileRectTransform_.sizeDelta);
             attachedToken_.SwapTileUnder(this);
             
             // Update the game status.

@@ -8,18 +8,8 @@ public class Store : MonoBehaviour, IDropHandler
 {
     private TokenPool tokenPool_;
     private Row[] rows_;
+    private Board board_;
     private GameController gameController_;
-
-    void Awake()
-    {
-        // Force the update of the layout at the beginning of the game
-        // to compute the anchor_position properly.
-        VerticalLayoutGroup layout = GetComponent<VerticalLayoutGroup>();
-        layout.CalculateLayoutInputHorizontal();
-        layout.CalculateLayoutInputVertical();
-        layout.SetLayoutHorizontal();
-        layout.SetLayoutVertical();
-    }
 
     // Start is called before the first frame update
     void Start()
@@ -27,6 +17,7 @@ public class Store : MonoBehaviour, IDropHandler
         rows_ = GetComponentsInChildren<Row>();
         tokenPool_ = FindObjectOfType<TokenPool>();
         gameController_ = FindObjectOfType<GameController>();
+        board_ = FindObjectOfType<Board>();
     }
 
     public void OnDrop(PointerEventData eventData)
@@ -34,13 +25,13 @@ public class Store : MonoBehaviour, IDropHandler
         if (eventData.pointerDrag != null)
         {   
             // Store a reference.
-            BasicToken token = eventData.pointerDrag.GetComponent<BasicToken>();
-            token.SetDraggedOnTile(true);
-            token.SwapTileUnder(null);
-            token.SetInBoard(false);
+            // BasicToken token = eventData.pointerDrag.GetComponent<BasicToken>();
+            // token.SetDraggedOnTile(true);
+            // token.SwapTileUnder(null);
+            // token.SetInBoard(false);
 
             // Update the game status.
-            gameController_.AskUpdate();
+            // gameController_.AskUpdate();
         }
     }
 
@@ -62,9 +53,11 @@ public class Store : MonoBehaviour, IDropHandler
             if(row < rowMax && col < colMax)
             {
                 // Relocate the Token.
-                rows_[row][col].UpdateAbsolutePosition();
-                token.GetComponent<RectTransform>().
-                    anchoredPosition = rows_[row][col].GetAbsolutePosition();
+                token.transform.position = rows_[row][col].transform.position;
+                
+                // 
+                Debug.Log("((RectTransform)(token.transform)).position = " + ((RectTransform)(token.transform)).position.ToString());
+
                 // Store a reference.
                 token.SetDraggedOnTile(true);
                 token.SwapTileUnder(rows_[row][col]);

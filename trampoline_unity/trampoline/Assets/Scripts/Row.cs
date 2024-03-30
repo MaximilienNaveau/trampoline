@@ -7,17 +7,6 @@ public class Row : MonoBehaviour
     private Tile[] tiles_;
     public int Length;
 
-    private void Awake()
-    {
-        // Force the update of the layout at the beginning of the game
-        // to compute the anchor_position properly.
-        HorizontalLayoutGroup layout = GetComponent<HorizontalLayoutGroup>();
-        layout.CalculateLayoutInputHorizontal();
-        layout.CalculateLayoutInputVertical();
-        layout.SetLayoutHorizontal();
-        layout.SetLayoutVertical();
-    }
-
     public Tile this[int i]
     {
         get { return tiles_[i]; }

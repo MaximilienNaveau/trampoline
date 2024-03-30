@@ -16,8 +16,8 @@ public class TokenPool : MonoBehaviour
         BasicToken newToken = new_token_object.GetComponent<BasicToken>();
         RectTransform newTokenRect = newToken.GetComponent<RectTransform>();
         RectTransform a_tile_rect = FindObjectOfType<Tile>().GetComponent<RectTransform>();
-        Debug.Log("a_tile_rect.sizeDelta = " + a_tile_rect.sizeDelta.ToString());
-        newTokenRect.sizeDelta = a_tile_rect.sizeDelta;
+        // Debug.Log("a_tile_rect.sizeDelta = " + a_tile_rect.sizeDelta.ToString());
+        // newTokenRect.sizeDelta = a_tile_rect.sizeDelta;
         return newToken;
     }
 
@@ -48,8 +48,8 @@ public class TokenPool : MonoBehaviour
     {
         tokenPool_.Clear();
         tokenObjPool_.Clear();
-        // for (int i = 0; i < _nbLetter * _nbWord; i++)
-        for (int i = 0; i < 1; i++)
+        for (int i = 0; i < _nbLetter * _nbWord; i++)
+        // for (int i = 0; i < 1; i++)
         {
             GameObject newBasicTokenObject = SpawnNewTokenObject();
             BasicToken newBasicToken = GetBasicTokenFromObject(newBasicTokenObject);
@@ -57,7 +57,7 @@ public class TokenPool : MonoBehaviour
             tokenPool_.Add(newBasicToken);
         }
 
-        // InitializeTokens();
+        InitializeTokens();
     }
 
     private void InitializeTokens()

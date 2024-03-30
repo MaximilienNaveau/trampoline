@@ -190,6 +190,11 @@ public class BasicToken : MonoBehaviour, IPointerDownHandler, IBeginDragHandler,
         tile_under_ = tile;
     }
 
+    public void UpdateSize(Vector2 sizeDelta)
+    {
+        rectTransform_.sizeDelta = sizeDelta;
+    }
+
     public void Update()
     {
     }

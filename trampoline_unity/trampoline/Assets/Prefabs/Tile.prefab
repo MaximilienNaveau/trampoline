@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 6206960673438824806}
   - component: {fileID: 7554341151497266033}
   - component: {fileID: 5109013101443069119}
-  - component: {fileID: 3232826406042463125}
+  - component: {fileID: -2471575761911926432}
   m_Layer: 5
   m_Name: Tile
   m_TagString: Untagged
@@ -38,7 +38,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 70, y: 0}
+  m_SizeDelta: {x: 60, y: 60}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &5714276300418591771
 CanvasRenderer:
@@ -105,7 +105,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3ba5851aaac6b7b4bb19e633a97b5f5a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &3232826406042463125
+--- !u!114 &-2471575761911926432
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

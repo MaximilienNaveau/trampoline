@@ -11,14 +11,6 @@ public class Board : MonoBehaviour
 
     private void Awake()
     {
-        // Force the update of the layout at the beginning of the game
-        // to compute the anchor_position properly.
-        VerticalLayoutGroup layout = GetComponent<VerticalLayoutGroup>();
-        layout.CalculateLayoutInputHorizontal();
-        layout.CalculateLayoutInputVertical();
-        layout.SetLayoutHorizontal();
-        layout.SetLayoutVertical();
-
         listOfWords_.Clear();
         rows_ = GetComponentsInChildren<Row>();
         Assert.AreEqual(rows_.Length, 13);
