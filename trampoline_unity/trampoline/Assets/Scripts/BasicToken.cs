@@ -143,9 +143,9 @@ public class BasicToken : MonoBehaviour, IPointerDownHandler, IBeginDragHandler,
         return letters_[sideShown_];
     }
 
-    public bool IsOnYellowFace()
+    public bool IsOnGreenFace()
     {
-        return colors_[sideShown_] == MyGameColors.GetYellow();
+        return colors_[sideShown_] == MyGameColors.GetGreen();
     }
 
     private void SwapSide()

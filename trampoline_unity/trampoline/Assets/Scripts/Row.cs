@@ -2,6 +2,12 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Assertions;
 
+public class Word
+{
+    public string word_ = "";
+    public int nb_greeen_letters_ = 0;
+}
+
 public class Row : MonoBehaviour
 {
     private Tile[] tiles_;
@@ -20,9 +26,11 @@ public class Row : MonoBehaviour
         Length = tiles_.Length;
     }
 
-    public string ExtractCurrentWord()
+    public Word ExtractCurrentWord()
     {
-        string word = "";
+        Word word = new Word();
+        word.word_ = "";
+        word.nb_greeen_letters_ = 0;
         
         for(int i = 0; i < tiles_.Length; i++)
         {
@@ -30,7 +38,12 @@ public class Row : MonoBehaviour
             {
                 break;
             }
-            word += tiles_[i].GetToken().GetLetter();
+            word.word_ += tiles_[i].GetToken().GetLetter();
+            if(tiles_[i].GetToken().IsOnGreenFace())
+            {
+                word.nb_greeen_letters_++;
+            }
+
         }
         return word;
     }

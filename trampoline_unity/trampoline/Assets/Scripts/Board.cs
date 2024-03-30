@@ -7,7 +7,7 @@ using System.Collections.Generic;
 public class Board : MonoBehaviour
 {
     private Row[] rows_;
-    List<String> listOfWords_ = new List<String>();
+    List<Word> listOfWords_ = new List<Word>();
 
     private void Awake()
     {
@@ -16,11 +16,11 @@ public class Board : MonoBehaviour
         Assert.AreEqual(rows_.Length, 13);
         for (int i = 0 ; i < rows_.Length ; i++)
         {
-            listOfWords_.Add("");
+            listOfWords_.Add(new Word());
         }
     }
 
-    public List<String> GetListOfWords()
+    public List<Word> GetListOfWords()
     {
         // Update the list of valid words and update score.
         for (int i = 0; i < rows_.Length; i++)

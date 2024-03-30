@@ -7,10 +7,8 @@ public class ContentFitterRefresh : MonoBehaviour
 {
     private void Start()
     {
-        Debug.Log("ContentFitterRefresh AWAKE START");
         Canvas.ForceUpdateCanvases();
         RefreshContentFitters();
-        Debug.Log("ContentFitterRefresh AWAKE STOP");
     }
  
     public void RefreshContentFitters()

@@ -54,9 +54,6 @@ public class Store : MonoBehaviour, IDropHandler
             {
                 // Relocate the Token.
                 token.transform.position = rows_[row][col].transform.position;
-                
-                // 
-                Debug.Log("((RectTransform)(token.transform)).position = " + ((RectTransform)(token.transform)).position.ToString());
 
                 // Store a reference.
                 token.SetDraggedOnTile(true);
