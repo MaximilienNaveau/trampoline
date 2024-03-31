@@ -11,7 +11,7 @@ public class GameController : MonoBehaviour
     private Board board_;
     private Store store_;
     private TokenPool tokenPool_;
-    private bool updateAsked_ = false;
+    private bool updateAsked_ = true;
 
     public void AskUpdate()
     {
@@ -19,17 +19,15 @@ public class GameController : MonoBehaviour
     }
 
     // Compute list of valid words on the board.
-    private List<String> ComputeListOfValidWords(List<String> listOfWords)
+    private List<Word> ComputeListOfValidWords(List<Word> listOfWords)
     {
-        List<String> listOfValidWords = new List<String>();
+        List<Word> listOfValidWords = new List<Word>();
         listOfValidWords.Clear();
         for (int i = 0; i < listOfWords.Count; i++)
         {
-            String word = listOfWords[i];
-            // Debug.Log("Row[" + i.ToString() + "] Testing word: \"" + word + "\"");
-            if (dictionnary_.ValidWord(word))
+            Word word = listOfWords[i];
+            if (dictionnary_.ValidWord(word.word_))
             {
-                // Debug.Log("Row[" + i.ToString() + "] has a valid word: " + word);
                 listOfValidWords.Add(word);
             }
         }
@@ -37,13 +35,14 @@ public class GameController : MonoBehaviour
     }
 
     // Compute score
-    private int ComputeScore(List<String> listOfValidWords)
+    private int ComputeScore(List<Word> listOfValidWords)
     {
         int score = 0;
         for (int i = 0; i < listOfValidWords.Count; i++)
         {
-            int n = listOfValidWords[i].Length;
+            int n = listOfValidWords[i].word_.Length;
             score += n * (n + 1) / 2;
+            score -= listOfValidWords[i].nb_greeen_letters_ * 5;
         }
         return score;
     }
@@ -57,6 +56,7 @@ public class GameController : MonoBehaviour
         board_ = FindObjectOfType<Board>();
         store_ = FindObjectOfType<Store>();
         tokenPool_ = FindObjectOfType<TokenPool>();
+        tokenPool_.DeactivateAllInactiveTokens();
     }
 
     // Update is called once per frame
@@ -64,10 +64,11 @@ public class GameController : MonoBehaviour
     {
         if(updateAsked_)
         {
-            List<String> listOfWords = board_.GetListOfWords();
-            List<String> listOfValidWords = ComputeListOfValidWords(listOfWords);
+            List<Word> listOfWords = board_.GetListOfWords();
+            List<Word> listOfValidWords = ComputeListOfValidWords(listOfWords);
             int score = ComputeScore(listOfValidWords);
             score_.SetScore(score);
+            store_.UpdateStorage();
         }
         updateAsked_ = false;
     }

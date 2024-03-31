@@ -50,6 +50,8 @@ public class BasicToken : MonoBehaviour, IPointerDownHandler, IBeginDragHandler,
 
     private void Awake()
     {
+        flipDeltaDuration_ = 0.01f;
+        flipDeltaScale_ = 0.1f;
         rectTransform_ = GetComponent<RectTransform>();
         canvasGroup_ = GetComponent<CanvasGroup>();
         canvas_ = GameObject.FindGameObjectWithTag(
@@ -141,9 +143,9 @@ public class BasicToken : MonoBehaviour, IPointerDownHandler, IBeginDragHandler,
         return letters_[sideShown_];
     }
 
-    public bool IsOnYellowFace()
+    public bool IsOnGreenFace()
     {
-        return colors_[sideShown_] == MyGameColors.GetYellow();
+        return colors_[sideShown_] == MyGameColors.GetGreen();
     }
 
     private void SwapSide()
@@ -174,6 +176,11 @@ public class BasicToken : MonoBehaviour, IPointerDownHandler, IBeginDragHandler,
         UpdateContent();
     }
 
+    public bool isOnTile()
+    {
+        return tile_under_ != null;
+    }
+
     public void SwapTileUnder(Tile tile)
     {
         if(tile_under_ != null)
@@ -181,6 +188,11 @@ public class BasicToken : MonoBehaviour, IPointerDownHandler, IBeginDragHandler,
             tile_under_.LetTheTokenGo();
         }
         tile_under_ = tile;
+    }
+
+    public void UpdateSize(Vector2 sizeDelta)
+    {
+        rectTransform_.sizeDelta = sizeDelta;
     }
 
     public void Update()

@@ -4,23 +4,64 @@ using UnityEngine.UIElements;
 
 public class TokenPool : MonoBehaviour
 {
-    private void DoNothing()
+    private GameObject SpawnNewTokenObject()
+    {
+        Vector3 position = new Vector3();
+        Quaternion orientation = new Quaternion();
+        return Instantiate(tilePrefab_, position, orientation, GameObject.FindGameObjectWithTag("GameCanvas").transform);
+    }
+
+    private BasicToken GetBasicTokenFromObject(GameObject new_token_object)
+    {
+        BasicToken newToken = new_token_object.GetComponent<BasicToken>();
+        RectTransform newTokenRect = newToken.GetComponent<RectTransform>();
+        RectTransform a_tile_rect = FindObjectOfType<Tile>().GetComponent<RectTransform>();
+        Debug.Log("a_tile_rect.sizeDelta = " + a_tile_rect.sizeDelta.ToString());
+        newTokenRect.sizeDelta = a_tile_rect.sizeDelta;
+        return newToken;
+    }
+
+    public List<BasicToken> GetPool()
+    {
+        return tokenPool_;
+    }
+
+    public List<GameObject> GetGameObjectPool()
+    {
+        return tokenObjPool_;
+    }
+
+    public void DeactivateAllInactiveTokens()
+    {
+        for (int i = 0; i < tokenObjPool_.Count; i++) 
+        {
+            tokenObjPool_[i].SetActive(tokenPool_[i].isOnTile());
+        }
+    }
+
+    private void start()
+    {
+        DeactivateAllInactiveTokens();
+    }
+
+    private void Awake()
     {
         tokenPool_.Clear();
         tokenObjPool_.Clear();
-        Vector3 position = new Vector3();
-        Quaternion orientation = new Quaternion();
-        
         for (int i = 0; i < _nbLetter * _nbWord; i++)
+        // for (int i = 0; i < 1; i++)
         {
-            GameObject newObj = Instantiate(tilePrefab_, position, orientation);
-            BasicToken newToken = newObj.GetComponent<BasicToken>();
-            RectTransform newTokenRect = newToken.GetComponent<RectTransform>();
-            newTokenRect.sizeDelta = new Vector2(60, 60);
-            tokenObjPool_.Add(newObj);
-            tokenPool_.Add(newToken);
+            GameObject newBasicTokenObject = SpawnNewTokenObject();
+            BasicToken newBasicToken = GetBasicTokenFromObject(newBasicTokenObject);
+            tokenObjPool_.Add(newBasicTokenObject);
+            tokenPool_.Add(newBasicToken);
         }
 
+        InitializeTokens();
+    }
+
+    private void InitializeTokens()
+    {
         // Replace letters and sprites if needed
         // row 0
         tokenPool_[0].SetParameters("A", "E", MyGameColors.GetYellow(), MyGameColors.GetGreen());

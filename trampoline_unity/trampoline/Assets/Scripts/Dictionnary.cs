@@ -26,7 +26,6 @@ public class Dictionnary : MonoBehaviour
         }
         String test_word = word.ToLower();
         bool is_word_valid = dictionnary_.Contains(test_word);
-        // Debug.Log("The word [" + test_word + "] is valid ? " + is_word_valid.ToString());
         return is_word_valid;
     }
 
@@ -40,11 +39,6 @@ public class Dictionnary : MonoBehaviour
         dictionnary_ = new HashSet<string>(
             (resourceRequest_.asset as TextAsset).text.Split(new[] { "\n" },
             StringSplitOptions.RemoveEmptyEntries));
-
-        // Check the dictionnary content.
-        // foreach (string word in dictionnary_) {
-        //     Debug.Log("Word in dict: \"" + word + "\"");
-        // }
 
         dictionaryLoaded_ = true;
     }
