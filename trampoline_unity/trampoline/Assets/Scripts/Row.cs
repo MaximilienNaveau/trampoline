@@ -22,7 +22,6 @@ public class Row : MonoBehaviour
     private void Start()
     {
         tiles_ = GetComponentsInChildren<Tile>();
-        Assert.AreEqual(tiles_.Length, 9);
         Length = tiles_.Length;
     }
 

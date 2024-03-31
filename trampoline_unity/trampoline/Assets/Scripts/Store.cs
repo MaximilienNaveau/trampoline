@@ -11,6 +11,9 @@ public class Store : MonoBehaviour, IDropHandler
     private Board board_;
     private GameController gameController_;
 
+    private int numberOfTile_ = 0;
+    private int startingIndex_ = 0;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -18,12 +21,18 @@ public class Store : MonoBehaviour, IDropHandler
         tokenPool_ = FindObjectOfType<TokenPool>();
         gameController_ = FindObjectOfType<GameController>();
         board_ = FindObjectOfType<Board>();
+        numberOfTile_ = 0;
+        foreach(Row row in rows_)
+        {
+            numberOfTile_ += row.GetTiles().Length;
+        }
     }
 
     public void OnDrop(PointerEventData eventData)
     {
         if (eventData.pointerDrag != null)
-        {   
+        {
+            Debug.Log("Token dropped on the store");   
             // Store a reference.
             // BasicToken token = eventData.pointerDrag.GetComponent<BasicToken>();
             // token.SetDraggedOnTile(true);
@@ -35,31 +44,48 @@ public class Store : MonoBehaviour, IDropHandler
         }
     }
 
+    public List<BasicToken> GetTokenInStorage()
+    {
+        List<BasicToken> ret = new List<BasicToken>();
+        int N = tokenPool_.GetPool().Count;
+        for(int i = 0 ; i < N ; i++)
+        {
+            BasicToken token = tokenPool_.GetPool()[i];
+            if (token.GetInBoard())
+            {
+                continue;
+            }
+            ret.Add(token);
+        }
+        return ret;
+    }
+
     public void UpdateStorage()
     {
         int rowMax = rows_.Length;
         int colMax = rows_[0].GetTiles().Length;
         int row = 0;
         int col = 0;
-        int N = tokenPool_.GetPool().Count;
-        for(int i = 0 ; i < N ; i++)
+        List<BasicToken> tokens = GetTokenInStorage();
+        // First Deactivate all.
+        for(int i = 0 ; i < tokens.Count ; i++)
         {
-            BasicToken token = tokenPool_.GetPool()[i];
-            GameObject token_object = tokenPool_.GetGameObjectPool()[i];
-            if (token.GetInBoard())
-            {
-                continue;
-            }
+            tokens[i].gameObject.SetActive(false);
+        }
+        // Then reactivate only the ones displayed in the store.
+        for(int i = startingIndex_ ; i < tokens.Count ; i++)
+        {
             if(row < rowMax && col < colMax)
             {
                 // Relocate the Token.
-                token.transform.position = rows_[row][col].transform.position;
+                tokens[i].transform.position = rows_[row][col].transform.position;
 
                 // Store a reference.
-                token.SetDraggedOnTile(true);
-                token.SwapTileUnder(rows_[row][col]);
+                tokens[i].SetDraggedOnTile(true);
+                tokens[i].SwapTileUnder(rows_[row][col]);
+
                 // activate it
-                token_object.SetActive(true);
+                tokens[i].gameObject.SetActive(true);
             }
             col = col + 1;
             if (col >= colMax)
@@ -72,5 +98,33 @@ public class Store : MonoBehaviour, IDropHandler
                 break;
             }
         }
+    }
+
+    public int numberOfStoredToken()
+    {
+        return GetTokenInStorage().Count;
+    }
+
+    public void IncreaseStartingIndex()
+    {
+        startingIndex_ += numberOfTile_;
+        int nbToken = numberOfStoredToken();
+        if (startingIndex_ > nbToken - numberOfTile_)
+        {
+            startingIndex_ = nbToken - numberOfTile_;
+        }
+        UpdateStorage();
+        Debug.Log("IncreaseStartingIndex: " + startingIndex_.ToString());
+    }
+    
+    public void DecreaseStartingIndex()
+    {
+        startingIndex_ -= numberOfTile_;
+        if (startingIndex_ < 0)
+        {
+            startingIndex_ = 0;
+        }
+        UpdateStorage();
+        Debug.Log("DecreaseStartingIndex: " + startingIndex_.ToString());
     }
 }
