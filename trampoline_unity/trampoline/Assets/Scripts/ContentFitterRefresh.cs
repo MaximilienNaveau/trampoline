@@ -5,6 +5,12 @@ using UnityEngine.UI;
 
 public class ContentFitterRefresh : MonoBehaviour
 {
+    private void Awake()
+    {
+        Canvas.ForceUpdateCanvases();
+        RefreshContentFitters();
+    }
+
     private void Start()
     {
         Canvas.ForceUpdateCanvases();

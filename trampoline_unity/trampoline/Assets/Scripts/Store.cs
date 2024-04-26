@@ -19,7 +19,6 @@ public class Store : MonoBehaviour, IDropHandler
     void Start()
     {
         rows_ = transform.GetChild(1).GetComponentsInChildren<Row>();
-        Debug.Log(rows_.Length.ToString());
         tokenPool_ = FindObjectOfType<TokenPool>();
         gameController_ = FindObjectOfType<GameController>();
         board_ = FindObjectOfType<Board>();
@@ -81,8 +80,11 @@ public class Store : MonoBehaviour, IDropHandler
         {
             if(row < rowMax && col < colMax)
             {
+                Debug.Log("rows_[row][col].transform.position = " + rows_[row][col].transform.position.ToString());
+
                 // Relocate the Token.
                 tokens[i].transform.position = rows_[row][col].transform.position;
+
 
                 // Store a reference.
                 tokens[i].SetDraggedOnTile(true);
