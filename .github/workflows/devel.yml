@@ -1,18 +1,13 @@
-name: GameCI Template, build and test 🎮
+name: GameCI Devel 🎮
 
 on:
-  push:
-    branches:
-    - devel
   pull_request:
     branches:
-    - devel
+      - devel
+  
 
 env:
   UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
-  UNITY_EMAIL: ${{ secrets.UNITY_LICENSE }}
-  UNITY_PASSWORD: ${{ secrets.UNITY_LICENSE }}
-  UNITY_PROJECT_PATH: trampoline_unity/trampoline
 
 jobs:
   checkLicense:
@@ -29,138 +24,41 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Create LFS file list
-        run: git lfs ls-files -l | cut -d' ' -f1 | sort > .lfs-assets-id
-
-      - name: Restore LFS cache
-        uses: actions/cache@v3
-        id: lfs-cache
-        with:
-          path: .git/lfs
-          key: ${{ runner.os }}-lfs-${{ hashFiles('.lfs-assets-id') }}
-
-      - name: Git LFS Pull
-        run: |
-          git lfs pull
-          git add .
-          git reset --hard
-
-      # Cache
-      - name: Restore Library cache
-        uses: actions/cache@v3
-        with:
-          path: trampoline_unity/trampoline/Library
-          key: trampoline_unity/trampoline/Library-test-project
-          restore-keys: |
-            trampoline_unity/trampoline/Library-test-project-
-            trampoline_unity/trampoline/Library-
-
-      # # Test
-      # - name: Run tests
-      #   uses: game-ci/unity-test-runner@v3
-      #   env:
-      #     UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
-      #   with:
-      #     githubToken: ${{ secrets.GITHUB_TOKEN }}
-      #     projectPath: ${{ env.UNITY_PROJECT_PATH }}
-
-      # Build
-      - name: Build project
-        uses: game-ci/unity-builder@v3
-        env:
-          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
-          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
-          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
-        with:
-          targetPlatform: WebGL
-          projectPath: ${{ env.UNITY_PROJECT_PATH }}
-
-      # Output
-      - uses: actions/upload-artifact@v3
-        with:
-          name: build
-          path: build/
-
-  buildForAllSupportedPlatforms:
-    needs: testRunner
-    name: Build for ${{ matrix.targetPlatform }}
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        targetPlatform:
-          # - StandaloneWindows64 # Build a Windows 64-bit standalone.
-          # - StandaloneLinux64 # Build a Linux 64-bit standalone.
-          # - Android # Build an Android .apk standalone app.
-          - WebGL # WebGL.
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Create LFS file list
-        run: git lfs ls-files -l | cut -d' ' -f1 | sort > .lfs-assets-id
-
-      - name: Restore LFS cache
-        uses: actions/cache@v3
-        id: lfs-cache
-        with:
-          path: .git/lfs
-          key: ${{ runner.os }}-lfs-${{ hashFiles('.lfs-assets-id') }}
-
-      - name: Git LFS Pull
-        run: |
-          git lfs pull
-          git add .
-          git reset --hard
-
-      # Cache
-      - name: Restore Library cache
-        uses: actions/cache@v3
-        with:
-          path: trampoline_unity/trampoline/Library
-          key: trampoline_unity/trampoline/Library-test-project
-          restore-keys: |
-            trampoline_unity/trampoline/Library-test-project-
-            trampoline_unity/trampoline/Library-
-
-      # Build
-      - name: Build project
-        uses: game-ci/unity-builder@v3
-        env:
-          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
-          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
-          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
-        with:
-          targetPlatform: ${{ matrix.targetPlatform }}
-          projectPath: ${{ env.UNITY_PROJECT_PATH }}
-
-      # Output
-      - uses: actions/upload-artifact@v3
-        with:
-          name: build-${{ matrix.targetPlatform }}
-          path: build/${{ matrix.targetPlatform }}
-
-  deployWebGL:
-    needs: buildForAllSupportedPlatforms
-    name: Deploy to Github Pages 🚀
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
         uses: actions/checkout@v2
 
-      - uses: actions/download-artifact@v2
-        with:
-          name: build-WebGL
-          path: build
+      - name: Create LFS file list
+        run: git lfs ls-files -l | cut -d' ' -f1 | sort > .lfs-assets-id
 
-      - name: Display structure of root files
-        run: ls -R
-        working-directory: build/WebGL
-
-      - name: Deploy 🚀
-        uses: JamesIves/github-pages-deploy-action@4.1.4
+      - name: Restore LFS cache
+        uses: actions/cache@v2
+        id: lfs-cache
         with:
-          branch: gh-pages
-          folder: build/WebGL
+          path: .git/lfs
+          key: ${{ runner.os }}-lfs-${{ hashFiles('.lfs-assets-id') }}
+
+      - name: Git LFS Pull
+        run: |
+          git lfs pull
+          git add .
+          git reset --hard
+
+      - name: Restore Library cache
+        uses: actions/cache@v2
+        with:
+          path: trampoline/Library
+          key: Library-test-project
+          restore-keys: |
+            Library-test-project-
+            Library-
+
+      - uses: webbertakken/unity-test-runner@v2
+        id: testRunner
+        with:
+          testMode: all
+          projectPath: trampoline
+          githubToken: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: Test results (all modes)
+          path: ${{ steps.testRunner.outputs.artifactsPath }}
