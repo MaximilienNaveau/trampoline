@@ -45,7 +45,7 @@ jobs:
       - name: Restore Library cache
         uses: actions/cache@v2
         with:
-          path: trampoline_unity/trampoline/Library
+          path: trampoline/Library
           key: Library-test-project
           restore-keys: |
             Library-test-project-
@@ -55,7 +55,7 @@ jobs:
         id: testRunner
         with:
           testMode: all
-          projectPath: trampoline_unity/trampoline
+          projectPath: trampoline
           githubToken: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: actions/upload-artifact@v2
