@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
+using UnityEngine.Assertions;
 
 public class Store : MonoBehaviour, IDropHandler
 {
@@ -17,15 +18,17 @@ public class Store : MonoBehaviour, IDropHandler
     // Start is called before the first frame update
     void Start()
     {
-        rows_ = GetComponentsInChildren<Row>();
+        rows_ = transform.GetChild(1).GetComponentsInChildren<Row>();
         tokenPool_ = FindObjectOfType<TokenPool>();
         gameController_ = FindObjectOfType<GameController>();
         board_ = FindObjectOfType<Board>();
         numberOfTile_ = 0;
         foreach(Row row in rows_)
         {
+            Assert.IsNotNull(row);
             numberOfTile_ += row.GetTiles().Length;
         }
+        Assert.AreNotEqual(numberOfTile_, 0);
     }
 
     public void OnDrop(PointerEventData eventData)
@@ -77,8 +80,11 @@ public class Store : MonoBehaviour, IDropHandler
         {
             if(row < rowMax && col < colMax)
             {
+                Debug.Log("rows_[row][col].transform.position = " + rows_[row][col].transform.position.ToString());
+
                 // Relocate the Token.
                 tokens[i].transform.position = rows_[row][col].transform.position;
+
 
                 // Store a reference.
                 tokens[i].SetDraggedOnTile(true);

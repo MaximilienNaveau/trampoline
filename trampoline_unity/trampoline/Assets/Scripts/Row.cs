@@ -19,7 +19,7 @@ public class Row : MonoBehaviour
         set { tiles_[i] = value; }
     }
 
-    private void Start()
+    private void Awake()
     {
         tiles_ = GetComponentsInChildren<Tile>();
         Length = tiles_.Length;

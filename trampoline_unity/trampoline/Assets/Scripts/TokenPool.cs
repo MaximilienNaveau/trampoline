@@ -16,7 +16,6 @@ public class TokenPool : MonoBehaviour
         BasicToken newToken = new_token_object.GetComponent<BasicToken>();
         RectTransform newTokenRect = newToken.GetComponent<RectTransform>();
         RectTransform a_tile_rect = FindObjectOfType<Tile>().GetComponent<RectTransform>();
-        Debug.Log("a_tile_rect.sizeDelta = " + a_tile_rect.sizeDelta.ToString());
         newTokenRect.sizeDelta = a_tile_rect.sizeDelta;
         return newToken;
     }
