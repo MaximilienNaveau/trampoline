@@ -1,9 +1,9 @@
-name: GameCI Trampoline, build, test, deploy 🎮
+name: GameCI Release 🎮
 
 on:
   push:
-    branches:
-    - main
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
 
 env:
   UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
@@ -44,7 +44,7 @@ jobs:
       - name: Restore Library cache
         uses: actions/cache@v2
         with:
-          path: trampoline_unity/trampoline/Library
+          path: trampoline/Library
           key: Library-test-project
           restore-keys: |
             Library-test-project-
@@ -54,7 +54,7 @@ jobs:
         id: testRunner
         with:
           testMode: all
-          projectPath: trampoline_unity/trampoline
+          projectPath: trampoline
           githubToken: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: actions/upload-artifact@v2
@@ -70,9 +70,8 @@ jobs:
       fail-fast: false
       matrix:
         targetPlatform:
-          # - StandaloneWindows64 # Build a Windows 64-bit standalone.
-          # - StandaloneLinux64 # Build a Linux 64-bit standalone.
-          # - Android # Build an Android .apk standalone app.
+          - StandaloneLinux64 # Build a Linux 64-bit standalone.
+          - Android # Build an Android .apk standalone app.
           - WebGL # WebGL.
     steps:
       - name: Checkout code
@@ -97,7 +96,7 @@ jobs:
       - name: Restore Library cache
         uses: actions/cache@v2
         with:
-          path: trampoline_unity/trampoline/Library
+          path: trampoline/Library
           key: Library-build-${{ matrix.targetPlatform }}
           restore-keys: |
             Library-build-
@@ -106,7 +105,7 @@ jobs:
       - uses: webbertakken/unity-builder@v2
         with:
           targetPlatform: ${{ matrix.targetPlatform }}
-          projectPath: trampoline_unity/trampoline
+          projectPath: trampoline
 
 
       - uses: actions/upload-artifact@v2
@@ -114,7 +113,7 @@ jobs:
           name: build-${{ matrix.targetPlatform }}
           path: build/${{ matrix.targetPlatform }}
 
-  deployWebGL:
+  deployPages:
     needs: buildForAllSupportedPlatforms
     name: Deploy to Github Pages 🚀
     runs-on: ubuntu-latest
