@@ -33,17 +33,19 @@ public class Store : MonoBehaviour, IDropHandler
 
     public void OnDrop(PointerEventData eventData)
     {
-        if (eventData.pointerDrag != null)
+        List<GameObject> hoveredList = eventData.hovered;
+        foreach (var GO in hoveredList)
         {
-            Debug.Log("Token dropped on the store");   
-            // Store a reference.
-            // BasicToken token = eventData.pointerDrag.GetComponent<BasicToken>();
-            // token.SetDraggedOnTile(true);
-            // token.SwapTileUnder(null);
-            // token.SetInBoard(false);
-
-            // Update the game status.
-            // gameController_.AskUpdate();
+            Debug.Log("Hovering over: " + GO.name);
+            if(GO.name == "Store")
+            {
+                BasicToken token = eventData.pointerDrag.GetComponent<BasicToken>();
+                token.SetDraggedOnTile(false);
+                token.SwapTileUnder(null);
+                token.SetInBoard(false);   
+                // Update the game status.
+                gameController_.AskUpdate();
+            }
         }
     }
 
@@ -80,16 +82,12 @@ public class Store : MonoBehaviour, IDropHandler
         {
             if(row < rowMax && col < colMax)
             {
-                Debug.Log("rows_[row][col].transform.position = " + rows_[row][col].transform.position.ToString());
-
                 // Relocate the Token.
                 tokens[i].transform.position = rows_[row][col].transform.position;
-
-
                 // Store a reference.
                 tokens[i].SetDraggedOnTile(true);
                 tokens[i].SwapTileUnder(rows_[row][col]);
-
+                tokens[i].UpdateSize(((RectTransform)(rows_[row][col].transform)).sizeDelta);
                 // activate it
                 tokens[i].gameObject.SetActive(true);
             }

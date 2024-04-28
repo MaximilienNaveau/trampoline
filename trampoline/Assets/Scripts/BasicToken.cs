@@ -197,5 +197,6 @@ public class BasicToken : MonoBehaviour, IPointerDownHandler, IBeginDragHandler,
 
     public void Update()
     {
+        
     }
 }
