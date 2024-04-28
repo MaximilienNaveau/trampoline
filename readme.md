@@ -5,7 +5,7 @@ Implementation par Maximilien Naveau
 
 ## Installation
 
-### Android ![Alt Text](doc/icons/android.png)
+### :robot: Android
 
 For the install of the android APK, one hase several options:
 - 1. F-Droid
