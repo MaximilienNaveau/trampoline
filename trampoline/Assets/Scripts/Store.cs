@@ -42,7 +42,7 @@ public class Store : MonoBehaviour, IDropHandler
                 BasicToken token = eventData.pointerDrag.GetComponent<BasicToken>();
                 token.SetDraggedOnTile(false);
                 token.SwapTileUnder(null);
-                token.SetInBoard(false);   
+                token.SetInBoard(false); 
                 // Update the game status.
                 gameController_.AskUpdate();
             }

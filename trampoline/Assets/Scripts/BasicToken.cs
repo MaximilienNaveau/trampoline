@@ -5,7 +5,7 @@ using TMPro;
 using UnityEngine.UI;
 using UnityEngine.Assertions;
 
-public class BasicToken : MonoBehaviour, IPointerDownHandler, IBeginDragHandler, IEndDragHandler, IDragHandler, IPointerClickHandler
+public class BasicToken : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDragHandler, IPointerClickHandler
 {
     // Drag and drop variables
     private Vector2 startDragPosition_ = new Vector2(0f, 0f);
@@ -90,10 +90,6 @@ public class BasicToken : MonoBehaviour, IPointerDownHandler, IBeginDragHandler,
         }
     }
 
-    public void OnPointerDown(PointerEventData eventData)
-    {
-    }
-
     public void SetDraggedOnTile(bool draggedOnTile)
     {
         draggedOnTile_ = draggedOnTile;
@@ -105,12 +101,12 @@ public class BasicToken : MonoBehaviour, IPointerDownHandler, IBeginDragHandler,
  
         if (clickCount_ == 2)
         {
-            StartCoroutine(this.Wait());
+            StartCoroutine(this.FlipToken());
         }
  
     }
 
-    IEnumerator Wait()
+    IEnumerator FlipToken()
     {
         Vector3 initScale = transform.localScale;
         float size = initScale.x;
