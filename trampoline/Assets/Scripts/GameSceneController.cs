@@ -7,14 +7,28 @@ public class GameSceneController: MonoBehaviour
 {
     public enum GameScene {
         introduction_scene,
-        rules_scenes,
         solo_game_scene,
-        multiplayer_scene,
+        multi_game_scene,
     }
 
-    public static void Load(GameScene scene)
+    private static void LoadScene(GameScene scene)
     {
         SceneManager.LoadScene(scene.ToString());
+    }
+
+    public static void LoadSoloGameScene()
+    {
+        LoadScene(GameScene.solo_game_scene);
+    }
+
+    public static void LoadMultiGameScene()
+    {
+        LoadScene(GameScene.multi_game_scene);
+    }
+
+    public static void LoadIntroductionScene()
+    {
+        LoadScene(GameScene.introduction_scene);
     }
 
     public static void QuitGame()
