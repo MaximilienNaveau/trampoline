@@ -11,6 +11,11 @@ public class GameSceneController: MonoBehaviour
         multi_game_scene,
     }
 
+    public void Start()
+    {
+        LoadIntroductionScene();
+    }
+
     private static void LoadScene(GameScene scene)
     {
         SceneManager.LoadScene(scene.ToString());
