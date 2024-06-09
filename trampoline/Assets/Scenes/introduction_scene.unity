@@ -38,7 +38,6 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
-  m_IndirectSpecularColor: {r: 0, g: 0, b: 0, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -104,7 +103,7 @@ NavMeshSettings:
   serializedVersion: 2
   m_ObjectHideFlags: 0
   m_BuildSettings:
-    serializedVersion: 2
+    serializedVersion: 3
     agentTypeID: 0
     agentRadius: 0.5
     agentHeight: 2
@@ -117,7 +116,7 @@ NavMeshSettings:
     cellSize: 0.16666667
     manualTileSize: 0
     tileSize: 256
-    accuratePlacement: 0
+    buildHeightMesh: 0
     maxJobWorkers: 0
     preserveTilesOutsideBounds: 0
     debug:
@@ -199,7 +198,9 @@ Canvas:
   m_OverrideSorting: 0
   m_OverridePixelPerfect: 0
   m_SortingBucketNormalizedSize: 0
+  m_VertexColorAlwaysGammaSpace: 0
   m_AdditionalShaderChannelsFlag: 25
+  m_UpdateRectTransformForStandalone: 0
   m_SortingLayerID: 0
   m_SortingOrder: 0
   m_TargetDisplay: 0
@@ -213,6 +214,7 @@ RectTransform:
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 0, y: 0, z: 0}
+  m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1601801885}
   - {fileID: 1486341661}
@@ -223,7 +225,6 @@ RectTransform:
   - {fileID: 354716383}
   - {fileID: 1606485712}
   m_Father: {fileID: 0}
-  m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
@@ -264,10 +265,10 @@ RectTransform:
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: -1}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 733018491}
   m_Father: {fileID: 148236397}
-  m_RootOrder: 6
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
@@ -409,6 +410,7 @@ PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
+    serializedVersion: 3
     m_TransformParent: {fileID: 148236397}
     m_Modifications:
     - target: {fileID: 7828570644194570135, guid: 2dc9b029d549bf2dbb70a37842db07d7, type: 3}
@@ -504,6 +506,9 @@ PrefabInstance:
       value: Quit
       objectReference: {fileID: 0}
     m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 2dc9b029d549bf2dbb70a37842db07d7, type: 3}
 --- !u!1 &716275581
 GameObject:
@@ -534,10 +539,10 @@ RectTransform:
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 2036750004}
   m_Father: {fileID: 1474922092}
-  m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
@@ -587,8 +592,8 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 721272426}
   m_HandleRect: {fileID: 721272425}
   m_Direction: 2
-  m_Value: 1.0000002
-  m_Size: 0.7039894
+  m_Value: 1.0000011
+  m_Size: 0.62365746
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -659,11 +664,11 @@ RectTransform:
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 2036750004}
-  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0.2960106}
+  m_AnchorMin: {x: 0, y: 0.37634254}
   m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 20, y: 20}
@@ -734,9 +739,9 @@ RectTransform:
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 354716383}
-  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
@@ -790,6 +795,7 @@ PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
+    serializedVersion: 3
     m_TransformParent: {fileID: 148236397}
     m_Modifications:
     - target: {fileID: 1339067425843345248, guid: df71a1bcbeb492298b26fd388c0a8d6c, type: 3}
@@ -965,6 +971,9 @@ PrefabInstance:
       value: UnityEngine.Object, UnityEngine
       objectReference: {fileID: 0}
     m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: df71a1bcbeb492298b26fd388c0a8d6c, type: 3}
 --- !u!224 &1093573930 stripped
 RectTransform:
@@ -999,14 +1008,14 @@ RectTransform:
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1474922092}
-  m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 334.8, y: -1106.9775}
-  m_SizeDelta: {x: 646.79, y: 2197.955}
+  m_AnchoredPosition: {x: 334.8, y: -1095.0009}
+  m_SizeDelta: {x: 646.79, y: 2190}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1137910392
 MonoBehaviour:
@@ -1028,106 +1037,23 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 'Mode de jeu multi:
-
-
-    ecrire ici les regles du jeu.
-
-
-    Cette ligne
-    de texte est vraiment tres tres tres tres tres tres tres tres tres tres tres
-    tres tres tres tres longue
-
-
-    lipsum
-
-    lipsumlipsum
-
-    lipsumlipsum
-
-    lipsumlipsum
-
-    lipsumlipsum
-
-    lipsumlipsum
-
-    lipsumlipsum
-
-    lipsumlipsum
-
-    lipsumlipsum
-
-    lipsumlipsum
-
-    lipsumlipsum
-
-    lipsumlipsum
-
-    lipsumlipsum
-
-    lipsumlipsum
-
-    lipsumlipsum
-
-    lipsumlipsum
-
-    lipsumlipsum
-
-    lipsumlipsum
-
-    lipsumlipsum
-
-    lipsumlipsum
-
-    lipsumlipsum
-
-    lipsumlipsum
-
-    lipsumlipsum
-
-    lipsumlipsum
-
-    lipsumlipsum
-
-    lipsumlipsum
-
-    lipsumlipsum
-
-    lipsumlipsum
-
-    lipsumlipsum
-
-    lipsumlipsum
-
-    lipsumlipsum
-
-    lipsumlipsum
-
-    lipsumlipsum
-
-    lipsumlipsum
-
-    lipsumlipsum
-
-    lipsumlipsum
-
-    lipsumlipsum
-
-    lipsumlipsum
-
-    lipsumlipsum
-
-    lipsumlipsum
-
-    lipsumlipsum
-
-    lipsumlipsum
-
-    lipsumlipsum
-
-    lipsumlipsum
-
-    lipsum'
+  m_text: "R\xE8gle du jeu\n\nCr\xE9er 13 mots de 9 lettres \xE0 partir des 117 lettres
+    disponibles disponibles  dans la reserve.\n\nUne lettre jaune ajout\xE9e rajoute
+    des points tandis qu'une lettre verte en enl\xE8ve 5\n\nLe nombre de point que
+    rajoute un mot est la somme du nombre de lettre que constitue ce mot. Par example
+    \"mot\" remport 1 + 2 + 3 = 6 points. Pour un total de 45 points pour 1 mot de
+    9 lettre \xE9crit seulement avec des lettres jaunes. Une grille compl\xE8te remporte
+    au maximum 585 points.\n\n\nL\u2019Objectif du jeu est d\u2019utiliser \xE0 sa
+    guise les 117 jetons \xE0 deux faces, pour composer finalement 13 mots de 9 lettres.\n
+    Pour atteindre ce r\xE9sultat, on progresse pas \xE0 pas \xE0 partir de tirages
+    successifs, en passant \xE9ventuellement par des mots inf\xE9rieurs qui se transforment,
+    et s\u2019allongent tant qu'ils ne sont pas complets(9 lettres), mais jamais
+    ne se r\xE9duisent.\nLes anagrammes, les remplacements de lettres sont permis\_selon
+    des r\xE8gles pr\xE9cises et simples.\n \n Une partie peut se jouer \xE0 2, 3
+    ou 4 joueurs.\n On peut aussi et c\u2019est agr\xE9able composer seul une grille.\n
+    Le challenge, collectif ou individuel, est d\u2019abord d\u2019aboutir \xE0 13
+    mots de 9 lettres\_\n On recherche aussi \xE0 r\xE9aliser un score, en utilisant
+    au mieux les lettres les plus \"r\xE9mun\xE9ratrices\"\n\nProfitez bien!"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -1190,7 +1116,7 @@ MonoBehaviour:
   m_VertexBufferAutoSizeReduction: 0
   m_useMaxVisibleDescender: 1
   m_pageToDisplay: 1
-  m_margin: {x: 1.0355225, y: 0, z: 0, w: 0}
+  m_margin: {x: 1.0355225, y: 0, z: 0, w: 247.19604}
   m_isUsingLegacyAnimationComponent: 0
   m_isVolumetricText: 0
   m_hasFontAssetChanged: 0
@@ -1209,6 +1135,7 @@ PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
+    serializedVersion: 3
     m_TransformParent: {fileID: 148236397}
     m_Modifications:
     - target: {fileID: 3541488766767366241, guid: 5871ed1beb1ad1f018d94828a2599f58, type: 3}
@@ -1320,6 +1247,9 @@ PrefabInstance:
       value: Jeu multi
       objectReference: {fileID: 0}
     m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 5871ed1beb1ad1f018d94828a2599f58, type: 3}
 --- !u!224 &1333074462 stripped
 RectTransform:
@@ -1353,12 +1283,12 @@ RectTransform:
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1724259499}
   - {fileID: 1137910391}
   - {fileID: 716275582}
   m_Father: {fileID: 1606485712}
-  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
@@ -1377,7 +1307,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1aa08ab6e0800fa44ae55d278d1423e3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_Content: {fileID: 1724259499}
+  m_Content: {fileID: 1137910391}
   m_Horizontal: 0
   m_Vertical: 1
   m_MovementType: 1
@@ -1389,7 +1319,7 @@ MonoBehaviour:
   m_HorizontalScrollbar: {fileID: 0}
   m_VerticalScrollbar: {fileID: 716275583}
   m_HorizontalScrollbarVisibility: 0
-  m_VerticalScrollbarVisibility: 0
+  m_VerticalScrollbarVisibility: 1
   m_HorizontalScrollbarSpacing: 0
   m_VerticalScrollbarSpacing: 0
   m_OnValueChanged:
@@ -1428,9 +1358,9 @@ RectTransform:
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 148236397}
-  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
@@ -1566,10 +1496,10 @@ RectTransform:
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1474922092}
   m_Father: {fileID: 148236397}
-  m_RootOrder: 7
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
@@ -1660,9 +1590,9 @@ RectTransform:
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1474922092}
-  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
@@ -1689,106 +1619,13 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: '                  Mode de jeu solo:
-
-
-    ecrire ici les regles du jeu.
-
-
-    Cette
-    ligne de texte est vraiment tres tres tres tres tres tres tres tres tres tres
-    tres tres tres tres tres longue
-
-
-    lipsum
-
-    lipsumlipsum
-
-    lipsumlipsum
-
-    lipsumlipsum
-
-    lipsumlipsum
-
-    lipsumlipsum
-
-    lipsumlipsum
-
-    lipsumlipsum
-
-    lipsumlipsum
-
-    lipsumlipsum
-
-    lipsumlipsum
-
-    lipsumlipsum
-
-    lipsumlipsum
-
-    lipsumlipsum
-
-    lipsumlipsum
-
-    lipsumlipsum
-
-    lipsumlipsum
-
-    lipsumlipsum
-
-    lipsumlipsum
-
-    lipsumlipsum
-
-    lipsumlipsum
-
-    lipsumlipsum
-
-    lipsumlipsum
-
-    lipsumlipsum
-
-    lipsumlipsum
-
-    lipsumlipsum
-
-    lipsumlipsum
-
-    lipsumlipsum
-
-    lipsumlipsum
-
-    lipsumlipsum
-
-    lipsumlipsum
-
-    lipsumlipsum
-
-    lipsumlipsum
-
-    lipsumlipsum
-
-    lipsumlipsum
-
-    lipsumlipsum
-
-    lipsumlipsum
-
-    lipsumlipsum
-
-    lipsumlipsum
-
-    lipsumlipsum
-
-    lipsumlipsum
-
-    lipsumlipsum
-
-    lipsumlipsum
-
-    lipsumlipsum
-
-    lipsum'
+  m_text: "R\xE8gle du jeu\n\nCr\xE9er 13 mots de 9 lettres \xE0 partir des 117 lettres
+    disponibles disponibles  dans la reserve.\n\nUne lettre jaune ajout\xE9e rajoute
+    des points tandis qu'une lettre verte en enl\xE8ve 5\n\nLe nombre de point que
+    rajoute un mot est la somme du nombre de lettre que constitue ce mot. Par example
+    \"mot\" remport 1 + 2 + 3 = 6 points. Pour un total de 45 points pour 1 mot de
+    9 lettre \xE9crit seulement avec des lettres jaunes. Une grille compl\xE8te remporte
+    au maximum 585 points.\n\nProfitez bien!"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -1851,7 +1688,7 @@ MonoBehaviour:
   m_VertexBufferAutoSizeReduction: 0
   m_useMaxVisibleDescender: 1
   m_pageToDisplay: 1
-  m_margin: {x: 1.0355225, y: 6.3864746, z: 0.5073242, w: 0}
+  m_margin: {x: 1.0355225, y: 6.3864746, z: 0.5073242, w: 931.47156}
   m_isUsingLegacyAnimationComponent: 0
   m_isVolumetricText: 0
   m_hasFontAssetChanged: 0
@@ -1895,6 +1732,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4f231c4fb786f3946a6b90b886c48677, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  m_SendPointerHoverToParent: 1
   m_HorizontalAxis: Horizontal
   m_VerticalAxis: Vertical
   m_SubmitButton: Submit
@@ -1924,12 +1762,13 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1805862429}
+  serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1881389571
 GameObject:
@@ -1971,9 +1810,17 @@ Camera:
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
   m_FOVAxisMode: 0
+  m_Iso: 200
+  m_ShutterSpeed: 0.005
+  m_Aperture: 16
+  m_FocusDistance: 10
+  m_FocalLength: 50
+  m_BladeCount: 5
+  m_Curvature: {x: 2, y: 11}
+  m_BarrelClipping: 0.25
+  m_Anamorphism: 0
   m_SensorSize: {x: 36, y: 24}
   m_LensShift: {x: 0, y: 0}
-  m_FocalLength: 50
   m_NormalizedViewPortRect:
     serializedVersion: 2
     x: 0
@@ -2007,12 +1854,13 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1881389571}
+  serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: -10}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2036750003
 GameObject:
@@ -2040,10 +1888,10 @@ RectTransform:
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 721272425}
   m_Father: {fileID: 716275582}
-  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
@@ -2055,6 +1903,7 @@ PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
+    serializedVersion: 3
     m_TransformParent: {fileID: 148236397}
     m_Modifications:
     - target: {fileID: 1339067425843345248, guid: df71a1bcbeb492298b26fd388c0a8d6c, type: 3}
@@ -2230,12 +2079,16 @@ PrefabInstance:
       value: UnityEngine.Object, UnityEngine
       objectReference: {fileID: 0}
     m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: df71a1bcbeb492298b26fd388c0a8d6c, type: 3}
 --- !u!1001 &3541488766607269929
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
+    serializedVersion: 3
     m_TransformParent: {fileID: 148236397}
     m_Modifications:
     - target: {fileID: 3541488766767366241, guid: 5871ed1beb1ad1f018d94828a2599f58, type: 3}
@@ -2343,4 +2196,14 @@ PrefabInstance:
       value: ButtonSolomode
       objectReference: {fileID: 0}
     m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 5871ed1beb1ad1f018d94828a2599f58, type: 3}
+--- !u!1660057539 &9223372036854775807
+SceneRoots:
+  m_ObjectHideFlags: 0
+  m_Roots:
+  - {fileID: 1805862432}
+  - {fileID: 1881389574}
+  - {fileID: 148236397}
