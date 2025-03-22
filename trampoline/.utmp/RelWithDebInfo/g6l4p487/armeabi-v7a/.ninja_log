@@ -1,0 +1,5 @@
+# ninja log v5
+70	94	1742661580691399885	/home/mnaveau/devel/workspace_trampoline/src/trampoline/trampoline/Library/Bee/Android/Prj/Mono2x/Gradle/unityLibrary/build/intermediates/cxx/RelWithDebInfo/g6l4p487/obj/armeabi-v7a/libswappywrapper.so	dcc0d981dfdeb1fc
+0	70	1742661580667399797	FramePacing/CMakeFiles/swappywrapper.dir/UnitySwappyWrapper.cpp.o	7431f5665172d7ca
+0	52	1742661898708578238	FramePacing/CMakeFiles/swappywrapper.dir/UnitySwappyWrapper.cpp.o	7431f5665172d7ca
+52	66	1742661898724578297	/home/mnaveau/devel/workspace_trampoline/src/trampoline/trampoline/Library/Bee/Android/Prj/Mono2x/Gradle/unityLibrary/build/intermediates/cxx/RelWithDebInfo/g6l4p487/obj/armeabi-v7a/libswappywrapper.so	dcc0d981dfdeb1fc

@@ -1,0 +1,2 @@
+/home/mnaveau/devel/workspace_trampoline/src/trampoline/trampoline/Library/Bee/Android/Prj/IL2CPP/Gradle/unityLibrary/src/main/cpp/CMakeLists.txt
+/home/mnaveau/devel/workspace_trampoline/src/trampoline/trampoline/Library/Bee/Android/Prj/IL2CPP/Gradle/unityLibrary/src/main/cpp/FramePacing/CMakeLists.txt

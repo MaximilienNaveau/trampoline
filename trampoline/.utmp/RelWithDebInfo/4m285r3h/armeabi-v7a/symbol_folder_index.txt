@@ -1,0 +1,1 @@
+/home/mnaveau/devel/workspace_trampoline/src/trampoline/trampoline/Library/Bee/Android/Prj/Mono2x/Gradle/unityLibrary/build/intermediates/cxx/RelWithDebInfo/4m285r3h/obj/armeabi-v7a

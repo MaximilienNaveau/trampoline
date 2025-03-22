@@ -1,0 +1,5 @@
+# ninja log v5
+0	171	1742657740105242545	FramePacing/CMakeFiles/swappywrapper.dir/UnitySwappyWrapper.cpp.o	a843b961b4d8967
+171	197	1742657740133242646	/home/mnaveau/devel/workspace_trampoline/src/trampoline/trampoline/Library/Bee/Android/Prj/Mono2x/Gradle/unityLibrary/build/intermediates/cxx/RelWithDebInfo/4m285r3h/obj/armeabi-v7a/libswappywrapper.so	46ea6d8133a4c0e3
+0	53	1742659900385192915	FramePacing/CMakeFiles/swappywrapper.dir/UnitySwappyWrapper.cpp.o	a843b961b4d8967
+53	69	1742659900401192975	/home/mnaveau/devel/workspace_trampoline/src/trampoline/trampoline/Library/Bee/Android/Prj/Mono2x/Gradle/unityLibrary/build/intermediates/cxx/RelWithDebInfo/4m285r3h/obj/armeabi-v7a/libswappywrapper.so	46ea6d8133a4c0e3
