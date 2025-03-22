@@ -19,9 +19,9 @@ public class Store : MonoBehaviour, IDropHandler
     void Start()
     {
         rows_ = transform.GetChild(1).GetComponentsInChildren<Row>();
-        tokenPool_ = FindObjectOfType<TokenPool>();
-        gameController_ = FindObjectOfType<GameController>();
-        board_ = FindObjectOfType<Board>();
+        tokenPool_ = FindAnyObjectByType<TokenPool>();
+        gameController_ = FindAnyObjectByType<GameController>();
+        board_ = FindAnyObjectByType<Board>();
         numberOfTile_ = 0;
         foreach(Row row in rows_)
         {

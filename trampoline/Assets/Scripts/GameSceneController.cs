@@ -3,17 +3,12 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-public class GameSceneController: MonoBehaviour
+public static class GameSceneController
 {
     public enum GameScene {
         introduction_scene,
         solo_game_scene,
         multi_game_scene,
-    }
-
-    public void Start()
-    {
-        LoadIntroductionScene();
     }
 
     private static void LoadScene(GameScene scene)

@@ -11,7 +11,7 @@ public class Tile : MonoBehaviour, IDropHandler
 
     private void Start()
     {
-        gameController_ = FindObjectOfType<GameController>();
+        gameController_ = FindAnyObjectByType<GameController>();
     }
     
     public void OnDrop(PointerEventData eventData)

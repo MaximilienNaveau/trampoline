@@ -1141,7 +1141,7 @@ PrefabInstance:
     - target: {fileID: 3541488766767366241, guid: 5871ed1beb1ad1f018d94828a2599f58, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 4647503760575100127, guid: d7d261878f9826579a204736908343d4, type: 3}
     - target: {fileID: 3541488766767366241, guid: 5871ed1beb1ad1f018d94828a2599f58, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
       value: LoadMultiGameScene
@@ -2094,10 +2094,10 @@ PrefabInstance:
     - target: {fileID: 3541488766767366241, guid: 5871ed1beb1ad1f018d94828a2599f58, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 8432881297509346154, guid: d7d261878f9826579a204736908343d4, type: 3}
     - target: {fileID: 3541488766767366241, guid: 5871ed1beb1ad1f018d94828a2599f58, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
-      value: LoadSoloGameScene
+      value: 
       objectReference: {fileID: 0}
     - target: {fileID: 3541488766767366241, guid: 5871ed1beb1ad1f018d94828a2599f58, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
@@ -2193,7 +2193,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3541488766767366255, guid: 5871ed1beb1ad1f018d94828a2599f58, type: 3}
       propertyPath: m_Name
-      value: ButtonSolomode
+      value: ButtonSoloMode
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
