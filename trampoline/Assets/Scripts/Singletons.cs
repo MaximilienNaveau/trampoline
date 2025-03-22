@@ -6,7 +6,7 @@ public class Singletons : MonoBehaviour
 
     public void Start()
     {
-        frenchDictionary_.initialize();
+        frenchDictionary_.initialize(async: true);
     }
 
     public FrenchDictionary GetFrenchDictionary()
