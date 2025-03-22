@@ -6,7 +6,7 @@ using UnityEngine;
 
 public class GameController : MonoBehaviour
 {    
-    private Dictionnary dictionnary_;
+    private FrenchDictionary frenchDictionary_;
     private Score score_;
     private Board board_;
     private Store store_;
@@ -26,7 +26,7 @@ public class GameController : MonoBehaviour
         for (int i = 0; i < listOfWords.Count; i++)
         {
             Word word = listOfWords[i];
-            if (dictionnary_.ValidWord(word.word_))
+            if (frenchDictionary_.isWordValid(word.word_))
             {
                 listOfValidWords.Add(word);
             }
@@ -42,7 +42,7 @@ public class GameController : MonoBehaviour
         {
             int n = listOfValidWords[i].word_.Length;
             score += n * (n + 1) / 2;
-            score -= listOfValidWords[i].nb_greeen_letters_ * 5;
+            score -= listOfValidWords[i].nb_green_letters_ * 5;
         }
         return score;
     }
@@ -50,12 +50,12 @@ public class GameController : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        dictionnary_ = FindObjectOfType<Dictionnary>();
-        score_ = FindObjectOfType<Score>();
+        frenchDictionary_ = FindAnyObjectByType<Singletons>().GetFrenchDictionary();
+        score_ = FindAnyObjectByType<Score>();
         score_.SetScore(0);
-        board_ = FindObjectOfType<Board>();
-        store_ = FindObjectOfType<Store>();
-        tokenPool_ = FindObjectOfType<TokenPool>();
+        board_ = FindAnyObjectByType<Board>();
+        store_ = FindAnyObjectByType<Store>();
+        tokenPool_ = FindAnyObjectByType<TokenPool>();
         tokenPool_.DeactivateAllInactiveTokens();
     }
 
