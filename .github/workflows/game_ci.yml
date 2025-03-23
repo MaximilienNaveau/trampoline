@@ -45,7 +45,10 @@ jobs:
           UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
           UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
         with:
-          targetPlatform: WebGL
+          targetPlatform:
+            - WebGL
+            - Android
+            - StandaloneLinux64
 
       # Output
       - uses: actions/upload-artifact@v3
