@@ -180,7 +180,7 @@ on:
           branch: gh-pages
           folder: build/WebGL
 
-  publishToFDroid:
+  deployToFdroid:
     needs: buildForAllSupportedPlatforms
     name: Publish APK to F-Droid
     runs-on: ubuntu-latest
