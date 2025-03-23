@@ -3,7 +3,7 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-public static class GameSceneController
+public class GameSceneController: MonoBehaviour
 {
     public enum GameScene {
         introduction_scene,
