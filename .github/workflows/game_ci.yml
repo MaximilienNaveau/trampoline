@@ -29,6 +29,7 @@ jobs:
 
       # Test
       - name: Run tests
+        id: testRunner
         uses: game-ci/unity-test-runner@v4
         env:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
@@ -38,19 +39,15 @@ jobs:
           githubToken: ${{ secrets.GITHUB_TOKEN }}
           projectPath: trampoline # Specify the path to your Unity project
 
-      # Build
-      - name: Build project
-        uses: game-ci/unity-builder@v4
-        env:
-          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
-          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
-          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
-        with:
-          targetPlatform: WebGL
-          projectPath: trampoline # Specify the path to your Unity project
-
       # Output
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
-          name: Build
-          path: build
+          name: Test results
+          path: ${{ steps.testRunner.outputs.artifactsPath }}      
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Coverage results
+          path: ${{ steps.testRunner.outputs.coveragePath }}
+
