@@ -1,63 +1,51 @@
 name: GameCI Release 🎮
 
 on:
+  workflow_dispatch: # Manually triggered
   push:
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+'
 
-env:
-  UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
-
 jobs:
-  checkLicense:
-    name: Check for the Unity license ☑️
-    runs-on: ubuntu-latest
-    steps:
-      - name: Fail - No license ☠️
-        if: ${{ !startsWith(env.UNITY_LICENSE, '<') }}
-        run: exit 1
-
   testRunner:
-    needs: checkLicense
     name: Test all modes 📝
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-
-      - name: Create LFS file list
-        run: git lfs ls-files -l | cut -d' ' -f1 | sort > .lfs-assets-id
-
-      - name: Restore LFS cache
-        uses: actions/cache@v2
-        id: lfs-cache
+      # Checkout
+      - name: Checkout repository
+        uses: actions/checkout@v4
         with:
-          path: .git/lfs
-          key: ${{ runner.os }}-lfs-${{ hashFiles('.lfs-assets-id') }}
+          lfs: true
 
-      - name: Git LFS Pull
-        run: |
-          git lfs pull
-          git add .
-          git reset --hard
-
-      - name: Restore Library cache
-        uses: actions/cache@v2
+      # Cache
+      - uses: actions/cache@v3
         with:
-          path: trampoline/Library
-          key: Library-test-project
+          path: Library
+          key: Library-${{ hashFiles('Assets/**', 'Packages/**', 'ProjectSettings/**') }}
           restore-keys: |
-            Library-test-project-
             Library-
 
-      - uses: webbertakken/unity-test-runner@v2
-        id: testRunner
+      # Test
+      - name: Run tests
+        uses: game-ci/unity-test-runner@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
         with:
-          testMode: all
-          projectPath: trampoline
           githubToken: ${{ secrets.GITHUB_TOKEN }}
 
-      - uses: actions/upload-artifact@v2
+      # Build
+      - name: Build project
+        uses: game-ci/unity-builder@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          targetPlatform: WebGL
+
+      - uses: actions/upload-artifact@v4
         with:
           name: Test results (all modes)
           path: ${{ steps.testRunner.outputs.artifactsPath }}
@@ -75,13 +63,13 @@ jobs:
           - WebGL # WebGL.
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       
       - name: Create LFS file list
         run: git lfs ls-files -l | cut -d' ' -f1 | sort > .lfs-assets-id
       
       - name: Restore LFS cache
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         id: lfs-cache
         with:
           path: .git/lfs
@@ -94,7 +82,7 @@ jobs:
           git reset --hard
 
       - name: Restore Library cache
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         with:
           path: trampoline/Library
           key: Library-build-${{ matrix.targetPlatform }}
@@ -102,16 +90,64 @@ jobs:
             Library-build-
             Library-
 
-      - uses: webbertakken/unity-builder@v2
+      - uses: game-ci/unity-builder@v4
         with:
           targetPlatform: ${{ matrix.targetPlatform }}
           projectPath: trampoline
 
-
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v4
         with:
           name: build-${{ matrix.targetPlatform }}
           path: build/${{ matrix.targetPlatform }}
+
+  publishRelease:
+    needs: buildForAllSupportedPlatforms
+    name: Publish Release on GitHub
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
+
+      - name: Upload WebGL build
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: build/WebGL
+          asset_name: WebGL.zip
+          asset_content_type: application/zip
+
+      - name: Upload Android APK
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: build/Android/trampoline_${{ github.ref }}.apk
+          asset_name: trampoline_${{ github.ref }}.apk
+          asset_content_type: application/vnd.android.package-archive
+
+      - name: Upload StandaloneLinux64 build
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: build/StandaloneLinux64
+          asset_name: StandaloneLinux64.zip
+          asset_content_type: application/zip
 
   deployPages:
     needs: buildForAllSupportedPlatforms
@@ -119,9 +155,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v4
         with:
           name: build-WebGL
           path: build
@@ -135,3 +171,31 @@ jobs:
         with:
           branch: gh-pages
           folder: build/WebGL
+
+  deployToFdroid:
+    needs: buildForAllSupportedPlatforms
+    name: Publish APK to F-Droid
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.FDROID_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
+
+      - name: Clone F-Droid repo
+        run: git clone git@github.com:MaximilienNaveau/magamajo.git fdroid-repo
+
+      - name: Copy APK to F-Droid repo
+        run: cp build/Android/trampoline_${{ github.ref }}.apk fdroid-repo/
+
+      - name: Commit and push APK
+        run: |
+          cd fdroid-repo
+          git add trampoline_${{ github.ref }}.apk
+          git commit -m "Add new APK for ${{ github.ref }}"
+          git push origin main
