@@ -50,4 +50,3 @@ jobs:
         with:
           name: Coverage results
           path: ${{ steps.testRunner.outputs.coveragePath }}
-
