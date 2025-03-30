@@ -36,7 +36,6 @@ public class BasicToken : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDr
         new Color [] {MyGameColors.GetYellow(), MyGameColors.GetGreen()};
 
     // Double click management
-    private int clickCount_ = 0;
     [SerializeField] private float flipDeltaDuration_ = 0.01f;
     [SerializeField] private float flipDeltaScale_ = 0.1f;
     
@@ -100,29 +99,18 @@ public class BasicToken : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDr
 
     public void OnPointerClick(PointerEventData eventData)
     {
-        #if UNITY_ANDROID || UNITY_IOS
-        // Handle double-tap for touch devices
-        if (Input.touchCount == 1 && Input.GetTouch(0).phase == TouchPhase.Ended)
+        float timeSinceLastTap = Time.time - lastTapTime_;
+        if (timeSinceLastTap <= doubleTapThreshold_)
         {
-            float timeSinceLastTap = Time.time - lastTapTime_;
-            if (timeSinceLastTap <= doubleTapThreshold_)
-            {
-                StartCoroutine(this.FlipToken());
-            }
-            lastTapTime_ = Time.time;
-        }
-        #else
-        // Handle double-click for mouse
-        clickCount_ = eventData.clickCount;
-        if (clickCount_ == 2)
-        {
+            // Detected a double-tap or double-click
             StartCoroutine(this.FlipToken());
         }
-        #endif
+        lastTapTime_ = Time.time;
     }
 
     IEnumerator FlipToken()
     {
+        Debug.Log("Flipping token");
         Vector3 initScale = transform.localScale;
         float size = initScale.x;
         while (size > 0.1)
