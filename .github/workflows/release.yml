@@ -109,9 +109,14 @@ jobs:
             Library-
 
       - uses: game-ci/unity-builder@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
         with:
           targetPlatform: ${{ matrix.targetPlatform }}
-          projectPath: trampoline
+          githubToken: ${{ secrets.GITHUB_TOKEN }}
+          projectPath: trampoline # Specify the path to your Unity project
 
       - uses: actions/upload-artifact@v4
         with:

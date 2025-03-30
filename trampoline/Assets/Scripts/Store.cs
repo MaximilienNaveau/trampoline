@@ -118,7 +118,7 @@ public class Store : MonoBehaviour, IDropHandler
             startingIndex_ = nbToken - numberOfTile_;
         }
         UpdateStorage();
-        Debug.Log("IncreaseStartingIndex: " + startingIndex_.ToString());
+        // Debug.Log("IncreaseStartingIndex: " + startingIndex_.ToString());
     }
     
     public void DecreaseStartingIndex()
@@ -129,6 +129,6 @@ public class Store : MonoBehaviour, IDropHandler
             startingIndex_ = 0;
         }
         UpdateStorage();
-        Debug.Log("DecreaseStartingIndex: " + startingIndex_.ToString());
+        // Debug.Log("DecreaseStartingIndex: " + startingIndex_.ToString());
     }
 }

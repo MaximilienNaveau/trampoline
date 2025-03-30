@@ -1,6 +1,6 @@
 using UnityEngine;
 
-class MyGameColors
+public static class MyGameColors
 {
     static public Color GetYellow()
     {

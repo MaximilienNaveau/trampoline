@@ -1,7 +1,7 @@
-using UnityEngine;
-using UnityEngine.EventSystems;
 using System.Collections;
 using TMPro;
+using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using UnityEngine.Assertions;
 
@@ -17,7 +17,7 @@ public class BasicToken : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDr
     private bool inBoard_ = false;
 
     // Double click management.
-    private float lastTapTime_ = 0f;
+    private float lastTapTime_ = -1000000.0f;
     private const float doubleTapThreshold_ = 0.3f; // Adjust as needed
 
     // Display colors and letters
@@ -43,6 +43,11 @@ public class BasicToken : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDr
     public bool GetInBoard()
     {
         return inBoard_;
+    }
+
+    public float GetFlipDeltaDuration()
+    {
+        return flipDeltaDuration_;
     }
 
     public void SetInBoard(bool inBoard)
@@ -99,18 +104,18 @@ public class BasicToken : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDr
 
     public void OnPointerClick(PointerEventData eventData)
     {
-        float timeSinceLastTap = Time.time - lastTapTime_;
+        Debug.Log("Detected a click.");
+        float timeSinceLastTap = Mathf.Abs(Time.time - lastTapTime_);
         if (timeSinceLastTap <= doubleTapThreshold_)
         {
-            // Detected a double-tap or double-click
+            Debug.Log("Detected a double-tap or double-click.");
             StartCoroutine(this.FlipToken());
         }
         lastTapTime_ = Time.time;
     }
 
-    IEnumerator FlipToken()
+    public IEnumerator FlipToken()
     {
-        Debug.Log("Flipping token");
         Vector3 initScale = transform.localScale;
         float size = initScale.x;
         while (size > 0.1)
