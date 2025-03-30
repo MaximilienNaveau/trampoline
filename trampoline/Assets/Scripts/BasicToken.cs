@@ -16,8 +16,11 @@ public class BasicToken : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDr
     private Canvas canvas_;
     private bool inBoard_ = false;
 
+    // Double click management.
+    private float lastTapTime_ = 0f;
+    private const float doubleTapThreshold_ = 0.3f; // Adjust as needed
+
     // Display colors and letters
-    
     private int sideShown_ = 0;
     private const int FRONT_ = 0;
     private const int BACK_ = 1;
@@ -97,13 +100,25 @@ public class BasicToken : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDr
 
     public void OnPointerClick(PointerEventData eventData)
     {
+        #if UNITY_ANDROID || UNITY_IOS
+        // Handle double-tap for touch devices
+        if (Input.touchCount == 1 && Input.GetTouch(0).phase == TouchPhase.Ended)
+        {
+            float timeSinceLastTap = Time.time - lastTapTime_;
+            if (timeSinceLastTap <= doubleTapThreshold_)
+            {
+                StartCoroutine(this.FlipToken());
+            }
+            lastTapTime_ = Time.time;
+        }
+        #else
+        // Handle double-click for mouse
         clickCount_ = eventData.clickCount;
- 
         if (clickCount_ == 2)
         {
             StartCoroutine(this.FlipToken());
         }
- 
+        #endif
     }
 
     IEnumerator FlipToken()
