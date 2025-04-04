@@ -11,12 +11,6 @@ public class GameController : MonoBehaviour
     private Board board_;
     private Store store_;
     private TokenPool tokenPool_;
-    private bool updateAsked_ = true;
-
-    public void AskUpdate()
-    {
-        updateAsked_ = true;
-    }
 
     // Compute list of valid words on the board.
     private List<Word> ComputeListOfValidWords(List<Word> listOfWords)
@@ -62,14 +56,10 @@ public class GameController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if(updateAsked_)
-        {
-            List<Word> listOfWords = board_.GetListOfWords();
-            List<Word> listOfValidWords = ComputeListOfValidWords(listOfWords);
-            int score = ComputeScore(listOfValidWords);
-            score_.SetScore(score);
-            store_.UpdateStorage();
-        }
-        updateAsked_ = false;
+        List<Word> listOfWords = board_.GetListOfWords();
+        List<Word> listOfValidWords = ComputeListOfValidWords(listOfWords);
+        int score = ComputeScore(listOfValidWords);
+        score_.SetScore(score);
+        store_.UpdateStorage();
     }
 }

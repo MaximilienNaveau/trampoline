@@ -7,13 +7,7 @@ public class Tile : MonoBehaviour, IDropHandler
 {
     // Attributes
     private BasicToken attachedToken_;
-    private GameController gameController_;
 
-    private void Start()
-    {
-        gameController_ = FindAnyObjectByType<GameController>();
-    }
-    
     public void OnDrop(PointerEventData eventData)
     {
         if (eventData.pointerDrag != null)
@@ -24,12 +18,9 @@ public class Tile : MonoBehaviour, IDropHandler
             // Store a reference.
             attachedToken_ = eventData.pointerDrag.GetComponent<BasicToken>();
             attachedToken_.SetDraggedOnTile(true);
-            attachedToken_.SetInBoard(transform.parent.parent.gameObject.name == "Board");
+            attachedToken_.SetInBoard(transform.parent.gameObject.name == "Board");
             attachedToken_.UpdateSize(((RectTransform)transform).sizeDelta);
             attachedToken_.SwapTileUnder(this);
-            
-            // Update the game status.
-            gameController_.AskUpdate();
         }
     }
 
