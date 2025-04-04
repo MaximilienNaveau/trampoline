@@ -153,6 +153,21 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - uses: actions/download-artifact@v4
+        with:
+          name: build-WebGL
+          path: build
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: build-Android
+          path: build
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: build-StandaloneLinux64
+          path: build
+
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
