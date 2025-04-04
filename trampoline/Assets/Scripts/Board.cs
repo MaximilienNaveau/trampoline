@@ -25,7 +25,7 @@ public class Board : MonoBehaviour
 
     public List<Word> GetListOfWords()
     {
-        // Update the list of valid words and update score.
+        // Update the list of valid words.
         for (int row = 0; row < rows_; row++)
         {
             listOfWords_[row].word_ = "";
