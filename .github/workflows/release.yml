@@ -111,7 +111,7 @@ jobs:
       - name: Decode Android keystore
         if: matrix.targetPlatform == 'Android'
         run: |
-          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > ../${{ secrets.ANDROID_KEYSTORE_NAME }}
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > ../build-key.keystore
         env:
           ANDROID_KEYSTORE_NAME: ../build-key.keystore
 
@@ -120,7 +120,7 @@ jobs:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
           UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
           UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
-          ANDROID_KEYSTORE_NAME: ../${{ secrets.ANDROID_KEYSTORE_NAME }}
+          ANDROID_KEYSTORE_NAME: ../build-key.keystore
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
           ANDROID_KEYSTORE_PASS: ${{ secrets.ANDROID_KEYSTORE_PASS }}
           ANDROID_KEY_ALIAS_NAME: ${{ secrets.ANDROID_KEY_ALIAS_NAME }}
