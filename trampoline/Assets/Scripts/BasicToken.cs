@@ -80,11 +80,13 @@ public class BasicToken : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDr
         canvasGroup_.blocksRaycasts = false;
         startDragPosition_ = rectTransform_.anchoredPosition;
         draggedOnTile_ = false;
+        tile_under_.LetTheTokenGo();
     }
 
     public void OnDrag(PointerEventData eventData)
     {
-        rectTransform_.anchoredPosition += eventData.delta / canvas_.scaleFactor;
+        rectTransform_.anchoredPosition +=
+            eventData.delta / canvas_.scaleFactor;
     }
 
     public void OnEndDrag(PointerEventData eventData)
@@ -94,6 +96,7 @@ public class BasicToken : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDr
         if(!draggedOnTile_)
         {
             rectTransform_.anchoredPosition = startDragPosition_;
+            tile_under_.AttachToken(this);
         }
     }
 

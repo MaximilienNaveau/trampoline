@@ -35,7 +35,7 @@ public class Board : MonoBehaviour
                 int i = row * cols_ + col;
                 if(!tiles_[i].HasToken())
                 {
-                    break;
+                    continue;
                 }
                 listOfWords_[row].word_ += tiles_[i].GetToken().GetLetter();
                 if(tiles_[i].GetToken().IsOnGreenFace())
