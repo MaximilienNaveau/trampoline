@@ -104,11 +104,9 @@ public class BasicToken : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDr
 
     public void OnPointerClick(PointerEventData eventData)
     {
-        Debug.Log("Detected a click.");
         float timeSinceLastTap = Mathf.Abs(Time.time - lastTapTime_);
         if (timeSinceLastTap <= doubleTapThreshold_)
         {
-            Debug.Log("Detected a double-tap or double-click.");
             StartCoroutine(this.FlipToken());
         }
         lastTapTime_ = Time.time;
