@@ -24,9 +24,9 @@ public class Tile : MonoBehaviour, IDropHandler
             eventData.pointerDrag.transform.position = transform.position;
             // Store a reference.
             AttachToken(eventData.pointerDrag.GetComponent<BasicToken>());
-            // Update the state of the storage as a token has been moved.
-            store_.UpdateStorage();
         }
+        // Update the state of the storage as a token has been moved.
+        store_.UpdateStorage();
     }
 
     public void LetTheTokenGo()

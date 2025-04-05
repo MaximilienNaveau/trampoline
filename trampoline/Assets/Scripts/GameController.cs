@@ -58,10 +58,6 @@ public class GameController : MonoBehaviour
     void Update()
     {
         List<Word> listOfWords = board_.GetListOfWords();
-        for (int i = 0 ; i < listOfWords.Count ; i++)
-        {
-            Debug.Log(listOfWords[i].word_);
-        }
         List<Word> listOfValidWords = ComputeListOfValidWords(listOfWords);
         int score = ComputeScore(listOfValidWords);
         score_.SetScore(score);

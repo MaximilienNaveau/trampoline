@@ -96,7 +96,10 @@ public class BasicToken : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDr
         if(!draggedOnTile_)
         {
             rectTransform_.anchoredPosition = startDragPosition_;
-            tile_under_.AttachToken(this);
+            if(tile_under_)
+            {
+                tile_under_.AttachToken(this);
+            }
         }
     }
 
