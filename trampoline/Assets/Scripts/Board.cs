@@ -31,8 +31,8 @@ public class Board : MonoBehaviour
             {
                 int i = row * cols_ + col;
                 if(!tiles_[i].HasToken())
-                {
-                    continue;
+                {    
+                    break;
                 }
                 word.word_ += tiles_[i].GetToken().GetLetter();
                 if(tiles_[i].GetToken().IsOnGreenFace())
