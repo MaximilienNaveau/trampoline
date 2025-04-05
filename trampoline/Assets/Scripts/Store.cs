@@ -8,7 +8,7 @@ using UnityEngine.Assertions;
 public class Store : MonoBehaviour, IDropHandler
 {
     private TokenPool tokenPool_;
-    private Row[] rows_;
+    private Tile[] tiles_;
     private Board board_;
     private GameController gameController_;
 
@@ -18,16 +18,11 @@ public class Store : MonoBehaviour, IDropHandler
     // Start is called before the first frame update
     void Start()
     {
-        rows_ = transform.GetChild(1).GetComponentsInChildren<Row>();
+        tiles_ = GetComponentsInChildren<Tile>();
         tokenPool_ = FindAnyObjectByType<TokenPool>();
         gameController_ = FindAnyObjectByType<GameController>();
         board_ = FindAnyObjectByType<Board>();
-        numberOfTile_ = 0;
-        foreach(Row row in rows_)
-        {
-            Assert.IsNotNull(row);
-            numberOfTile_ += row.GetTiles().Length;
-        }
+        numberOfTile_ = tiles_.Length;
         Assert.AreNotEqual(numberOfTile_, 0);
     }
 
@@ -42,9 +37,7 @@ public class Store : MonoBehaviour, IDropHandler
                 BasicToken token = eventData.pointerDrag.GetComponent<BasicToken>();
                 token.SetDraggedOnTile(false);
                 token.SwapTileUnder(null);
-                token.SetInBoard(false); 
-                // Update the game status.
-                gameController_.AskUpdate();
+                token.SetInBoard(false);
             }
         }
     }
@@ -67,10 +60,6 @@ public class Store : MonoBehaviour, IDropHandler
 
     public void UpdateStorage()
     {
-        int rowMax = rows_.Length;
-        int colMax = rows_[0].GetTiles().Length;
-        int row = 0;
-        int col = 0;
         List<BasicToken> tokens = GetTokenInStorage();
         // First Deactivate all.
         for(int i = 0 ; i < tokens.Count ; i++)
@@ -78,26 +67,24 @@ public class Store : MonoBehaviour, IDropHandler
             tokens[i].gameObject.SetActive(false);
         }
         // Then reactivate only the ones displayed in the store.
+        int tile_id = 0;
         for(int i = startingIndex_ ; i < tokens.Count ; i++)
         {
-            if(row < rowMax && col < colMax)
+            if(tile_id < tiles_.Length)
             {
                 // Relocate the Token.
-                tokens[i].transform.position = rows_[row][col].transform.position;
+                tokens[i].transform.position =
+                    tiles_[tile_id].transform.position;
                 // Store a reference.
                 tokens[i].SetDraggedOnTile(true);
-                tokens[i].SwapTileUnder(rows_[row][col]);
-                tokens[i].UpdateSize(((RectTransform)(rows_[row][col].transform)).sizeDelta);
+                tokens[i].SwapTileUnder(tiles_[tile_id]);
+                tokens[i].UpdateSize(
+                    ((RectTransform)(tiles_[tile_id].transform)).sizeDelta);
                 // activate it
                 tokens[i].gameObject.SetActive(true);
             }
-            col = col + 1;
-            if (col >= colMax)
-            {
-                col = 0;
-                row = row + 1;
-            }
-            if(row >= rowMax)
+            tile_id = tile_id + 1;
+            if (tile_id >= tiles_.Length)
             {
                 break;
             }

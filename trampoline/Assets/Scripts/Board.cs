@@ -4,30 +4,48 @@ using UnityEngine.Assertions;
 using System;
 using System.Collections.Generic;
 
+
 public class Board : MonoBehaviour
 {
-    private Row[] rows_;
-    List<Word> listOfWords_ = new List<Word>();
+    private Tile[] tiles_;
+    private int rows_ = 13;
+    private int cols_ = 9;
 
     private void Awake()
     {
-        listOfWords_.Clear();
-        rows_ = GetComponentsInChildren<Row>();
-        Assert.AreEqual(rows_.Length, 13);
-        for (int i = 0 ; i < rows_.Length ; i++)
-        {
-            listOfWords_.Add(new Word());
-        }
+        tiles_ = GetComponentsInChildren<Tile>();
+        Assert.AreEqual(tiles_.Length, cols_ * rows_);
     }
 
     public List<Word> GetListOfWords()
     {
-        // Update the list of valid words and update score.
-        for (int i = 0; i < rows_.Length; i++)
+        List<Word> listOfWords = new List<Word>();
+        listOfWords.Clear();
+        // Update the list of valid words.
+        for (int row = 0; row < rows_; row++)
         {
-            listOfWords_[i] = rows_[i].ExtractCurrentWord();
+            Word word = new Word();
+            word.word_ = "";
+            word.nb_green_letters_ = 0;
+            for (int col = 0; col < cols_; col++)
+            {
+                int i = row * cols_ + col;
+                if(!tiles_[i].HasToken())
+                {    
+                    break;
+                }
+                word.word_ += tiles_[i].GetToken().GetLetter();
+                if(tiles_[i].GetToken().IsOnGreenFace())
+                {
+                    word.nb_green_letters_++;
+                }
+            }
+            if (word.word_ != "")
+            {
+                listOfWords.Add(word);
+            }
         }
-        return listOfWords_;
+        return listOfWords;
     }
 
     // Update is called once per frame
