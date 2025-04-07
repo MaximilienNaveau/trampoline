@@ -12,6 +12,7 @@ public class GameController : MonoBehaviour
     private Store store_;
     private TokenPool tokenPool_;
     private bool once_ = true;
+    private int numberOfPlayer_ = 1;
 
     // Compute list of valid words on the board.
     private List<Word> ComputeListOfValidWords(List<Word> listOfWords)
@@ -52,6 +53,11 @@ public class GameController : MonoBehaviour
         store_ = FindAnyObjectByType<Store>();
         tokenPool_ = FindAnyObjectByType<TokenPool>();
         tokenPool_.DeactivateAllInactiveTokens();
+    }
+
+    public void SetNumberOfPlayers(int numberOfPlayer)
+    {
+        numberOfPlayer_ = numberOfPlayer;
     }
 
     // Update is called once per frame

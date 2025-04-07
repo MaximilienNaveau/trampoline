@@ -1,0 +1,19 @@
+Règle du jeu
+
+Créer 13 mots de 9 lettres à partir des 117 lettres disponibles disponibles  dans la reserve.
+
+Une lettre jaune ajoutée rajoute des points tandis qu'une lettre verte en enlève 5
+
+Le nombre de point que rajoute un mot est la somme du nombre de lettre que constitue ce mot. Par example "mot" remport 1 + 2 + 3 = 6 points. Pour un total de 45 points pour 1 mot de 9 lettre écrit seulement avec des lettres jaunes. Une grille complète remporte au maximum 585 points.
+
+
+L’Objectif du jeu est d’utiliser à sa guise les 117 jetons à deux faces, pour composer finalement 13 mots de 9 lettres.
+ Pour atteindre ce résultat, on progresse pas à pas à partir de tirages successifs, en passant éventuellement par des mots inférieurs qui se transforment, et s’allongent tant qu'ils ne sont pas complets(9 lettres), mais jamais ne se réduisent.
+Les anagrammes, les remplacements de lettres sont permis selon des règles précises et simples.
+ 
+ Une partie peut se jouer à 2, 3 ou 4 joueurs.
+ On peut aussi et c’est agréable composer seul une grille.
+ Le challenge, collectif ou individuel, est d’abord d’aboutir à 13 mots de 9 lettres 
+ On recherche aussi à réaliser un score, en utilisant au mieux les lettres les plus "rémunératrices"
+
+Profitez bien!
