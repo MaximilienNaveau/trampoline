@@ -80,11 +80,13 @@ public class BasicToken : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDr
         canvasGroup_.blocksRaycasts = false;
         startDragPosition_ = rectTransform_.anchoredPosition;
         draggedOnTile_ = false;
+        tile_under_.LetTheTokenGo();
     }
 
     public void OnDrag(PointerEventData eventData)
     {
-        rectTransform_.anchoredPosition += eventData.delta / canvas_.scaleFactor;
+        rectTransform_.anchoredPosition +=
+            eventData.delta / canvas_.scaleFactor;
     }
 
     public void OnEndDrag(PointerEventData eventData)
@@ -94,6 +96,10 @@ public class BasicToken : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDr
         if(!draggedOnTile_)
         {
             rectTransform_.anchoredPosition = startDragPosition_;
+            if(tile_under_)
+            {
+                tile_under_.AttachToken(this);
+            }
         }
     }
 
@@ -104,11 +110,9 @@ public class BasicToken : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDr
 
     public void OnPointerClick(PointerEventData eventData)
     {
-        Debug.Log("Detected a click.");
         float timeSinceLastTap = Mathf.Abs(Time.time - lastTapTime_);
         if (timeSinceLastTap <= doubleTapThreshold_)
         {
-            Debug.Log("Detected a double-tap or double-click.");
             StartCoroutine(this.FlipToken());
         }
         lastTapTime_ = Time.time;
