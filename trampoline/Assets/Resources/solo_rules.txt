@@ -1,0 +1,9 @@
+Règle du jeu
+
+Créer 13 mots de 9 lettres à partir des 117 lettres disponibles disponibles  dans la reserve.
+
+Une lettre jaune ajoutée rajoute des points tandis qu'une lettre verte en enlève 5
+
+Le nombre de point que rajoute un mot est la somme du nombre de lettre que constitue ce mot. Par example "mot" remport 1 + 2 + 3 = 6 points. Pour un total de 45 points pour 1 mot de 9 lettre écrit seulement avec des lettres jaunes. Une grille complète remporte au maximum 585 points.
+
+Profitez bien!
