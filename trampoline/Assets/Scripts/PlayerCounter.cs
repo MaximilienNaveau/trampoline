@@ -1,7 +1,7 @@
-using System;
 using System.Collections;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Assertions;
 using UnityEngine.SceneManagement;
 
 public class PlayerCounter: MonoBehaviour
@@ -10,8 +10,19 @@ public class PlayerCounter: MonoBehaviour
     private const int minNumberOfPlayer_ = 1;
     private const int maxNumberOfPlayer_ = 4;
 
-    private TextMeshProUGUI playerCountUI_;
-    
+    private TMPro.TextMeshProUGUI playerCountUI_;
+
+    private void Start()
+    {
+        playerCountUI_ = GetComponentInChildren<TMPro.TextMeshProUGUI>();
+        Assert.IsTrue(playerCountUI_ != null, "PlayerCounter: TextMeshPro component is missing.");
+    }
+
+    public void Update()
+    {
+        playerCountUI_.text = numberOfPlayer_.ToString();
+    }
+
     public void IncreasePlayerCount()
     {
         numberOfPlayer_ = numberOfPlayer_ + 1;

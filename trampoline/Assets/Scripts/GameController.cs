@@ -53,6 +53,8 @@ public class GameController : MonoBehaviour
         store_ = FindAnyObjectByType<Store>();
         tokenPool_ = FindAnyObjectByType<TokenPool>();
         tokenPool_.DeactivateAllInactiveTokens();
+        // Retrieve the number of players
+        numberOfPlayer_ = PlayerPrefs.GetInt("NumberOfPlayers", 1); // Default to 1 if not set
     }
 
     public void SetNumberOfPlayers(int numberOfPlayer)

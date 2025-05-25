@@ -1,18 +1,12 @@
 using System;
 using System.Collections;
 using UnityEngine;
+using UnityEngine.Assertions;
 using UnityEngine.SceneManagement;
 
 public class GameSceneController: MonoBehaviour
 {
-    private GameController gameController_;
     private PlayerCounter playerCounter_;
-
-    public void Start()
-    {
-        gameController_ = FindAnyObjectByType<GameController>();
-        playerCounter_ = FindAnyObjectByType<PlayerCounter>();
-    }
 
     public enum GameScene {
         introduction_scene,
@@ -22,14 +16,18 @@ public class GameSceneController: MonoBehaviour
 
     public void LoadScene()
     {
-        gameController_.SetNumberOfPlayers(playerCounter_.GetNumberOfPlayer());
+        // Retrieve the number of players
+        playerCounter_ = FindAnyObjectByType<PlayerCounter>();
+        Assert.IsTrue(playerCounter_ != null, "GameSceneController: PlayerCounter component is missing.");
+        PlayerPrefs.SetInt("NumberOfPlayers", playerCounter_.GetNumberOfPlayer()); // Default to 1 if not set
         if (playerCounter_.GetNumberOfPlayer() == 1)
         {
             SceneManager.LoadScene(GameScene.solo_game_scene.ToString());
         }
         else
         {
-            SceneManager.LoadScene(GameScene.multi_game_scene.ToString());
+            /// @todo: handle the multiplayer case.
+            // SceneManager.LoadScene(GameScene.multi_game_scene.ToString());
         }
     }
 
