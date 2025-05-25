@@ -200,7 +200,7 @@ public class TokenPool : MonoBehaviour
         tokenPool_[12 * _nbLetter + 2].SetParameters("U", "R", MyGameColors.GetYellow(), MyGameColors.GetGreen());
         tokenPool_[12 * _nbLetter + 3].SetParameters("V", "E", MyGameColors.GetYellow(), MyGameColors.GetGreen());
         tokenPool_[12 * _nbLetter + 4].SetParameters("V", "S", MyGameColors.GetYellow(), MyGameColors.GetGreen());
-        tokenPool_[12 * _nbLetter + 5].SetParameters("W", "S", MyGameColors.GetYellow(), MyGameColors.GetGreen());
+        tokenPool_[12 * _nbLetter + 5].SetParameters("W", "S", MyGameColors.GetYellow(), MyGameColors.GetYellow());
         tokenPool_[12 * _nbLetter + 6].SetParameters("X", "E", MyGameColors.GetYellow(), MyGameColors.GetGreen());
         tokenPool_[12 * _nbLetter + 7].SetParameters("Y", "O", MyGameColors.GetYellow(), MyGameColors.GetGreen());
         tokenPool_[12 * _nbLetter + 8].SetParameters("Z", "R", MyGameColors.GetYellow(), MyGameColors.GetGreen());
