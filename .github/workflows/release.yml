@@ -120,6 +120,17 @@ jobs:
         run: |
           ls -l ../build-key.keystore || echo "Keystore not found!"
 
+      - name: Free Disk Space for Android
+        run: |
+          sudo swapoff -a
+          sudo rm -f /swapfile
+          sudo apt clean
+          docker rmi $(docker image ls -aq)
+          df -h
+          # Before
+          echo "Disk space before:"
+          df -h
+
       - uses: game-ci/unity-builder@v4
         env:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
