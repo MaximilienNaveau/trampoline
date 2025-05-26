@@ -153,20 +153,17 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - uses: actions/download-artifact@v4
-        with:
-          name: build-WebGL
-          path: build
+      - name: Fetch all tags
+        run: git fetch --tags
 
-      - uses: actions/download-artifact@v4
-        with:
-          name: build-Android
-          path: build
+      - name: Get the latest tag
+        id: get_latest_tag
+        run: |
+          latest_tag=$(git tag -l 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname | head -n 1)
+          echo "latest_tag=$latest_tag" >> $GITHUB_ENV
 
-      - uses: actions/download-artifact@v4
-        with:
-          name: build-StandaloneLinux64
-          path: build
+      - name: Debug latest tag
+        run: echo "Latest tag is ${{ env.latest_tag }}"
 
       - name: Create Release
         id: create_release
@@ -174,8 +171,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
+          tag_name: ${{ env.latest_tag }}
+          release_name: Release ${{ env.latest_tag }}
           draft: false
           prerelease: false
 
@@ -195,8 +192,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: build/Android/trampoline_${{ github.ref }}.apk
-          asset_name: trampoline_${{ github.ref }}.apk
+          asset_path: build/Android/trampoline_${{ env.latest_tag }}.apk
+          asset_name: trampoline_${{ env.latest_tag }}.apk
           asset_content_type: application/vnd.android.package-archive
 
       - name: Upload StandaloneLinux64 build
@@ -247,11 +244,11 @@ jobs:
         run: git clone git@github.com:MaximilienNaveau/magamajo.git fdroid-repo
 
       - name: Copy APK to F-Droid repo
-        run: cp build/Android/trampoline_${{ github.ref }}.apk fdroid-repo/
+        run: cp build/Android/trampoline_${{ env.latest_tag }}.apk fdroid-repo/
 
       - name: Commit and push APK
         run: |
           cd fdroid-repo
-          git add trampoline_${{ github.ref }}.apk
-          git commit -m "Add new APK for ${{ github.ref }}"
+          git add trampoline_${{ env.latest_tag }}.apk
+          git commit -m "Add new APK for ${{ env.latest_tag }}"
           git push origin main
