@@ -36,10 +36,10 @@ jobs:
         uses: actions/cache@v4
         with:
           path: trampoline/Library
-          key: Library-build-${{ matrix.targetPlatform }}
+          key: Library-build-${{ runner.os }}
           restore-keys: |
-            Library-build-
-            Library-
+            Library-build-${{ runner.os }}
+            Library-${{ runner.os }}
 
       # Test
       - name: Run tests
@@ -108,14 +108,14 @@ jobs:
           latest_tag=$(git tag -l 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname | head -n 1)
           echo "latest_tag=$latest_tag" >> $GITHUB_ENV
 
-      # - name: Restore Library cache
-      #   uses: actions/cache@v4
-      #   with:
-      #     path: trampoline/Library
-      #     key: Library-build-${{ matrix.targetPlatform }}
-      #     restore-keys: |
-      #       Library-build-
-      #       Library-
+      - name: Restore Library cache
+        uses: actions/cache@v4
+        with:
+          path: trampoline/Library
+          key: Library-build-${{ matrix.targetPlatform }}
+          restore-keys: |
+            Library-build-${{ matrix.targetPlatform }}
+            Library-${{ matrix.targetPlatform }}
 
       - name: Decode Android keystore
         if: matrix.targetPlatform == 'Android'

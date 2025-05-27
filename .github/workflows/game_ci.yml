@@ -40,8 +40,8 @@ jobs:
           path: trampoline/Library
           key: Library-build-${{ matrix.targetPlatform }}
           restore-keys: |
-            Library-build-
-            Library-
+            Library-build-${{ matrix.targetPlatform }}
+            Library-${{ matrix.targetPlatform }}
 
       # Test
       - name: Run tests
