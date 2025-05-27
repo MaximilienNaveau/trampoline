@@ -140,6 +140,7 @@ jobs:
           ANDROID_KEY_ALIAS_NAME: ${{ secrets.ANDROID_KEY_ALIAS_NAME }}
           ANDROID_KEY_ALIAS_PASS: ${{ secrets.ANDROID_KEY_ALIAS_PASS }}
         with:
+          buildName: trampoline_${{ env.latest_tag }} # Use the latest tag for the build name
           targetPlatform: ${{ matrix.targetPlatform }}
           githubToken: ${{ secrets.GITHUB_TOKEN }}
           projectPath: trampoline # Specify the path to your Unity project
@@ -151,7 +152,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: build-${{ matrix.targetPlatform }}
+          name: trampoline_${{ env.latest_tag }}
           path: build/${{ matrix.targetPlatform }}
 
   publishRelease:
@@ -194,6 +195,9 @@ jobs:
           asset_path: build/WebGL
           asset_name: WebGL.zip
           asset_content_type: application/zip
+
+      - name: "Display the build directory"
+        run: ls -al -R build
 
       - name: Upload Android APK
         uses: actions/upload-release-asset@v1
