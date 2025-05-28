@@ -265,6 +265,12 @@ jobs:
       - name: Clone F-Droid repo
         run: git clone git@github.com:MaximilienNaveau/magamajo.git fdroid-repo
 
+      - name: Display the build folder
+        run: |
+          sudo apt-get install -y tree
+          tree build
+          find -name "*.apk"
+      
       - name: Copy APK to F-Droid repo
         run: cp build/Android/trampoline_Android_${{ env.latest_tag }}.apk fdroid-repo/
 
