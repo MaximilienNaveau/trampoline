@@ -278,7 +278,7 @@ jobs:
         working-directory: ${{ github.workspace }}
       
       - name: Copy APK to F-Droid repo
-        run: cp build/Android/trampoline_Android_${{ env.latest_tag }}.apk ${{ github.workspace }}/fdroid-repo/
+        run: cp build/Android/trampoline_Android_${{ env.latest_tag }}.apk ${{ github.workspace }}/fdroid-repo/trampoline_${{ env.latest_tag }}.apk
 
       - name: Commit and push APK
         run: |
