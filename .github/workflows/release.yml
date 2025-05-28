@@ -32,14 +32,13 @@ jobs:
           git add .
           git reset --hard
 
-      - name: Restore Library cache
-        uses: actions/cache@v4
+      # Cache
+      - uses: actions/cache@v3
         with:
-          path: trampoline/Library
-          key: Library-build-${{ runner.os }}
+          path: Library
+          key: Library-${{ hashFiles('Assets/**', 'Packages/**', 'ProjectSettings/**') }}
           restore-keys: |
-            Library-build-${{ runner.os }}
-            Library-${{ runner.os }}
+            Library-
 
       # Test
       - name: Run tests
@@ -57,13 +56,13 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: Test results
-          path: ${{ steps.testRunner.outputs.artifactsPath }}      
+          name: Test-results
+          path: ${{ steps.testRunner.outputs.artifactsPath }}
 
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: Coverage results
+          name: Coverage-results
           path: ${{ steps.testRunner.outputs.coveragePath }}
 
   buildForAllSupportedPlatforms:
@@ -108,13 +107,14 @@ jobs:
           latest_tag=$(git tag -l 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname | head -n 1)
           echo "latest_tag=$latest_tag" >> $GITHUB_ENV
 
+      # Cache
       - name: Restore Library cache
+        if: matrix.targetPlatform != 'Android' # Skip for Android
         uses: actions/cache@v4
         with:
           path: trampoline/Library
-          key: Library-build-${{ matrix.targetPlatform }}
+          key: Library-${{ matrix.targetPlatform }}-${{ hashFiles('Assets/**', 'Packages/**', 'ProjectSettings/**') }}
           restore-keys: |
-            Library-build-${{ matrix.targetPlatform }}
             Library-${{ matrix.targetPlatform }}
 
       - name: Decode Android keystore
@@ -140,7 +140,7 @@ jobs:
           ANDROID_KEY_ALIAS_NAME: ${{ secrets.ANDROID_KEY_ALIAS_NAME }}
           ANDROID_KEY_ALIAS_PASS: ${{ secrets.ANDROID_KEY_ALIAS_PASS }}
         with:
-          buildName: trampoline_${{ env.latest_tag }} # Use the latest tag for the build name
+          buildName: trampoline_${{ matrix.targetPlatform }}_${{ env.latest_tag }} # Use the latest tag for the build name
           targetPlatform: ${{ matrix.targetPlatform }}
           githubToken: ${{ secrets.GITHUB_TOKEN }}
           projectPath: trampoline # Specify the path to your Unity project
@@ -152,91 +152,91 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: trampoline_${{ env.latest_tag }}
+          name: trampoline_${{ matrix.targetPlatform }}_${{ env.latest_tag }}
           path: build/${{ matrix.targetPlatform }}
 
-  publishRelease:
-    needs: buildForAllSupportedPlatforms
-    name: Publish Release on GitHub
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+  # publishRelease:
+  #   needs: buildForAllSupportedPlatforms
+  #   name: Publish Release on GitHub
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v4
 
-      - name: Fetch all tags
-        run: git fetch --tags
+  #     - name: Fetch all tags
+  #       run: git fetch --tags
 
-      - name: Get the latest tag
-        id: get_latest_tag
-        run: |
-          latest_tag=$(git tag -l 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname | head -n 1)
-          echo "latest_tag=$latest_tag" >> $GITHUB_ENV
+  #     - name: Get the latest tag
+  #       id: get_latest_tag
+  #       run: |
+  #         latest_tag=$(git tag -l 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname | head -n 1)
+  #         echo "latest_tag=$latest_tag" >> $GITHUB_ENV
 
-      - name: Debug latest tag
-        run: echo "Latest tag is ${{ env.latest_tag }}"
+  #     - name: Debug latest tag
+  #       run: echo "Latest tag is ${{ env.latest_tag }}"
 
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ env.latest_tag }}
-          release_name: Release ${{ env.latest_tag }}
-          draft: false
-          prerelease: false
+  #     - name: Create Release
+  #       id: create_release
+  #       uses: actions/create-release@v1
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #       with:
+  #         tag_name: ${{ env.latest_tag }}
+  #         release_name: Release ${{ env.latest_tag }}
+  #         draft: false
+  #         prerelease: false
 
-      - name: Upload WebGL build
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: build/WebGL
-          asset_name: WebGL.zip
-          asset_content_type: application/zip
+  #     - name: Upload WebGL build
+  #       uses: actions/upload-release-asset@v1
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #       with:
+  #         upload_url: ${{ steps.create_release.outputs.upload_url }}
+  #         asset_path: build/WebGL
+  #         asset_name: trampoline_WebGL_${{ env.latest_tag }}.zip
+  #         asset_content_type: application/zip
 
-      - name: "Display the build directory"
-        run: ls -al -R build
+  #     - name: "Display the build directory"
+  #       run: ls -al -R build
 
-      - name: Upload Android APK
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: build/Android/trampoline_${{ env.latest_tag }}.apk
-          asset_name: trampoline_${{ env.latest_tag }}.apk
-          asset_content_type: application/vnd.android.package-archive
+  #     - name: Upload Android APK
+  #       uses: actions/upload-release-asset@v1
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #       with:
+  #         upload_url: ${{ steps.create_release.outputs.upload_url }}
+  #         asset_path: build/Android/trampoline_${{ env.latest_tag }}.apk
+  #         asset_name: trampoline_Android_${{ env.latest_tag }}.apk
+  #         asset_content_type: application/vnd.android.package-archive
 
-      - name: Upload StandaloneLinux64 build
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: build/StandaloneLinux64
-          asset_name: StandaloneLinux64.zip
-          asset_content_type: application/zip
+  #     - name: Upload StandaloneLinux64 build
+  #       uses: actions/upload-release-asset@v1
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #       with:
+  #         upload_url: ${{ steps.create_release.outputs.upload_url }}
+  #         asset_path: build/StandaloneLinux64
+  #         asset_name: trampoline_StandaloneLinux64_${{ env.latest_tag }}.zip
+  #         asset_content_type: application/zip
 
-  deployPages:
-    needs: buildForAllSupportedPlatforms
-    name: Deploy to Github Pages 🚀
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+  # deployPages:
+  #   needs: buildForAllSupportedPlatforms
+  #   name: Deploy to Github Pages 🚀
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v4
 
-      - uses: actions/download-artifact@v4
-        with:
-          name: build-WebGL
-          path: build
+  #     - uses: actions/download-artifact@v4
+  #       with:
+  #         name: trampoline_WebGL_${{ env.latest_tag }}
+  #         path: build
 
-      - name: Deploy 🚀
-        uses: JamesIves/github-pages-deploy-action@v4.7.3
-        with:
-          branch: gh-pages
-          folder: build/WebGL
+  #     - name: Deploy 🚀
+  #       uses: JamesIves/github-pages-deploy-action@v4.7.3
+  #       with:
+  #         branch: gh-pages
+  #         folder: build/WebGL
 
   deployToFdroid:
     needs: buildForAllSupportedPlatforms
@@ -266,7 +266,7 @@ jobs:
         run: git clone git@github.com:MaximilienNaveau/magamajo.git fdroid-repo
 
       - name: Copy APK to F-Droid repo
-        run: cp build/Android/trampoline_${{ env.latest_tag }}.apk fdroid-repo/
+        run: cp build/Android/trampoline_Android_${{ env.latest_tag }}.apk fdroid-repo/
 
       - name: Commit and push APK
         run: |
@@ -274,3 +274,4 @@ jobs:
           git add trampoline_${{ env.latest_tag }}.apk
           git commit -m "Add new APK for ${{ env.latest_tag }}"
           git push origin main
+
