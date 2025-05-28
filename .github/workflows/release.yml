@@ -283,7 +283,8 @@ jobs:
       - name: Commit and push APK
         run: |
           cd fdroid-repo
+          git config --global user.email "maximilien.naveau@gmail.com"
+          git config --global user.name "Maximilien Naveau"
           git add trampoline_${{ env.latest_tag }}.apk
           git commit -m "Add new APK for ${{ env.latest_tag }}"
           git push origin main
-
