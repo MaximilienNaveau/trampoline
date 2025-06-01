@@ -74,7 +74,7 @@ jobs:
       matrix:
         targetPlatform:
           - StandaloneLinux64 # Build a Linux 64-bit standalone.
-          # - Android # Build an Android .apk standalone app.
+          - Android # Build an Android .apk standalone app.
           - WebGL # WebGL.
     steps:
       - name: Checkout code
@@ -172,11 +172,11 @@ jobs:
           latest_tag=$(git tag -l 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname | head -n 1)
           echo "latest_tag=$latest_tag" >> $GITHUB_ENV
 
-      # - name: Download Android APK artifact
-      #   uses: actions/download-artifact@v4
-      #   with:
-      #     name: trampoline_Android_${{ env.latest_tag }}
-      #     path: build/Android
+      - name: Download Android APK artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: trampoline_Android_${{ env.latest_tag }}
+          path: build/Android
 
       - name: Download WebGL artifact
         uses: actions/download-artifact@v4
@@ -226,15 +226,15 @@ jobs:
           asset_name: trampoline_WebGL_${{ env.latest_tag }}.zip
           asset_content_type: application/zip
 
-      # - name: Upload Android APK
-      #   uses: actions/upload-release-asset@v1
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      #   with:
-      #     upload_url: ${{ steps.create_release.outputs.upload_url }}
-      #     asset_path: build/Android/trampoline_${{ env.latest_tag }}.apk
-      #     asset_name: trampoline_Android_${{ env.latest_tag }}.apk
-      #     asset_content_type: application/vnd.android.package-archive
+      - name: Upload Android APK
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: build/Android/trampoline_${{ env.latest_tag }}.apk
+          asset_name: trampoline_Android_${{ env.latest_tag }}.apk
+          asset_content_type: application/vnd.android.package-archive
 
       - name: Upload StandaloneLinux64 build
         uses: actions/upload-release-asset@v1
@@ -264,7 +264,7 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: trampoline_WebGL_${{ env.latest_tag }}
-          path: build
+          path: build/WebGL
 
       - name: Deploy 🚀
         uses: JamesIves/github-pages-deploy-action@v4.7.3
