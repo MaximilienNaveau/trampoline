@@ -73,8 +73,8 @@ jobs:
       fail-fast: false
       matrix:
         targetPlatform:
-          - StandaloneLinux64 # Build a Linux 64-bit standalone.
-          - Android # Build an Android .apk standalone app.
+          # - StandaloneLinux64 # Build a Linux 64-bit standalone.
+          # - Android # Build an Android .apk standalone app.
           - WebGL # WebGL.
     steps:
       - name: Checkout code
@@ -175,11 +175,11 @@ jobs:
       - name: Debug latest tag
         run: echo "Latest tag is ${{ env.latest_tag }}"
 
-      - name: Download Android APK artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: trampoline_Android_${{ env.latest_tag }}
-          path: build/Android
+      # - name: Download Android APK artifact
+      #   uses: actions/download-artifact@v4
+      #   with:
+      #     name: trampoline_Android_${{ env.latest_tag }}
+      #     path: build/Android
 
       - name: Download WebGL artifact
         uses: actions/download-artifact@v4
@@ -187,11 +187,11 @@ jobs:
           name: trampoline_WebGL_${{ env.latest_tag }}
           path: build/Android
 
-      - name: Download Linux Standalone artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: trampoline_StandaloneLinux64_${{ env.latest_tag }}
-          path: build/StandaloneLinux64
+      # - name: Download Linux Standalone artifact
+      #   uses: actions/download-artifact@v4
+      #   with:
+      #     name: trampoline_StandaloneLinux64_${{ env.latest_tag }}
+      #     path: build/StandaloneLinux64
 
       - name: Create Release
         id: create_release
@@ -204,6 +204,11 @@ jobs:
           draft: false
           prerelease: false
 
+      - name: "Display the build directory"
+        run: |
+          sudo apt-get install -y tree
+          tree .
+
       - name: Upload WebGL build
         uses: actions/upload-release-asset@v1
         env:
@@ -214,28 +219,25 @@ jobs:
           asset_name: trampoline_WebGL_${{ env.latest_tag }}.zip
           asset_content_type: application/zip
 
-      - name: "Display the build directory"
-        run: ls -al -R build
+      # - name: Upload Android APK
+      #   uses: actions/upload-release-asset@v1
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #   with:
+      #     upload_url: ${{ steps.create_release.outputs.upload_url }}
+      #     asset_path: build/Android/trampoline_${{ env.latest_tag }}.apk
+      #     asset_name: trampoline_Android_${{ env.latest_tag }}.apk
+      #     asset_content_type: application/vnd.android.package-archive
 
-      - name: Upload Android APK
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: build/Android/trampoline_${{ env.latest_tag }}.apk
-          asset_name: trampoline_Android_${{ env.latest_tag }}.apk
-          asset_content_type: application/vnd.android.package-archive
-
-      - name: Upload StandaloneLinux64 build
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: build/StandaloneLinux64
-          asset_name: trampoline_StandaloneLinux64_${{ env.latest_tag }}.zip
-          asset_content_type: application/zip
+      # - name: Upload StandaloneLinux64 build
+      #   uses: actions/upload-release-asset@v1
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #   with:
+      #     upload_url: ${{ steps.create_release.outputs.upload_url }}
+      #     asset_path: build/StandaloneLinux64
+      #     asset_name: trampoline_StandaloneLinux64_${{ env.latest_tag }}.zip
+      #     asset_content_type: application/zip
 
   deployPages:
     needs: buildForAllSupportedPlatforms
