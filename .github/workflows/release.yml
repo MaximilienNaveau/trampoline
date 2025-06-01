@@ -73,7 +73,7 @@ jobs:
       fail-fast: false
       matrix:
         targetPlatform:
-          # - StandaloneLinux64 # Build a Linux 64-bit standalone.
+          - StandaloneLinux64 # Build a Linux 64-bit standalone.
           # - Android # Build an Android .apk standalone app.
           - WebGL # WebGL.
     steps:
@@ -172,9 +172,6 @@ jobs:
           latest_tag=$(git tag -l 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname | head -n 1)
           echo "latest_tag=$latest_tag" >> $GITHUB_ENV
 
-      - name: Debug latest tag
-        run: echo "Latest tag is ${{ env.latest_tag }}"
-
       # - name: Download Android APK artifact
       #   uses: actions/download-artifact@v4
       #   with:
@@ -192,11 +189,16 @@ jobs:
           cd build/WebGL
           zip -r trampoline_WebGL_${{ env.latest_tag }}.zip ./*
 
-      # - name: Download Linux Standalone artifact
-      #   uses: actions/download-artifact@v4
-      #   with:
-      #     name: trampoline_StandaloneLinux64_${{ env.latest_tag }}
-      #     path: build/StandaloneLinux64
+      - name: Download Linux Standalone artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: trampoline_StandaloneLinux64_${{ env.latest_tag }}
+          path: build/StandaloneLinux64
+
+      - name: Compress StandaloneLinux64 build
+        run: |
+          cd build/StandaloneLinux64
+          zip -r trampoline_StandaloneLinux64_${{ env.latest_tag }}.zip ./*
 
       - name: Create Release
         id: create_release
@@ -234,15 +236,15 @@ jobs:
       #     asset_name: trampoline_Android_${{ env.latest_tag }}.apk
       #     asset_content_type: application/vnd.android.package-archive
 
-      # - name: Upload StandaloneLinux64 build
-      #   uses: actions/upload-release-asset@v1
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      #   with:
-      #     upload_url: ${{ steps.create_release.outputs.upload_url }}
-      #     asset_path: build/StandaloneLinux64
-      #     asset_name: trampoline_StandaloneLinux64_${{ env.latest_tag }}.zip
-      #     asset_content_type: application/zip
+      - name: Upload StandaloneLinux64 build
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: build/StandaloneLinux64/trampoline_StandaloneLinux64_${{ env.latest_tag }}.zip
+          asset_name: trampoline_StandaloneLinux64_${{ env.latest_tag }}.zip
+          asset_content_type: application/zip
 
   deployPages:
     needs: buildForAllSupportedPlatforms
@@ -251,6 +253,13 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Get the latest tag
+        id: get_latest_tag
+        run: |
+          latest_tag=$(git tag -l 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname | head -n 1)
+          echo "latest_tag=$latest_tag" >> $GITHUB_ENV
+
 
       - uses: actions/download-artifact@v4
         with:
