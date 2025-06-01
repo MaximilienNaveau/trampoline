@@ -185,7 +185,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: trampoline_WebGL_${{ env.latest_tag }}
-          path: build/Android
+          path: build/WebGL
 
       # - name: Download Linux Standalone artifact
       #   uses: actions/download-artifact@v4
