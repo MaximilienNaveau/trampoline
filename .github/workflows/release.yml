@@ -155,114 +155,25 @@ jobs:
           name: trampoline_${{ matrix.targetPlatform }}_${{ env.latest_tag }}
           path: build/${{ matrix.targetPlatform }}
 
-  # publishRelease:
-  #   needs: buildForAllSupportedPlatforms
-  #   name: Publish Release on GitHub
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Checkout code
-  #       uses: actions/checkout@v4
-
-  #     - name: Fetch all tags
-  #       run: git fetch --tags
-
-  #     - name: Get the latest tag
-  #       id: get_latest_tag
-  #       run: |
-  #         latest_tag=$(git tag -l 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname | head -n 1)
-  #         echo "latest_tag=$latest_tag" >> $GITHUB_ENV
-
-  #     - name: Debug latest tag
-  #       run: echo "Latest tag is ${{ env.latest_tag }}"
-
-  #     - name: Create Release
-  #       id: create_release
-  #       uses: actions/create-release@v1
-  #       env:
-  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  #       with:
-  #         tag_name: ${{ env.latest_tag }}
-  #         release_name: Release ${{ env.latest_tag }}
-  #         draft: false
-  #         prerelease: false
-
-  #     - name: Upload WebGL build
-  #       uses: actions/upload-release-asset@v1
-  #       env:
-  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  #       with:
-  #         upload_url: ${{ steps.create_release.outputs.upload_url }}
-  #         asset_path: build/WebGL
-  #         asset_name: trampoline_WebGL_${{ env.latest_tag }}.zip
-  #         asset_content_type: application/zip
-
-  #     - name: "Display the build directory"
-  #       run: ls -al -R build
-
-  #     - name: Upload Android APK
-  #       uses: actions/upload-release-asset@v1
-  #       env:
-  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  #       with:
-  #         upload_url: ${{ steps.create_release.outputs.upload_url }}
-  #         asset_path: build/Android/trampoline_${{ env.latest_tag }}.apk
-  #         asset_name: trampoline_Android_${{ env.latest_tag }}.apk
-  #         asset_content_type: application/vnd.android.package-archive
-
-  #     - name: Upload StandaloneLinux64 build
-  #       uses: actions/upload-release-asset@v1
-  #       env:
-  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  #       with:
-  #         upload_url: ${{ steps.create_release.outputs.upload_url }}
-  #         asset_path: build/StandaloneLinux64
-  #         asset_name: trampoline_StandaloneLinux64_${{ env.latest_tag }}.zip
-  #         asset_content_type: application/zip
-
-  # deployPages:
-  #   needs: buildForAllSupportedPlatforms
-  #   name: Deploy to Github Pages 🚀
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Checkout code
-  #       uses: actions/checkout@v4
-
-  #     - uses: actions/download-artifact@v4
-  #       with:
-  #         name: trampoline_WebGL_${{ env.latest_tag }}
-  #         path: build
-
-  #     - name: Deploy 🚀
-  #       uses: JamesIves/github-pages-deploy-action@v4.7.3
-  #       with:
-  #         branch: gh-pages
-  #         folder: build/WebGL
-
-  deployToFdroid:
+  publishRelease:
     needs: buildForAllSupportedPlatforms
-    name: Publish APK to F-Droid
+    name: Publish Release on GitHub
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Fetch all tags
+        run: git fetch --tags
+
       - name: Get the latest tag
         id: get_latest_tag
         run: |
-          git fetch --tags
           latest_tag=$(git tag -l 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname | head -n 1)
           echo "latest_tag=$latest_tag" >> $GITHUB_ENV
 
-      - name: Setup SSH
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.FDROID_SSH_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan github.com >> ~/.ssh/known_hosts
-
-      - name: Clone F-Droid repo
-        run: git clone git@github.com:MaximilienNaveau/magamajo.git fdroid-repo
-        working-directory: ${{ github.workspace }}
+      - name: Debug latest tag
+        run: echo "Latest tag is ${{ env.latest_tag }}"
 
       - name: Download Android APK artifact
         uses: actions/download-artifact@v4
@@ -270,21 +181,130 @@ jobs:
           name: trampoline_Android_${{ env.latest_tag }}
           path: build/Android
 
-      - name: Display the build folder
-        run: |
-          sudo apt-get install -y tree
-          tree .
-          find -name "*.apk"
-        working-directory: ${{ github.workspace }}
-      
-      - name: Copy APK to F-Droid repo
-        run: cp build/Android/trampoline_Android_${{ env.latest_tag }}.apk ${{ github.workspace }}/fdroid-repo/trampoline_${{ env.latest_tag }}.apk
+      - name: Download WebGL artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: trampoline_WebGL_${{ env.latest_tag }}
+          path: build/Android
 
-      - name: Commit and push APK
-        run: |
-          cd fdroid-repo
-          git config --global user.email "maximilien.naveau@gmail.com"
-          git config --global user.name "Maximilien Naveau"
-          git add trampoline_${{ env.latest_tag }}.apk
-          git commit -m "Add new APK for ${{ env.latest_tag }}"
-          git push origin main
+      - name: Download Linux Standalone artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: trampoline_StandaloneLinux64_${{ env.latest_tag }}
+          path: build/StandaloneLinux64
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ env.latest_tag }}
+          release_name: Release ${{ env.latest_tag }}
+          draft: false
+          prerelease: false
+
+      - name: Upload WebGL build
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: build/WebGL
+          asset_name: trampoline_WebGL_${{ env.latest_tag }}.zip
+          asset_content_type: application/zip
+
+      - name: "Display the build directory"
+        run: ls -al -R build
+
+      - name: Upload Android APK
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: build/Android/trampoline_${{ env.latest_tag }}.apk
+          asset_name: trampoline_Android_${{ env.latest_tag }}.apk
+          asset_content_type: application/vnd.android.package-archive
+
+      - name: Upload StandaloneLinux64 build
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: build/StandaloneLinux64
+          asset_name: trampoline_StandaloneLinux64_${{ env.latest_tag }}.zip
+          asset_content_type: application/zip
+
+  deployPages:
+    needs: buildForAllSupportedPlatforms
+    name: Deploy to Github Pages 🚀
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: trampoline_WebGL_${{ env.latest_tag }}
+          path: build
+
+      - name: Deploy 🚀
+        uses: JamesIves/github-pages-deploy-action@v4.7.3
+        with:
+          branch: gh-pages
+          folder: build/WebGL
+
+  # deployToFdroid:
+  #   needs: buildForAllSupportedPlatforms
+  #   name: Publish APK to F-Droid
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v4
+
+  #     - name: Get the latest tag
+  #       id: get_latest_tag
+  #       run: |
+  #         git fetch --tags
+  #         latest_tag=$(git tag -l 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname | head -n 1)
+  #         echo "latest_tag=$latest_tag" >> $GITHUB_ENV
+
+  #     - name: Setup SSH
+  #       run: |
+  #         mkdir -p ~/.ssh
+  #         echo "${{ secrets.FDROID_SSH_KEY }}" > ~/.ssh/id_rsa
+  #         chmod 600 ~/.ssh/id_rsa
+  #         ssh-keyscan github.com >> ~/.ssh/known_hosts
+
+  #     - name: Clone F-Droid repo
+  #       run: git clone git@github.com:MaximilienNaveau/magamajo.git fdroid-repo
+  #       working-directory: ${{ github.workspace }}
+
+  #     - name: Download Android APK artifact
+  #       uses: actions/download-artifact@v4
+  #       with:
+  #         name: trampoline_Android_${{ env.latest_tag }}
+  #         path: build/Android
+
+  #     - name: Display the build folder
+  #       run: |
+  #         sudo apt-get install -y tree
+  #         tree .
+  #         find -name "*.apk"
+  #       working-directory: ${{ github.workspace }}
+      
+  #     - name: Copy APK to F-Droid repo
+  #       run: |
+  #         mkdir -p ${{ github.workspace }}/fdroid-repo/releases/
+  #         cp build/Android/trampoline_Android_${{ env.latest_tag }}.apk ${{ github.workspace }}/fdroid-repo/releases/trampoline_${{ env.latest_tag }}.apk
+
+  #     - name: Commit and push APK
+  #       run: |
+  #         cd fdroid-repo
+  #         git config --global user.email "maximilien.naveau@gmail.com"
+  #         git config --global user.name "Maximilien Naveau"
+  #         git add trampoline_${{ env.latest_tag }}.apk
+  #         git commit -m "Add new APK for ${{ env.latest_tag }}"
+  #         git push origin main
