@@ -233,7 +233,7 @@ jobs:
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: build/Android/trampoline_Android_${{ env.latest_tag }}.apk
-          asset_name: trampoline_Android_${{ env.latest_tag }}.apk
+          asset_name: trampoline_${{ env.latest_tag }}.apk
           asset_content_type: application/vnd.android.package-archive
 
       - name: Upload StandaloneLinux64 build
