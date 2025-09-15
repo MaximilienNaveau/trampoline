@@ -80,6 +80,8 @@ public class Store : MonoBehaviour, IDropHandler
                 token.SetDraggedOnTile(false);
                 token.SwapTileUnder(null);
                 token.SetInBoard(false);
+                token.transform.gameObject.SetActive(false);
+                UpdateStorage();
             }
         }
     }

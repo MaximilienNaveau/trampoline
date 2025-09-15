@@ -51,7 +51,7 @@ public class TokenPool : MonoBehaviour
     {
         for (int i = 0; i < tokenObjPool_.Count; i++) 
         {
-            tokenObjPool_[i].SetActive(tokenPool_[i].isOnTile());
+            tokenObjPool_[i].SetActive(tokenPool_[i].IsOnTile());
         }
     }
 

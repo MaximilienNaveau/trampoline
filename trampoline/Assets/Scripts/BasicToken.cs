@@ -57,6 +57,11 @@ public class BasicToken : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDr
         inBoard_ = inBoard;
     }
 
+    public Tile GetTileUnder()
+    {
+        return tile_under_;
+    }
+
     private void Awake()
     {
         flipDeltaDuration_ = 0.01f;
@@ -115,8 +120,6 @@ public class BasicToken : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDr
         // Calculate the new position using delta and scaleFactor
         Vector2 delta = eventData.delta / canvas_.scaleFactor;
         rectTransform_.anchoredPosition += delta;
-
-        Debug.Log($"Dragging token: {this.name}, anchoredPosition: {rectTransform_.anchoredPosition}, delta: {delta}");
     }
 
     public void OnEndDrag(PointerEventData eventData)
@@ -214,7 +217,7 @@ public class BasicToken : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDr
         UpdateContent();
     }
 
-    public bool isOnTile()
+    public bool IsOnTile()
     {
         return tile_under_ != null;
     }
@@ -235,6 +238,9 @@ public class BasicToken : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDr
 
     public void Update()
     {
-        
+        if(!BeingDragged() && IsOnTile())
+        {
+            transform.position = tile_under_.transform.position;
+        }
     }
 }

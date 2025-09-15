@@ -11,10 +11,8 @@ public class Board : MonoBehaviour
 {
     [SerializeField] private GameObject tilePrefab_;
     private GridLayoutGroup grid_;
-    private List<Tile> tiles_;
     private int rows_ = 13;
     private int cols_ = 9;
-    private int numberOfTile_ = 0;
 
     private void Awake()
     {
@@ -31,22 +29,32 @@ public class Board : MonoBehaviour
         // Resize the grid to fit the number of columns and rows.
         grid_.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
         grid_.constraintCount = cols_;
-        numberOfTile_ = grid_.transform.childCount;
     }
 
 
     public List<Tile> GetTiles()
     {
         List<Tile> tiles = new();
-        if (numberOfTile_ != grid_.transform.childCount)
+        for (int i = 0; i < grid_.transform.childCount; i++)
         {
-            numberOfTile_ = grid_.transform.childCount;
-            for (int i = 0; i < numberOfTile_; i++)
+            tiles.Add(grid_.transform.GetChild(i).GetComponent<Tile>());
+        }
+        Assert.AreEqual(tiles.Count, grid_.transform.childCount);
+        return tiles;
+    }
+
+    public List<BasicToken> GetTokensOnTheBoard()
+    {
+        List<BasicToken> tokens = new();
+        List<Tile> tiles = GetTiles();
+        for (int i = 0; i < tiles.Count; i++)
+        {
+            if (tiles[i].HasToken())
             {
-                tiles.Add(grid_.transform.GetChild(i).GetComponent<Tile>());
+                tokens.Add(tiles[i].GetToken());
             }
         }
-        return tiles;
+        return tokens;
     }
 
     public List<Word> GetListOfWords()
@@ -55,13 +63,13 @@ public class Board : MonoBehaviour
         List<Word> listOfWords = new();
         listOfWords.Clear();
         // Get the list of tiles.
-        tiles_ = GetTiles();
-        if (tiles_.Count == 0)
+        List<Tile> tiles = GetTiles();
+        if (tiles.Count == 0)
         {
             return listOfWords;
         }
         // compute the available numer of rows there is in the grid.
-        int existingRows = tiles_.Count / cols_;
+        int existingRows = tiles.Count / cols_;
         // Update the list of valid words.
         for (int row = 0; row < existingRows; row++)
         {
@@ -73,12 +81,12 @@ public class Board : MonoBehaviour
             for (int col = 0; col < cols_; col++)
             {
                 int i = row * cols_ + col;
-                if (!tiles_[i].HasToken())
+                if (!tiles[i].HasToken())
                 {
                     break;
                 }
-                word.word_ += tiles_[i].GetToken().GetLetter();
-                if (tiles_[i].GetToken().IsOnGreenFace())
+                word.word_ += tiles[i].GetToken().GetLetter();
+                if (tiles[i].GetToken().IsOnGreenFace())
                 {
                     word.nb_green_letters_++;
                 }
@@ -95,7 +103,7 @@ public class Board : MonoBehaviour
     {
         for (int col = 0; col < cols_; col++)
         {
-            int tileIndex = (rowIndex - 1) * cols_ + col;
+            int tileIndex = rowIndex * cols_ + col;
             if (tileIndex < grid_.transform.childCount)
             {
                 if (grid_.transform.GetChild(tileIndex).GetComponent<Tile>().HasToken())
@@ -105,6 +113,30 @@ public class Board : MonoBehaviour
             }
         }
         return true;
+    }
+
+    private void RemoveLastRow()
+    {
+        int nbOfTiles = grid_.transform.childCount;
+        Assert.IsTrue(nbOfTiles >= cols_);
+        // Remove the last row of tiles.
+        for (int col = 0; col < cols_; col++)
+        {
+            int i = nbOfTiles - 1 - col;
+            Destroy(grid_.transform.GetChild(i).gameObject);
+        }
+        Assert.IsTrue(grid_.transform.childCount % cols_ == 0);
+    }
+
+    private void AddNewRow()
+    {
+        for (int col = 0; col < cols_; col++)
+        {
+            Vector3 position = new();
+            Quaternion orientation = new();
+            Instantiate(tilePrefab_, position, orientation, grid_.transform);
+        }
+        Assert.IsTrue(grid_.transform.childCount % cols_ == 0);
     }
 
     public bool ResizeGrid()
@@ -120,13 +152,7 @@ public class Board : MonoBehaviour
             int rowsToAdd = 2 - existingRows;
             for (int i = 0; i < rowsToAdd; i++)
             {
-                for (int col = 0; col < cols_; col++)
-                {
-                    Vector3 position = new();
-                    Quaternion orientation = new();
-                    Instantiate(tilePrefab_, position, orientation, grid_.transform);
-                    hasResized = true;
-                }
+                AddNewRow();
             }
         }
         else
@@ -137,13 +163,8 @@ public class Board : MonoBehaviour
                 // Add an extra row if the last row is not empty
                 if (existingRows <= rows_) // Ensure we don't exceed the maximum number of rows
                 {
-                    for (int col = 0; col < cols_; col++)
-                    {
-                        Vector3 position = new();
-                        Quaternion orientation = new();
-                        Instantiate(tilePrefab_, position, orientation, grid_.transform);
-                        hasResized = true;
-                    }
+                    AddNewRow();
+                    hasResized = true;
                 }
             }
             else
@@ -151,17 +172,13 @@ public class Board : MonoBehaviour
                 // Remove extra rows if there are more than 2 rows with tiles and 1 empty row
                 while (existingRows > 2 && IsRowEmpty(existingRows - 2))
                 {
-                    for (int col = 0; col < cols_; col++)
-                    {
-                        int i = grid_.transform.childCount - 1;
-                        Destroy(grid_.transform.GetChild(i).gameObject);
-                        hasResized = true;
-                    }
+                    RemoveLastRow();
+                    hasResized = true;
                     existingRows--; // Update the row count after removing a row
                 }
             }
         }
-
+        Assert.IsTrue(grid_.transform.childCount % cols_ == 0);
         return hasResized;
     }
 
