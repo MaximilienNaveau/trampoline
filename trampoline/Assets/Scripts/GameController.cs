@@ -11,8 +11,8 @@ public class GameController : MonoBehaviour
     private Board board_;
     private Store store_;
     private TokenPool tokenPool_;
-    private bool once_ = true;
     private int numberOfPlayer_ = 1;
+    private bool once_ = true;
 
     // Compute list of valid words on the board.
     private List<Word> ComputeListOfValidWords(List<Word> listOfWords)
@@ -69,10 +69,10 @@ public class GameController : MonoBehaviour
         List<Word> listOfValidWords = ComputeListOfValidWords(listOfWords);
         int score = ComputeScore(listOfValidWords);
         score_.SetScore(score);
-        if(once_)
+        if (once_)
         {
-            store_.UpdateStorage();
             once_ = false;
+            store_.UpdateStorage();
         }
     }
 }

@@ -1,22 +1,39 @@
 using System.Collections.Generic;
+using NUnit.Framework;
 using UnityEngine;
-using UnityEngine.UIElements;
 
 public class TokenPool : MonoBehaviour
 {
     private GameObject SpawnNewTokenObject()
     {
-        Vector3 position = new Vector3();
-        Quaternion orientation = new Quaternion();
-        return Instantiate(tilePrefab_, position, orientation, GameObject.FindGameObjectWithTag("GameCanvas").transform);
+        Vector3 position = new();
+        Quaternion orientation = new();
+        GameObject newTokenObject = Instantiate(
+            tilePrefab_, position, orientation,
+            GameObject.FindGameObjectWithTag("GameCanvas").transform);
+        Assert.AreNotEqual(newTokenObject, null);
+        return newTokenObject;
     }
 
     private BasicToken GetBasicTokenFromObject(GameObject new_token_object)
     {
+        if (new_token_object == null)
+        {
+            Debug.LogError("[TokenPool] new_token_object est null dans GetBasicTokenFromObject");
+            return null;
+        }
         BasicToken newToken = new_token_object.GetComponent<BasicToken>();
+        if (newToken == null)
+        {
+            Debug.LogError("[TokenPool] Le GameObject n'a pas de composant BasicToken attaché : " + new_token_object.name);
+            return null;
+        }
         RectTransform newTokenRect = newToken.GetComponent<RectTransform>();
-        RectTransform a_tile_rect = FindAnyObjectByType<Tile>().GetComponent<RectTransform>();
-        newTokenRect.sizeDelta = a_tile_rect.sizeDelta;
+        if (newTokenRect == null)
+        {
+            Debug.LogError("[TokenPool] Le BasicToken n'a pas de RectTransform attaché : " + new_token_object.name);
+            return newToken;
+        }
         return newToken;
     }
 
@@ -38,7 +55,7 @@ public class TokenPool : MonoBehaviour
         }
     }
 
-    private void start()
+    private void Start()
     {
         DeactivateAllInactiveTokens();
     }
@@ -51,6 +68,7 @@ public class TokenPool : MonoBehaviour
         // for (int i = 0; i < 1; i++)
         {
             GameObject newBasicTokenObject = SpawnNewTokenObject();
+            Assert.AreNotEqual(newBasicTokenObject, null);
             BasicToken newBasicToken = GetBasicTokenFromObject(newBasicTokenObject);
             tokenObjPool_.Add(newBasicTokenObject);
             tokenPool_.Add(newBasicToken);

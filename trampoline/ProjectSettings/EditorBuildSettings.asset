@@ -17,4 +17,8 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/multi_game_scene.unity
     guid: f027c7b504e4ef145a88880bb49a105c
+  - enabled: 1
+    path: Assets/Scenes/solo_game_scene_dynamic.unity
+    guid: fb55754bb9920624c9d9e4c324d2d998
   m_configObjects: {}
+  m_UseUCBPForAssetBundles: 0

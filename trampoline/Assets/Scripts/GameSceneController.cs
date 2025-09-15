@@ -11,6 +11,7 @@ public class GameSceneController: MonoBehaviour
     public enum GameScene {
         introduction_scene,
         solo_game_scene,
+        solo_game_scene_dynamic,
         multi_game_scene,
     }
 
@@ -22,7 +23,7 @@ public class GameSceneController: MonoBehaviour
         PlayerPrefs.SetInt("NumberOfPlayers", playerCounter_.GetNumberOfPlayer()); // Default to 1 if not set
         if (playerCounter_.GetNumberOfPlayer() == 1)
         {
-            SceneManager.LoadScene(GameScene.solo_game_scene.ToString());
+            SceneManager.LoadScene(GameScene.solo_game_scene_dynamic.ToString());
         }
         else
         {

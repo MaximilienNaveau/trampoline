@@ -8,12 +8,14 @@ using UnityEngine.Assertions;
 public class BasicToken : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDragHandler, IPointerClickHandler
 {
     // Drag and drop variables
-    private Vector2 startDragPosition_ = new Vector2(0f, 0f);
+    private Vector2 startDragPosition_ = new(0f, 0f);
     private Tile tile_under_ = null;
     private bool draggedOnTile_ = false;
+    private Vector2 dragOffset_;
     private RectTransform rectTransform_;
     private CanvasGroup canvasGroup_;
     private Canvas canvas_;
+    private RectTransform canvasRectTransform_;
     private bool inBoard_ = false;
 
     // Double click management.
@@ -62,11 +64,18 @@ public class BasicToken : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDr
         rectTransform_ = GetComponent<RectTransform>();
         canvasGroup_ = GetComponent<CanvasGroup>();
         canvas_ = GameObject.FindGameObjectWithTag(
-            "StaticCanvas").GetComponent<Canvas>();
+            "GameCanvas").GetComponent<Canvas>();
+        canvasRectTransform_ = canvas_.GetComponent<RectTransform>();
         draggedOnTile_ = false;
 
         guiImages_ = GetComponentsInChildren<Image>();
         guiLetters_ = GetComponentsInChildren<TextMeshProUGUI>();
+
+        LayoutElement layoutElement = GetComponent<LayoutElement>();
+        if (layoutElement != null)
+        {
+            layoutElement.ignoreLayout = true;
+        }
 
         Assert.AreEqual(guiLetters_.Length, 2);
         Assert.AreEqual(guiImages_.Length, 2);
@@ -80,13 +89,34 @@ public class BasicToken : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDr
         canvasGroup_.blocksRaycasts = false;
         startDragPosition_ = rectTransform_.anchoredPosition;
         draggedOnTile_ = false;
-        tile_under_.LetTheTokenGo();
+
+        if (tile_under_ != null)
+        {
+            tile_under_.LetTheTokenGo();
+        }
+
+        // // Calculer l'offset entre la position de la souris et la position actuelle du token
+        // RectTransformUtility.ScreenPointToLocalPointInRectangle(
+        //     canvasRectTransform_,
+        //     eventData.position,
+        //     canvas_.worldCamera,
+        //     out Vector2 localMousePosition
+        // );
+        // dragOffset_ = rectTransform_.anchoredPosition - localMousePosition;
+    }
+
+    public bool BeingDragged()
+    {
+        return canvasGroup_.blocksRaycasts == false;
     }
 
     public void OnDrag(PointerEventData eventData)
     {
-        rectTransform_.anchoredPosition +=
-            eventData.delta / canvas_.scaleFactor;
+        // Calculate the new position using delta and scaleFactor
+        Vector2 delta = eventData.delta / canvas_.scaleFactor;
+        rectTransform_.anchoredPosition += delta;
+
+        Debug.Log($"Dragging token: {this.name}, anchoredPosition: {rectTransform_.anchoredPosition}, delta: {delta}");
     }
 
     public void OnEndDrag(PointerEventData eventData)

@@ -17,7 +17,7 @@ public class DragAndDrop : MonoBehaviour, IPointerDownHandler, IBeginDragHandler
         rectTransform_ = GetComponent<RectTransform>();
         canvasGroup_ = GetComponent<CanvasGroup>();
         canvas_ = GameObject.FindGameObjectWithTag(
-            "StaticCanvas").GetComponent<Canvas>();
+            "GameCanvas").GetComponent<Canvas>();
         draggedOnTile_ = false;
     }
 

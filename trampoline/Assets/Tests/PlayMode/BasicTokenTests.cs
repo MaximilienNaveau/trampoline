@@ -38,8 +38,8 @@ public class BasicTokenTests
         imageChild2.transform.SetParent(tokenObject_.transform);
         imageChild2.AddComponent<Image>();
 
-        // Create a canvas GameObject for the StaticCanvas tag
-        var canvas = new GameObject("StaticCanvas") { tag = "StaticCanvas" };
+        // Create a canvas GameObject for the MasterCanvas tag
+        var canvas = new GameObject("GameCanvas") { tag = "GameCanvas" };
         canvas.AddComponent<Canvas>();
 
         // Add the BasicToken component and set its parameters
