@@ -1,18 +1,17 @@
-using System;
-using System.Collections;
 using System.Collections.Generic;
+using NUnit.Framework;
 using UnityEngine;
+using UnityEngine.UI;
 
 
 public class GameController : MonoBehaviour
-{    
+{
     private FrenchDictionary frenchDictionary_;
     private Score score_;
     private Board board_;
     private Store store_;
     private TokenPool tokenPool_;
     private int numberOfPlayer_ = 1;
-    private bool once_ = true;
 
     // Compute list of valid words on the board.
     private List<Word> ComputeListOfValidWords(List<Word> listOfWords)
@@ -46,13 +45,13 @@ public class GameController : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        frenchDictionary_ = FindAnyObjectByType<Singletons>().GetFrenchDictionary();
+        // frenchDictionary_ = FindAnyObjectByType<Singletons>().GetFrenchDictionary();
+        frenchDictionary_ = new();
         score_ = FindAnyObjectByType<Score>();
         score_.SetScore(0);
         board_ = FindAnyObjectByType<Board>();
         store_ = FindAnyObjectByType<Store>();
         tokenPool_ = FindAnyObjectByType<TokenPool>();
-        tokenPool_.DeactivateAllInactiveTokens();
         // Retrieve the number of players
         numberOfPlayer_ = PlayerPrefs.GetInt("NumberOfPlayers", 1); // Default to 1 if not set
     }
@@ -69,10 +68,5 @@ public class GameController : MonoBehaviour
         List<Word> listOfValidWords = ComputeListOfValidWords(listOfWords);
         int score = ComputeScore(listOfValidWords);
         score_.SetScore(score);
-        if (once_)
-        {
-            once_ = false;
-            store_.UpdateStorage();
-        }
     }
 }

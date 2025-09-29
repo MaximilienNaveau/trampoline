@@ -9,10 +9,4 @@ public class LoadIntrodutionScene : MonoBehaviour
     {
         GameSceneController.LoadIntroductionScene();
     }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
 }

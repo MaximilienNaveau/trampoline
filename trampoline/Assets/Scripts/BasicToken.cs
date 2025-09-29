@@ -8,14 +8,14 @@ using UnityEngine.Assertions;
 public class BasicToken : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDragHandler, IPointerClickHandler
 {
     // Drag and drop variables
-    private Vector2 startDragPosition_ = new(0f, 0f);
+    private Transform parentOnDragStart_ = null;
     private Tile tile_under_ = null;
+    private Tile startTileUnder_ = null;
     private bool draggedOnTile_ = false;
     private Vector2 dragOffset_;
     private RectTransform rectTransform_;
     private CanvasGroup canvasGroup_;
     private Canvas canvas_;
-    private RectTransform canvasRectTransform_;
     private bool inBoard_ = false;
 
     // Double click management.
@@ -68,9 +68,8 @@ public class BasicToken : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDr
         flipDeltaScale_ = 0.1f;
         rectTransform_ = GetComponent<RectTransform>();
         canvasGroup_ = GetComponent<CanvasGroup>();
-        canvas_ = GameObject.FindGameObjectWithTag(
-            "GameCanvas").GetComponent<Canvas>();
-        canvasRectTransform_ = canvas_.GetComponent<RectTransform>();
+        canvas_ = FindAnyObjectByType<Canvas>();
+        Assert.AreNotEqual(canvas_, null);
         draggedOnTile_ = false;
 
         guiImages_ = GetComponentsInChildren<Image>();
@@ -92,22 +91,14 @@ public class BasicToken : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDr
     {
         canvasGroup_.alpha = 0.6f;
         canvasGroup_.blocksRaycasts = false;
-        startDragPosition_ = rectTransform_.anchoredPosition;
         draggedOnTile_ = false;
-
+        parentOnDragStart_ = transform.parent;
+        startTileUnder_ = tile_under_;
         if (tile_under_ != null)
         {
             tile_under_.LetTheTokenGo();
         }
-
-        // // Calculer l'offset entre la position de la souris et la position actuelle du token
-        // RectTransformUtility.ScreenPointToLocalPointInRectangle(
-        //     canvasRectTransform_,
-        //     eventData.position,
-        //     canvas_.worldCamera,
-        //     out Vector2 localMousePosition
-        // );
-        // dragOffset_ = rectTransform_.anchoredPosition - localMousePosition;
+        transform.SetParent(canvas_.transform);
     }
 
     public bool BeingDragged()
@@ -126,14 +117,11 @@ public class BasicToken : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDr
     {
         canvasGroup_.alpha = 1.0f;
         canvasGroup_.blocksRaycasts = true;
-        if(!draggedOnTile_)
+        if (!draggedOnTile_)
         {
-            rectTransform_.anchoredPosition = startDragPosition_;
-            if(tile_under_)
-            {
-                tile_under_.AttachToken(this);
-            }
+            startTileUnder_.AttachToken(this);
         }
+        parentOnDragStart_ = null;
     }
 
     public void SetDraggedOnTile(bool draggedOnTile)
@@ -224,11 +212,19 @@ public class BasicToken : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDr
 
     public void SwapTileUnder(Tile tile)
     {
-        if(tile_under_ != null)
+        if (tile_under_ != null)
         {
             tile_under_.LetTheTokenGo();
         }
         tile_under_ = tile;
+        if (tile_under_ == null)
+        {
+            return;
+        }
+        // Change the parent of the BasicToken to the new Tile
+        transform.SetParent(tile_under_.transform);
+        draggedOnTile_ = true;
+        UpdateSize(((RectTransform)(tile_under_.transform)).sizeDelta);
     }
 
     public void UpdateSize(Vector2 sizeDelta)
@@ -240,7 +236,8 @@ public class BasicToken : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDr
     {
         if(!BeingDragged() && IsOnTile())
         {
-            transform.position = tile_under_.transform.position;
+            // transform.position = tile_under_.transform.position;
+            transform.position = Vector3.zero;
         }
     }
 }

@@ -8,29 +8,39 @@ public class Tile : MonoBehaviour, IDropHandler
 {
     // Attributes
     private BasicToken attachedToken_;
-    private Store store_;
+    private Transform game_canvas_;
 
     public void Start()
     {
-        store_ = FindAnyObjectByType<Store>();
-        Assert.AreNotEqual(store_, null);
+        game_canvas_ = FindAnyObjectByType<Canvas>().transform;
+        Assert.AreNotEqual(game_canvas_, null);
+    }
+
+    public void Update()
+    {
     }
 
     public void OnDrop(PointerEventData eventData)
     {
         if (eventData.pointerDrag != null)
-        {   
-            // Relocate the Token.
-            eventData.pointerDrag.transform.position = transform.position;
-            // Store a reference.
-            AttachToken(eventData.pointerDrag.GetComponent<BasicToken>());
+        {
+            // Get the token being dragged.
+            BasicToken token = eventData.pointerDrag.GetComponent<BasicToken>();
+            // Maybe it was not a token being dragged.
+            if (token == null)
+            {
+                return;
+            }
+            AttachToken(token);
         }
-        // Update the state of the storage as a token has been moved.
-        store_.UpdateStorage();
     }
 
     public void LetTheTokenGo()
     {
+        if (attachedToken_ != null)
+        {
+            attachedToken_.transform.SetParent(game_canvas_);
+        }
         attachedToken_ = null;
     }
 

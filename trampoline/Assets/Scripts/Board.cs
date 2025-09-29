@@ -1,18 +1,15 @@
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Assertions;
-using System;
 using System.Collections.Generic;
-using UnityEditor.Experimental.GraphView;
-using System.Linq;
-
 
 public class Board : MonoBehaviour
 {
     [SerializeField] private GameObject tilePrefab_;
     private GridLayoutGroup grid_;
-    private int rows_ = 13;
-    private int cols_ = 9;
+    public readonly int rows_ = 13;
+    public readonly int cols_ = 9;
+    private readonly float fractionOfScreenHeight_ = 0.75f;
 
     private void Awake()
     {
@@ -154,20 +151,12 @@ public class Board : MonoBehaviour
             {
                 AddNewRow();
             }
+            hasResized = true;
         }
         else
         {
-            // Check if the last row is empty
-            if (!IsRowEmpty(existingRows - 1))
-            {
-                // Add an extra row if the last row is not empty
-                if (existingRows <= rows_) // Ensure we don't exceed the maximum number of rows
-                {
-                    AddNewRow();
-                    hasResized = true;
-                }
-            }
-            else
+            // Check if the last row is fully empty
+            if (IsRowEmpty(existingRows - 1))
             {
                 // Remove extra rows if there are more than 2 rows with tiles and 1 empty row
                 while (existingRows > 2 && IsRowEmpty(existingRows - 2))
@@ -177,9 +166,46 @@ public class Board : MonoBehaviour
                     existingRows--; // Update the row count after removing a row
                 }
             }
+            else
+            {
+                // Check if the last row is partially filled
+                bool isLastRowPartiallyFilled = false;
+                for (int col = 0; col < cols_; col++)
+                {
+                    int tileIndex = (existingRows - 1) * cols_ + col;
+                    if (tileIndex < grid_.transform.childCount &&
+                        grid_.transform.GetChild(tileIndex).GetComponent<Tile>().HasToken())
+                    {
+                        isLastRowPartiallyFilled = true;
+                        break;
+                    }
+                }
+
+                // Add an extra row if the last row is partially filled or fully filled
+                if (isLastRowPartiallyFilled && existingRows < rows_) // Ensure we don't exceed the maximum number of rows
+                {
+                    AddNewRow();
+                    hasResized = true;
+                }
+            }
         }
+
         Assert.IsTrue(grid_.transform.childCount % cols_ == 0);
         return hasResized;
+    }
+
+    private void SetMaxHeight()
+    {
+        // Get or add the LayoutElement component
+        LayoutElement layoutElement = GetComponent<LayoutElement>();
+        if (layoutElement == null)
+        {
+            layoutElement = gameObject.AddComponent<LayoutElement>();
+        }
+
+        // Set the preferred height to 1/4 of the screen height
+        layoutElement.preferredHeight = Screen.height * fractionOfScreenHeight_;
+        layoutElement.flexibleHeight = 0; // Ensure it doesn't stretch beyond the preferred height
     }
 
     // Update is called once per frame
