@@ -173,13 +173,13 @@ jobs:
           echo "latest_tag=$latest_tag" >> $GITHUB_ENV
 
       - name: Download Android APK artifact
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           name: trampoline_Android_${{ env.latest_tag }}
           path: build/Android
 
       - name: Download WebGL artifact
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           name: trampoline_WebGL_${{ env.latest_tag }}
           path: build/WebGL
@@ -190,7 +190,7 @@ jobs:
           zip -r trampoline_WebGL_${{ env.latest_tag }}.zip ./*
 
       - name: Download Linux Standalone artifact
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           name: trampoline_StandaloneLinux64_${{ env.latest_tag }}
           path: build/StandaloneLinux64
@@ -261,7 +261,7 @@ jobs:
           echo "latest_tag=$latest_tag" >> $GITHUB_ENV
 
 
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@v6
         with:
           name: trampoline_WebGL_${{ env.latest_tag }}
           path: build/WebGL
@@ -299,7 +299,7 @@ jobs:
   #       working-directory: ${{ github.workspace }}
 
   #     - name: Download Android APK artifact
-  #       uses: actions/download-artifact@v5
+  #       uses: actions/download-artifact@v6
   #       with:
   #         name: trampoline_Android_${{ env.latest_tag }}
   #         path: build/Android
