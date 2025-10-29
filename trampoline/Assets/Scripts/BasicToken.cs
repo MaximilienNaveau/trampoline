@@ -236,8 +236,12 @@ public class BasicToken : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDr
     {
         if(!BeingDragged() && IsOnTile())
         {
-            // transform.position = tile_under_.transform.position;
-            transform.position = Vector3.zero;
+            transform.position = tile_under_.transform.position;
+            // transform.position = Vector3.zero;
+        }
+        if(IsOnTile())
+        {
+            UpdateSize(((RectTransform)(tile_under_.transform)).sizeDelta);
         }
     }
 }

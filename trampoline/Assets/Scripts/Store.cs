@@ -35,34 +35,36 @@ public class Store : MonoBehaviour, IDropHandler, IScrollHandler
 
     private void ConfigureScrollRect()
     {
-        // Crée un objet parent pour le ScrollRect
+        // Utilise le parent existant comme conteneur horizontal
+        RectTransform containerRect = GetComponent<RectTransform>();
+
+        // Crée le ScrollRect (grille)
         GameObject scrollRectObject = new GameObject("ScrollRect", typeof(RectTransform), typeof(ScrollRect));
         scrollRectObject.transform.SetParent(transform, false);
         scrollRect_ = scrollRectObject.GetComponent<ScrollRect>();
-
-        // Configure le RectTransform du ScrollRect
         RectTransform scrollRectTransform = scrollRectObject.GetComponent<RectTransform>();
-        scrollRectTransform.anchorMin = Vector2.zero;
-        scrollRectTransform.anchorMax = Vector2.one;
+        scrollRectTransform.anchorMin = new Vector2(0, 0);
+        scrollRectTransform.anchorMax = new Vector2(1, 1);
         scrollRectTransform.offsetMin = Vector2.zero;
         scrollRectTransform.offsetMax = Vector2.zero;
 
-        // Crée un objet pour le contenu
+        // Crée le contenu de la grille
         GameObject contentObject = new GameObject("Content", typeof(RectTransform), typeof(GridLayoutGroup));
         contentObject.transform.SetParent(scrollRectObject.transform, false);
         content_ = contentObject.GetComponent<RectTransform>();
-
-        // Configure le RectTransform du contenu
         content_.anchorMin = new Vector2(0, 1);
         content_.anchorMax = new Vector2(1, 1);
         content_.pivot = new Vector2(0.5f, 1);
 
         // Configure le GridLayoutGroup
         grid_ = contentObject.GetComponent<GridLayoutGroup>();
-        grid_.cellSize = new Vector2(65, 65); // Taille des cellules
-        grid_.spacing = new Vector2(10, 10); // Espacement entre les cellules
+        float spacing = 8f;
+        float gridWidth = containerRect.rect.width - 14f; // 14px pour la scrollbar
+        float cellSize = (gridWidth - 10 * spacing) / 9;
+        grid_.cellSize = new Vector2(cellSize, cellSize);
+        grid_.spacing = new Vector2(spacing, spacing);
         grid_.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
-        grid_.constraintCount = 9; // Nombre de colonnes
+        grid_.constraintCount = 9;
         grid_.childAlignment = TextAnchor.MiddleCenter;
 
         // Configure le ScrollRect
@@ -71,39 +73,46 @@ public class Store : MonoBehaviour, IDropHandler, IScrollHandler
         scrollRect_.horizontal = false;
         scrollRect_.vertical = true;
 
-        // Crée une barre de défilement verticale
-        GameObject scrollbarObject = new GameObject("VerticalScrollbar",
-            typeof(RectTransform), typeof(Scrollbar));
-        scrollbarObject.transform.SetParent(scrollRectObject.transform, false);
+        // Crée la scrollbar verticale
+        GameObject scrollbarObject = new GameObject("VerticalScrollbar", typeof(RectTransform), typeof(Scrollbar));
+        scrollbarObject.transform.SetParent(transform, false);
         verticalScrollbar_ = scrollbarObject.GetComponent<Scrollbar>();
-
-        // Configure le RectTransform de la barre de défilement
-        RectTransform scrollbarTransform =
-            scrollbarObject.GetComponent<RectTransform>();
+        RectTransform scrollbarTransform = scrollbarObject.GetComponent<RectTransform>();
         scrollbarTransform.anchorMin = new Vector2(1, 0);
         scrollbarTransform.anchorMax = new Vector2(1, 1);
-        scrollbarTransform.offsetMin = new Vector2(-20, 0);
+        scrollbarTransform.pivot = new Vector2(1, 0.5f);
+        scrollbarTransform.sizeDelta = new Vector2(14f, 0); // Largeur fine
+        scrollbarTransform.offsetMin = new Vector2(-14f, 0);
         scrollbarTransform.offsetMax = new Vector2(0, 0);
 
         // Configure la barre de défilement
         verticalScrollbar_.direction = Scrollbar.Direction.BottomToTop;
         scrollRect_.verticalScrollbar = verticalScrollbar_;
 
-        // Ajoutez un objet pour le fond de la barre de défilement
+        // Ajoute le background de la scrollbar
         GameObject backgroundObject = new GameObject("Background", typeof(RectTransform), typeof(Image));
         backgroundObject.transform.SetParent(scrollbarObject.transform, false);
+        RectTransform backgroundRect = backgroundObject.GetComponent<RectTransform>();
+        backgroundRect.anchorMin = new Vector2(0, 0);
+        backgroundRect.anchorMax = new Vector2(1, 1);
+        backgroundRect.offsetMin = Vector2.zero;
+        backgroundRect.offsetMax = Vector2.zero;
         Image backgroundImage = backgroundObject.GetComponent<Image>();
-        backgroundImage.color = Color.gray;
+        backgroundImage.color = new Color(0.8f, 0.8f, 0.8f, 1f); // gris clair
 
-        // Ajoutez un objet pour le handle de la barre de défilement
+        // Ajoute le handle de la scrollbar
         GameObject handleObject = new GameObject("Handle", typeof(RectTransform), typeof(Image));
         handleObject.transform.SetParent(scrollbarObject.transform, false);
+        RectTransform handleRect = handleObject.GetComponent<RectTransform>();
+        handleRect.anchorMin = new Vector2(0, 0);
+        handleRect.anchorMax = new Vector2(1, 1);
+        handleRect.offsetMin = new Vector2(2, 2);
+        handleRect.offsetMax = new Vector2(-2, -2);
         Image handleImage = handleObject.GetComponent<Image>();
         handleImage.color = Color.white;
 
-        // Configure le handle de la barre de défilement
         verticalScrollbar_.targetGraphic = handleImage;
-        verticalScrollbar_.handleRect = handleObject.GetComponent<RectTransform>();
+        verticalScrollbar_.handleRect = handleRect;
 
         // Positionne le contenu au maximum en haut
         content_.anchoredPosition = new Vector2(content_.anchoredPosition.x, 0);
@@ -113,7 +122,7 @@ public class Store : MonoBehaviour, IDropHandler, IScrollHandler
     {
         int numberOfTokens = NumberOfStoredToken();
         int numberOfTiles = grid_.transform.childCount;
-        int idealNumberOfTiles = ((numberOfTokens + 8) / 9) * 9;
+        int idealNumberOfTiles = 13 * 9; // ((numberOfTokens + 8) / 9) * 9;
         int numberOfTilesToCreate = idealNumberOfTiles - numberOfTiles;
 
         if (numberOfTilesToCreate == 0)
