@@ -21,7 +21,7 @@ public class Tile : MonoBehaviour, IDropHandler
         if(HasToken())
         {
             attachedToken_.transform.position = transform.position;
-            attachedToken_.Resize(((RectTransform)transform).sizeDelta);
+            attachedToken_.UpdateSize(((RectTransform)transform).sizeDelta);
         }
     }
 
