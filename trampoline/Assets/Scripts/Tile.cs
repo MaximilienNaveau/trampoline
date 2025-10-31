@@ -18,6 +18,11 @@ public class Tile : MonoBehaviour, IDropHandler
 
     public void Update()
     {
+        if(HasToken())
+        {
+            attachedToken_.transform.position = transform.position;
+            attachedToken_.Resize(((RectTransform)transform).sizeDelta);
+        }
     }
 
     public void OnDrop(PointerEventData eventData)
@@ -37,18 +42,24 @@ public class Tile : MonoBehaviour, IDropHandler
 
     public void LetTheTokenGo()
     {
-        if (attachedToken_ != null)
-        {
-            attachedToken_.transform.SetParent(game_canvas_);
-        }
         attachedToken_ = null;
+    }
+
+    public bool IsBoardTile()
+    {
+        return transform.parent.gameObject.name == "Board";
+    }
+
+    public bool IsStoreTile()
+    {
+        return ! IsBoardTile();
     }
 
     public void AttachToken(BasicToken token)
     {
         attachedToken_ = token;
         attachedToken_.SetDraggedOnTile(true);
-        attachedToken_.SetInBoard(transform.parent.gameObject.name == "Board");
+        attachedToken_.SetInBoard(IsBoardTile());
         attachedToken_.UpdateSize(((RectTransform)transform).sizeDelta);
         attachedToken_.SwapTileUnder(this);
     }

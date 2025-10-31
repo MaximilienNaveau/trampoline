@@ -94,10 +94,7 @@ public class BasicToken : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDr
         draggedOnTile_ = false;
         parentOnDragStart_ = transform.parent;
         startTileUnder_ = tile_under_;
-        if (tile_under_ != null)
-        {
-            tile_under_.LetTheTokenGo();
-        }
+        SwapTileUnder(null);
         transform.SetParent(canvas_.transform);
     }
 
@@ -172,6 +169,16 @@ public class BasicToken : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDr
         return letters_[sideShown_];
     }
 
+    public string GetMainLetter()
+    {
+        return letters_[0];
+    }
+
+    public string GetSecondaryLetter()
+    {
+        return letters_[1];
+    }
+
     public bool IsOnGreenFace()
     {
         return colors_[sideShown_] == MyGameColors.GetGreen();
@@ -212,7 +219,7 @@ public class BasicToken : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDr
 
     public void SwapTileUnder(Tile tile)
     {
-        if (tile_under_ != null)
+        if (tile_under_ != null && tile_under_ != tile)
         {
             tile_under_.LetTheTokenGo();
         }
@@ -234,14 +241,6 @@ public class BasicToken : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDr
 
     public void Update()
     {
-        if(!BeingDragged() && IsOnTile())
-        {
-            transform.position = tile_under_.transform.position;
-            // transform.position = Vector3.zero;
-        }
-        if(IsOnTile())
-        {
-            UpdateSize(((RectTransform)(tile_under_.transform)).sizeDelta);
-        }
+        // Nothing to do for now.
     }
 }

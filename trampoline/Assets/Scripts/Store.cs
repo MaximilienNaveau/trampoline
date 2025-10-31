@@ -9,28 +9,32 @@ public class Store : MonoBehaviour, IDropHandler, IScrollHandler
     private TokenPool tokenPool_;
     [SerializeField] private GameObject tilePrefab_;
     private GridLayoutGroup grid_;
-    private List<Tile> tiles_;
-
     private ScrollRect scrollRect_;
     private RectTransform content_;
     private Scrollbar verticalScrollbar_;
 
     void Start()
     {
-        // Configure le ScrollRect et ses composants
         ConfigureScrollRect();
-
         tokenPool_ = FindAnyObjectByType<TokenPool>();
         Assert.IsTrue(tokenPool_ != null);
+
+        ResizeGrid();
         UpdateStorage();
-        tiles_ = GetTiles();
-        Assert.AreNotEqual(tiles_.Count, 0);
+
+        List<Tile> tiles = GetTiles();
+        for (int i = 0; i < tiles.Count; i++)
+        {
+            Assert.IsTrue(tiles[i].HasToken());
+        }
+        Assert.AreNotEqual(tiles.Count, 0);
         Assert.AreEqual(GetTokenInStorage().Count, 117);
     }
 
     void Update()
     {
         UpdateStorage();
+        // Debug.Log("NumberOfStoredToken = " + NumberOfStoredToken().ToString());
     }
 
     private void ConfigureScrollRect()
@@ -171,40 +175,26 @@ public class Store : MonoBehaviour, IDropHandler, IScrollHandler
 
     public void UpdateStorage()
     {
-        ResizeGrid();
-        tiles_ = GetTiles();
+        List<Tile> tiles = GetTiles();
         List<BasicToken> tokens = GetTokenInStorage();
-        Assert.IsTrue(tiles_.Count >= tokens.Count);
+        Assert.IsTrue(tiles.Count >= tokens.Count);
 
+        // Sort the tokens alphabetically by their main letter
+        tokens.Sort((a, b) => a.GetMainLetter().CompareTo(b.GetMainLetter()));
+
+        // Store the token not in the board in the storage.
         for (int i = 0; i < tokens.Count; i++)
         {
-            if (tokens[i].BeingDragged())
-            {
-                continue;
-            }
-            tokens[i].gameObject.SetActive(false);
-        }
-
-        int tile_id = 0;
-        for (int i = 0; i < tokens.Count; i++)
-        {
-            if (tile_id < tiles_.Count)
+            if (i < tiles.Count)
             {
                 if (tokens[i].BeingDragged())
                 {
                     continue;
                 }
-                tokens[i].SwapTileUnder(tiles_[tile_id]);
                 tokens[i].gameObject.SetActive(true);
-                tile_id++;
-            }
-            if (tile_id >= tiles_.Count)
-            {
-                break;
+                tiles[i].AttachToken(tokens[i]);
             }
         }
-
-        UpdateContentSize();
     }
 
     public int NumberOfStoredToken()
@@ -224,23 +214,21 @@ public class Store : MonoBehaviour, IDropHandler, IScrollHandler
 
     public void OnDrop(PointerEventData eventData)
     {
-        List<GameObject> hoveredList = eventData.hovered;
-        foreach (var GO in hoveredList)
-        {
-            Debug.Log("Hovering over: " + GO.name);
-            if (GO.name == "Store")
-            {
-                BasicToken token = eventData.pointerDrag.GetComponent<BasicToken>();
-                if (token == null)
-                {
-                    return;
-                }
-                token.SetDraggedOnTile(false);
-                token.SwapTileUnder(null);
-                token.SetInBoard(false);
-                token.gameObject.SetActive(false);
-            }
-        }
+        // List<GameObject> hoveredList = eventData.hovered;
+        // foreach (var GO in hoveredList)
+        // {
+        //     if (GO.name == "Store")
+        //     {
+        //         BasicToken token = eventData.pointerDrag.GetComponent<BasicToken>();
+        //         if (token == null)
+        //         {
+        //             return;
+        //         }
+        //         token.SwapTileUnder(null);
+        //         token.SetInBoard(false);
+        //         token.gameObject.SetActive(false);
+        //     }
+        // }
     }
 
     public void OnScroll(PointerEventData eventData)
