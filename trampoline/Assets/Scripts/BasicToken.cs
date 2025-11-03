@@ -160,8 +160,8 @@ public class BasicToken : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDr
     {
         guiImages_[0].color = colors_[sideShown_];
         guiImages_[1].color = colors_[GetOppositeSide()];
-        guiLetters_[0].text = letters_[sideShown_];
-        guiLetters_[1].text = letters_[GetOppositeSide()];
+        guiLetters_[1].text = letters_[sideShown_];
+        guiLetters_[0].text = letters_[GetOppositeSide()];
     }
 
     public string GetLetter()
@@ -169,9 +169,14 @@ public class BasicToken : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDr
         return letters_[sideShown_];
     }
 
+    public string GetLetters()
+    {
+        return letters_[0] + letters_[1];
+    }
+
     public string GetMainLetter()
     {
-        return letters_[0];
+        return letters_[1];
     }
 
     public string GetSecondaryLetter()

@@ -180,7 +180,7 @@ public class Store : MonoBehaviour, IDropHandler, IScrollHandler
         Assert.IsTrue(tiles.Count >= tokens.Count);
 
         // Sort the tokens alphabetically by their main letter
-        tokens.Sort((a, b) => a.GetMainLetter().CompareTo(b.GetMainLetter()));
+        tokens.Sort((a, b) => a.GetLetters().CompareTo(b.GetLetters()));
 
         // Store the token not in the board in the storage.
         for (int i = 0; i < tokens.Count; i++)
