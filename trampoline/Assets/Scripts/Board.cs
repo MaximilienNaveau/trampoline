@@ -3,55 +3,21 @@ using UnityEngine.UI;
 using UnityEngine.Assertions;
 using System.Collections.Generic;
 
-public class Board : MonoBehaviour
+public class Board : MonoBehaviour, ScrollableGrid
 {
-    [SerializeField] private GameObject tilePrefab_;
-    private GridLayoutGroup grid_;
     public readonly int rows_ = 13;
-    public readonly int cols_ = 9;
     private readonly float fractionOfScreenHeight_ = 0.75f;
 
     private void Awake()
     {
+        // Configure the scrollable grid layout.
+        ConfigureLayout()
         // Get the GridLayoutGroup component.
-        grid_ = GetComponent<GridLayoutGroup>();
-        // Delete all existing tiles.
-        for (int i = grid_.transform.childCount - 1; i >= 0; i--)
-        {
-            Destroy(grid_.transform.GetChild(i).gameObject);
-        }
+        clearGrid();
         // Create 2 new lines of tiles.
-        ResizeGrid();
-        Assert.IsTrue(grid_.transform.childCount == cols_ * 2);
-        // Resize the grid to fit the number of columns and rows.
-        grid_.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
-        grid_.constraintCount = cols_;
-    }
+        ResizeGrid(2);
+        Assert.AreEqual(GetNbRows(), 2);
 
-
-    public List<Tile> GetTiles()
-    {
-        List<Tile> tiles = new();
-        for (int i = 0; i < grid_.transform.childCount; i++)
-        {
-            tiles.Add(grid_.transform.GetChild(i).GetComponent<Tile>());
-        }
-        Assert.AreEqual(tiles.Count, grid_.transform.childCount);
-        return tiles;
-    }
-
-    public List<BasicToken> GetTokensOnTheBoard()
-    {
-        List<BasicToken> tokens = new();
-        List<Tile> tiles = GetTiles();
-        for (int i = 0; i < tiles.Count; i++)
-        {
-            if (tiles[i].HasToken())
-            {
-                tokens.Add(tiles[i].GetToken());
-            }
-        }
-        return tokens;
     }
 
     public List<Word> GetListOfWords()
@@ -65,10 +31,8 @@ public class Board : MonoBehaviour
         {
             return listOfWords;
         }
-        // compute the available numer of rows there is in the grid.
-        int existingRows = tiles.Count / cols_;
         // Update the list of valid words.
-        for (int row = 0; row < existingRows; row++)
+        for (int row = 0; row < GetNbRows(); row++)
         {
             Word word = new()
             {
@@ -139,73 +103,37 @@ public class Board : MonoBehaviour
     public bool ResizeGrid()
     {
         bool hasResized = false;
-
-        // Calculate the number of existing rows
-        int existingRows = grid_.transform.childCount / cols_;
-
         // Ensure there are at least 2 rows with tiles and 1 empty row
-        if (existingRows < 2)
+        if (GetNbRows() < 2)
         {
-            int rowsToAdd = 2 - existingRows;
-            for (int i = 0; i < rowsToAdd; i++)
-            {
-                AddNewRow();
-            }
+            ResizeGrid(2);
             hasResized = true;
         }
-        else
+        else if (GetNbRows() == 2)
         {
-            // Check if the last row is fully empty
-            if (IsRowEmpty(existingRows - 1))
+            if (!IsRowEmpty(existingRows - 1))
             {
-                // Remove extra rows if there are more than 2 rows with tiles and 1 empty row
-                while (existingRows > 2 && IsRowEmpty(existingRows - 2))
-                {
-                    RemoveLastRow();
-                    hasResized = true;
-                    existingRows--; // Update the row count after removing a row
-                }
+                AddNewRow();
+                hasResized = true;
             }
-            else
+        } else
+        {
+            // Remove all extra empty rows.
+            while (GetNbRows() >= 2 && IsRowEmpty(existingRows - 1))
             {
-                // Check if the last row is partially filled
-                bool isLastRowPartiallyFilled = false;
-                for (int col = 0; col < cols_; col++)
-                {
-                    int tileIndex = (existingRows - 1) * cols_ + col;
-                    if (tileIndex < grid_.transform.childCount &&
-                        grid_.transform.GetChild(tileIndex).GetComponent<Tile>().HasToken())
-                    {
-                        isLastRowPartiallyFilled = true;
-                        break;
-                    }
-                }
-
-                // Add an extra row if the last row is partially filled or fully filled
-                if (isLastRowPartiallyFilled && existingRows < rows_) // Ensure we don't exceed the maximum number of rows
-                {
-                    AddNewRow();
-                    hasResized = true;
-                }
+                RemoveLastRow();
+                hasResized = true;
+            }
+            // Ensure there is always at least one empty row at the bottom.
+            if(GetNbRows() < rows_)
+            {
+                AddNewRow();
+                return hasResized;
             }
         }
 
         Assert.IsTrue(grid_.transform.childCount % cols_ == 0);
         return hasResized;
-    }
-
-    private void SetMaxHeight()
-    {
-        // Get or add the LayoutElement component
-        LayoutElement layoutElement = GetComponent<LayoutElement>();
-        if (layoutElement == null)
-        {
-            layoutElement = gameObject.AddComponent<LayoutElement>();
-        }
-
-        // Set the preferred height to 1/4 of the screen height
-        layoutElement.preferredHeight = Screen.height * fractionOfScreenHeight_;
-        layoutElement.flexibleHeight = 0; // Ensure it doesn't stretch beyond the preferred height
     }
 
     // Update is called once per frame
