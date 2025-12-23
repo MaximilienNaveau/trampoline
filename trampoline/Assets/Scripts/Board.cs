@@ -123,8 +123,8 @@ public class Board : ScrollableGrid
         }
 
         Assert.IsTrue(grid_.transform.childCount % cols_ == 0);
-        Assert.IsGreaterOrEqual(GetNbRows(), 2);
-        Assert.IsLessOrEqual(GetNbRows(), rows_);
+        Assert.IsTrue(GetNbRows() >= 2);
+        Assert.IsTrue(GetNbRows() <= rows_);
         return hasResized;
     }
 
