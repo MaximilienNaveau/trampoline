@@ -62,7 +62,7 @@ public class LayoutManager : MonoBehaviour
         // Resize the board to fit the width of the screen with a padding.
         board_.sizeDelta = new Vector2(
             Screen.width - spacing_ * 2,
-            board_.sizeDelta.y);
+            Mathf.Min(board_.sizeDelta.y, Screen.height * 0.6f));
 
         // Place the board below the header with a padding.
         float headerHeight = header_.rect.height;

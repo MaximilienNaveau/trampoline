@@ -4,14 +4,14 @@ using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using UnityEngine.Assertions;
 
-public class Store : MonoBehaviour, ScrollableGrid
+public class Store : ScrollableGrid, IDropHandler
 {
     private TokenPool tokenPool_;
 
     void Start()
     {
         // Configure the scrollable grid layout.
-        ConfigureLayout()
+        ConfigureLayout();
 
         // Get the token pool.
         tokenPool_ = FindAnyObjectByType<TokenPool>();

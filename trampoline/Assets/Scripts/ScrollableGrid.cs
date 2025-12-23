@@ -4,17 +4,17 @@ using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using UnityEngine.Assertions;
 
-public class ScrollableGrid : IDropHandler, IScrollHandler
+public class ScrollableGrid : MonoBehaviour, IScrollHandler
 {
-    [SerializeField] private GameObject tilePrefab_;
-    private GridLayoutGroup grid_;
+    [SerializeField] protected GameObject tilePrefab_;
+    protected GridLayoutGroup grid_;
     private ScrollRect scrollRect_;
     private RectTransform content_;
     private Scrollbar verticalScrollbar_;
-    const private int rows_ = 13;
-    const private int cols_ = 9;
+    protected const int rows_ = 13;
+    protected const int cols_ = 9;
 
-    private void ConfigureLayout()
+    protected void ConfigureLayout()
     {
         // Use the parent as horizontal container.
         RectTransform containerRect = GetComponent<RectTransform>();
@@ -99,46 +99,43 @@ public class ScrollableGrid : IDropHandler, IScrollHandler
         content_.anchoredPosition = new Vector2(content_.anchoredPosition.x, 0);
     }
 
-    private GetNbRows()
+    protected int GetNbRows()
     {
-        Assert.AreEqual(grid_.transform.childCount % cols_, 0)
+        Assert.AreEqual(grid_.transform.childCount % cols_, 0);
         return  grid_.transform.childCount / cols_ ;
     }
 
-    private void ResizeGrid(int nbRows)
+    protected void ResizeGrid(int nbRows)
     {
-        
         int currentNbRows = GetNbRows();
-        int numberOfTilesToCreate = idealNumberOfTiles - numberOfTiles;
+        int nbRowsToCreate = nbRows - GetNbRows();
 
-        if (numberOfTilesToCreate == 0)
+        if (nbRowsToCreate == 0)
         {
             return;
         }
-        else if (numberOfTilesToCreate < 0)
+        else if (nbRowsToCreate < 0)
         {
-            for (int i = numberOfTiles - 1; i >= idealNumberOfTiles; i--)
+            for (int i = 0; i < -nbRowsToCreate; i++)
             {
-                Destroy(grid_.transform.GetChild(i).gameObject);
+                RemoveLastRow();
             }
         }
         else
         {
-            for (int i = 0; i < numberOfTilesToCreate; i++)
+            for (int i = 0; i < nbRowsToCreate; i++)
             {
-                Vector3 position = new();
-                Quaternion orientation = new();
-                Instantiate(tilePrefab_, position, orientation, grid_.transform);
+                AddNewRow();
             }
         }
-        Assert.AreEqual(idealNumberOfTiles % cols_, 0);
-        Assert.AreEqual(grid_.transform.childCount, idealNumberOfTiles);
+        Assert.AreEqual(GetNbRows(), nbRows);
+        Assert.AreEqual(grid_.transform.childCount, nbRows * cols_);
 
         // Ajustez la taille du contenu après avoir redimensionné la grille
         UpdateContentSize();
     }
 
-    private void RemoveLastRow()
+    protected void RemoveLastRow()
     {
         if(GetNbRows() > 0){
             Debug.Log("No more tiles to remove, doing nothing.");
@@ -154,7 +151,7 @@ public class ScrollableGrid : IDropHandler, IScrollHandler
         Assert.AreEqual(grid_.transform.childCount % cols_, 0);
     }
 
-    private void AddNewRow()
+    protected void AddNewRow()
     {
         for (int col = 0; col < cols_; col++)
         {
@@ -183,7 +180,7 @@ public class ScrollableGrid : IDropHandler, IScrollHandler
         content_.sizeDelta = new Vector2(parentWidth, Mathf.Max(contentHeight + padding * 2, parentHeight));
     }
 
-    public List<Tile> GetTiles()
+    protected List<Tile> GetTiles()
     {
         List<Tile> tiles = new();
         for (int i = 0; i < grid_.transform.childCount; i++)
@@ -194,7 +191,7 @@ public class ScrollableGrid : IDropHandler, IScrollHandler
         return tiles;
     }
 
-    public List<BasicToken> GetTokens()
+    protected List<BasicToken> GetTokens()
     {
         List<BasicToken> tokens = new();
         List<Tile> tiles = GetTiles();
@@ -216,7 +213,7 @@ public class ScrollableGrid : IDropHandler, IScrollHandler
         }
     }
 
-    private void ClearGrid()
+    protected void ClearGrid()
     {
         // Delete all existing tiles.
         for (int i = grid_.transform.childCount - 1; i >= 0; i--)
