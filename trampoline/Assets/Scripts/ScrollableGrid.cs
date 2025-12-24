@@ -13,40 +13,70 @@ public class ScrollableGrid : MonoBehaviour, IScrollHandler
     private Scrollbar verticalScrollbar_;
     protected const int rows_ = 13;
     protected const int cols_ = 9;
+    
+    private Vector2 lastScreenSize_;
+    private RectTransform containerRect_;
+    private float spacing_ = 8f;
 
     protected void ConfigureLayout()
     {
         // Use the parent as horizontal container.
-        RectTransform containerRect = GetComponent<RectTransform>();
+        containerRect_ = GetComponent<RectTransform>();
+        
+        // Get the Canvas scale factor.
+        Canvas canvas = GetComponentInParent<Canvas>();
+        float scaleFactor = (canvas != null) ? canvas.scaleFactor : 1f;
 
-        // Create the ScrollRect (grid).
-        GameObject scrollRectObject = new GameObject("ScrollRect", typeof(RectTransform), typeof(ScrollRect));
+        // Create the ScrollRect (viewport).
+        GameObject scrollRectObject = new GameObject("ScrollRect", typeof(RectTransform), typeof(ScrollRect), typeof(RectMask2D));
         scrollRectObject.transform.SetParent(transform, false);
         scrollRect_ = scrollRectObject.GetComponent<ScrollRect>();
         RectTransform scrollRectTransform = scrollRectObject.GetComponent<RectTransform>();
+        
+        // Configure GridLayoutGroup parameters.
+        spacing_ = 8f;
+        float scrollbarWidth = 8f;
+        float scrollbarPadding = 4f;
+        float scrollbarTotalWidth = scrollbarWidth + scrollbarPadding * 2;
+        float maskInset = 10f; // Inset to prevent overflow on rounded corners
+        float scrollbarVerticalInset = 15f; // Additional inset for scrollbar to account for rounded corners
+        
+        // Position ScrollRect to leave space for scrollbar on the right and add insets
         scrollRectTransform.anchorMin = new Vector2(0, 0);
         scrollRectTransform.anchorMax = new Vector2(1, 1);
-        scrollRectTransform.offsetMin = Vector2.zero;
-        scrollRectTransform.offsetMax = Vector2.zero;
+        scrollRectTransform.offsetMin = new Vector2(maskInset, maskInset);
+        scrollRectTransform.offsetMax = new Vector2(-scrollbarTotalWidth - maskInset, -maskInset);
 
-        // Create the grid content.
-        GameObject contentObject = new GameObject("Content", typeof(RectTransform), typeof(GridLayoutGroup));
+        // Create the content container with GridLayoutGroup.
+        GameObject contentObject = new GameObject("Content", typeof(RectTransform));
         contentObject.transform.SetParent(scrollRectObject.transform, false);
         content_ = contentObject.GetComponent<RectTransform>();
         content_.anchorMin = new Vector2(0, 1);
         content_.anchorMax = new Vector2(1, 1);
         content_.pivot = new Vector2(0.5f, 1);
 
-        // Configure le GridLayoutGroup.
-        grid_ = contentObject.GetComponent<GridLayoutGroup>();
-        float spacing = 8f;
-        float gridWidth = containerRect.rect.width - 14f; // 14px pour la scrollbar
-        float cellSize = (gridWidth - 10 * spacing) / cols_;
+        // Add the GridLayoutGroup to the content.
+        grid_ = contentObject.AddComponent<GridLayoutGroup>();
+
+        // Calculate available width for grid (ScrollRect width, which already excludes scrollbar)
+        float availableWidth = scrollRectTransform.rect.width;
+        
+        // Calculate cell size: available width minus padding (left + right) and spacing between cells
+        // For 9 columns: left_padding + 8*gaps + right_padding = spacing + 8*spacing + spacing = 10*spacing
+        float cellSize = (availableWidth - (cols_ + 1) * spacing_) / cols_;
+        
         grid_.cellSize = new Vector2(cellSize, cellSize);
-        grid_.spacing = new Vector2(spacing, spacing);
+        grid_.spacing = new Vector2(spacing_, spacing_);
+        grid_.padding = new RectOffset(
+            (int)spacing_,  // left
+            (int)spacing_,  // right
+            (int)spacing_,  // top
+            (int)spacing_); // bottom
+        grid_.startCorner = GridLayoutGroup.Corner.UpperLeft;
+        grid_.startAxis = GridLayoutGroup.Axis.Horizontal;
         grid_.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
         grid_.constraintCount = cols_;
-        grid_.childAlignment = TextAnchor.MiddleCenter;
+        grid_.childAlignment = TextAnchor.UpperCenter;
 
         // Configure the ScrollRect.
         scrollRect_.content = content_;
@@ -62,9 +92,10 @@ public class ScrollableGrid : MonoBehaviour, IScrollHandler
         scrollbarTransform.anchorMin = new Vector2(1, 0);
         scrollbarTransform.anchorMax = new Vector2(1, 1);
         scrollbarTransform.pivot = new Vector2(1, 0.5f);
-        scrollbarTransform.sizeDelta = new Vector2(14f, 0); // Largeur fine
-        scrollbarTransform.offsetMin = new Vector2(-14f, 0);
-        scrollbarTransform.offsetMax = new Vector2(0, 0);
+        // Scrollbar dimensions (using previously defined variables)
+        scrollbarTransform.sizeDelta = new Vector2(scrollbarWidth, 0);
+        scrollbarTransform.offsetMin = new Vector2(-scrollbarWidth - scrollbarPadding * 2, scrollbarPadding + scrollbarVerticalInset);
+        scrollbarTransform.offsetMax = new Vector2(-scrollbarPadding, -scrollbarPadding - scrollbarVerticalInset);
 
         // Configure the scrollbar direction.
         verticalScrollbar_.direction = Scrollbar.Direction.BottomToTop;
@@ -97,9 +128,48 @@ public class ScrollableGrid : MonoBehaviour, IScrollHandler
 
         // Place the content as high as possible.
         content_.anchoredPosition = new Vector2(content_.anchoredPosition.x, 0);
+        
+        // Initialize screen size tracking
+        lastScreenSize_ = new Vector2(Screen.width, Screen.height);
+    }
+    
+    protected void CheckAndUpdateLayout()
+    {
+        // Check if screen size has changed
+        Vector2 currentScreenSize = new Vector2(Screen.width, Screen.height);
+        if (currentScreenSize != lastScreenSize_)
+        {
+            lastScreenSize_ = currentScreenSize;
+            RecalculateLayout();
+        }
+    }
+    
+    public void RecalculateGridLayout()
+    {
+        // Public method that can be called by LayoutManager
+        RecalculateLayout();
+    }
+    
+    private void RecalculateLayout()
+    {
+        if (scrollRect_ == null || grid_ == null) return;
+        
+        // Recalculate cell size based on new viewport width
+        RectTransform scrollRectTransform = scrollRect_.GetComponent<RectTransform>();
+        float availableWidth = scrollRectTransform.rect.width;
+        float cellSize = (availableWidth - (cols_ + 1) * spacing_) / cols_;
+        
+        grid_.cellSize = new Vector2(cellSize, cellSize);
+        
+        // Force layout rebuild
+        LayoutRebuilder.ForceRebuildLayoutImmediate(content_);
+        LayoutRebuilder.ForceRebuildLayoutImmediate(scrollRectTransform);
+        
+        // Update content size
+        UpdateContentSize();
     }
 
-    protected int GetNbRows()
+    public int GetNbRows()
     {
         Assert.AreEqual(grid_.transform.childCount % cols_, 0);
         return  grid_.transform.childCount / cols_ ;
@@ -137,7 +207,7 @@ public class ScrollableGrid : MonoBehaviour, IScrollHandler
 
     protected void RemoveLastRow()
     {
-        if(GetNbRows() > 0){
+        if(GetNbRows() <= 0){
             Debug.Log("No more tiles to remove, doing nothing.");
             return;
         }
@@ -146,7 +216,9 @@ public class ScrollableGrid : MonoBehaviour, IScrollHandler
         for (int col = 0; col < cols_; col++)
         {
             int i = nbOfTiles - 1 - col;
-            Destroy(grid_.transform.GetChild(i).gameObject);
+            // Use DestroyImmediate to ensure tiles are removed immediately
+            // This prevents infinite loops in resize logic that checks row counts
+            DestroyImmediate(grid_.transform.GetChild(i).gameObject);
         }
         Assert.AreEqual(grid_.transform.childCount % cols_, 0);
     }
@@ -162,7 +234,7 @@ public class ScrollableGrid : MonoBehaviour, IScrollHandler
         Assert.AreEqual(grid_.transform.childCount % cols_, 0);
     }
 
-    private void UpdateContentSize()
+    protected void UpdateContentSize()
     {
         // Get parent size (ScrollRect)
         float parentWidth = ((RectTransform)scrollRect_.transform).rect.width;

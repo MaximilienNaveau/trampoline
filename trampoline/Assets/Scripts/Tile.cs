@@ -3,6 +3,7 @@
 using UnityEngine;
 using UnityEngine.Assertions;
 using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
 public class Tile : MonoBehaviour, IDropHandler
 {
@@ -14,6 +15,16 @@ public class Tile : MonoBehaviour, IDropHandler
     {
         game_canvas_ = FindAnyObjectByType<Canvas>().transform;
         Assert.AreNotEqual(game_canvas_, null);
+        
+        // Ensure the tile has an Image component that can receive raycasts
+        // This is required for IDropHandler to work properly
+        Image image = GetComponent<Image>();
+        if (image == null)
+        {
+            image = gameObject.AddComponent<Image>();
+            // image.color = new Color(1, 1, 1, 0.01f); // Nearly transparent
+        }
+        image.raycastTarget = true;
     }
 
     public void Update()
@@ -36,7 +47,8 @@ public class Tile : MonoBehaviour, IDropHandler
             {
                 return;
             }
-            AttachToken(token);
+            // Only allow drop if the tile is free (checkIfFree=true)
+            AttachToken(token, checkIfFree: true);
         }
     }
 
@@ -47,7 +59,8 @@ public class Tile : MonoBehaviour, IDropHandler
 
     public bool IsBoardTile()
     {
-        return transform.parent.gameObject.name == "Board";
+        // Check if this tile belongs to a Board component (not Store)
+        return GetComponentInParent<Board>() != null;
     }
 
     public bool IsStoreTile()
@@ -55,8 +68,14 @@ public class Tile : MonoBehaviour, IDropHandler
         return ! IsBoardTile();
     }
 
-    public void AttachToken(BasicToken token)
+    public void AttachToken(BasicToken token, bool checkIfFree = false)
     {
+        // If we need to check if tile is free (during drag/drop), return if occupied
+        if (checkIfFree && HasToken())
+        {
+            return;
+        }
+        
         attachedToken_ = token;
         attachedToken_.SetDraggedOnTile(true);
         attachedToken_.SetInBoard(IsBoardTile());

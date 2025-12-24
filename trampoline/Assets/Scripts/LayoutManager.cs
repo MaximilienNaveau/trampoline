@@ -10,20 +10,30 @@ public class LayoutManager : MonoBehaviour
     private RectTransform board_;
     private RectTransform store_;
     private RectTransform header_;
-    private GridLayoutGroup board_grid_layout_group_;
     
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
+    void Awake()
     {
         header_ = (RectTransform)transform.Find("Header");
         board_ = (RectTransform)transform.Find("Board");
         store_ = (RectTransform)transform.Find("Store");
-        board_grid_layout_group_ = board_.GetComponent<GridLayoutGroup>();
         
         Assert.AreNotEqual(header_, null);
         Assert.AreNotEqual(board_, null);
         Assert.AreNotEqual(store_, null);
-        Assert.AreNotEqual(board_grid_layout_group_, null);
+        
+        // Initialize screen size tracking
+        lastScreenSize_ = new Vector2(Screen.width, Screen.height);
+        
+        // Perform initial layout
+        PerformLayout();
+    }
+    
+    void PerformLayout()
+    {
+        PlaceHeader();
+        PlaceBoard();
+        PlaceStore();
+        CheckSize();
     }
 
     void PlaceHeader()
@@ -59,21 +69,30 @@ public class LayoutManager : MonoBehaviour
         // Set the pivot to [0, 1] (top-left corner)
         board_.pivot = new Vector2(0, 1);
 
+        // Get the content's preferred height from the Board component
+        Board boardScript = board_.GetComponent<Board>();
+        float maxBoardHeight = Screen.height * 0.45f; // Maximum 45% of screen
+        float minBoardHeight = Screen.height * 0.15f; // Minimum 15% of screen
+        
+        // Calculate actual content height needed
+        GridLayoutGroup gridLayoutGroup = board_.GetComponentInChildren<GridLayoutGroup>();
+        float contentHeight = minBoardHeight;
+        if (gridLayoutGroup != null && boardScript != null)
+        {
+            int rows = boardScript.GetNbRows();
+            contentHeight = rows * (gridLayoutGroup.cellSize.y + gridLayoutGroup.spacing.y) + gridLayoutGroup.padding.top + gridLayoutGroup.padding.bottom + spacing_ * 2;
+            contentHeight = Mathf.Clamp(contentHeight, minBoardHeight, maxBoardHeight);
+        }
+
         // Resize the board to fit the width of the screen with a padding.
         board_.sizeDelta = new Vector2(
             Screen.width - spacing_ * 2,
-            Mathf.Min(board_.sizeDelta.y, Screen.height * 0.6f));
+            contentHeight);
 
         // Place the board below the header with a padding.
         float headerHeight = header_.rect.height;
         board_.anchoredPosition =
             new Vector2(spacing_, -spacing_ * 2 - headerHeight);
-
-        // Set the cell size to be a square that fits 9 columns with spacing.
-        float boardCellSize = (board_.rect.width - spacing_ * 10) / 9;
-        GridLayoutGroup gridLayoutGroup = board_.GetComponent<GridLayoutGroup>();
-        gridLayoutGroup.cellSize = new Vector2(boardCellSize, boardCellSize);
-        gridLayoutGroup.spacing = new Vector2(spacing_, spacing_);
     }
 
     void PlaceStore()
@@ -105,12 +124,51 @@ public class LayoutManager : MonoBehaviour
             Screen.height);
     }
 
-    // Update is called once per frame
+    private int lastBoardRowCount_ = -1;
+    private Vector2 lastScreenSize_;
+    
     void Update()
     {
-        PlaceHeader();
-        PlaceBoard();
-        PlaceStore();
-        CheckSize();
+        // Check for screen size changes
+        Vector2 currentScreenSize = new Vector2(Screen.width, Screen.height);
+        bool screenSizeChanged = currentScreenSize != lastScreenSize_;
+        
+        if (screenSizeChanged)
+        {
+            lastScreenSize_ = currentScreenSize;
+            // Perform the overall layout first to resize containers
+            PerformLayout();
+            // Then notify grids to recalculate their internal layouts based on new sizes
+            NotifyGridsToRecalculate();
+            return;
+        }
+        
+        // Only update layout when board content changes
+        Board boardScript = board_.GetComponent<Board>();
+        if (boardScript != null)
+        {
+            int currentRows = boardScript.GetNbRows();
+            if (currentRows != lastBoardRowCount_)
+            {
+                lastBoardRowCount_ = currentRows;
+                PerformLayout();
+            }
+        }
+    }
+    
+    void NotifyGridsToRecalculate()
+    {
+        // Tell all ScrollableGrid components to recalculate their internal layouts
+        Board boardScript = board_.GetComponent<Board>();
+        Store storeScript = store_.GetComponent<Store>();
+        
+        if (boardScript != null)
+        {
+            boardScript.RecalculateGridLayout();
+        }
+        if (storeScript != null)
+        {
+            storeScript.RecalculateGridLayout();
+        }
     }
 }

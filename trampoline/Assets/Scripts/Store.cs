@@ -18,6 +18,7 @@ public class Store : ScrollableGrid, IDropHandler
 
         // Resize the grid to fit the tokens.
         ResizeGrid(rows_);
+        UpdateContentSize();
 
         // Fit the tokens in the storage.
         UpdateStorage();
@@ -35,31 +36,48 @@ public class Store : ScrollableGrid, IDropHandler
 
     void Update()
     {
+        // Check for screen size changes and update layout if needed
+        CheckAndUpdateLayout();
+        
+        // Continuously update storage to reflect current token state
         UpdateStorage();
-        // Debug.Log("NumberOfStoredToken = " + NumberOfStoredToken().ToString());
     }
 
     public void UpdateStorage()
     {
         List<Tile> tiles = GetTiles();
         List<BasicToken> tokens = GetTokenInStorage();
-        Assert.IsTrue(tiles.Count >= tokens.Count);
-
-        // Sort the tokens alphabetically by their main letter
-        tokens.Sort((a, b) => a.GetLetters().CompareTo(b.GetLetters()));
-
-        // Store the token not currently on the board.
-        for (int i = 0; i < tokens.Count; i++)
+        
+        // Filter out tokens that should not be in storage
+        List<BasicToken> validTokens = new();
+        foreach (BasicToken token in tokens)
         {
-            if (i < tiles.Count)
+            // Only include tokens that are NOT on board and NOT being dragged
+            if (!token.GetInBoard() && !token.BeingDragged())
             {
-                if (tokens[i].BeingDragged())
-                {
-                    continue;
-                }
-                tokens[i].gameObject.SetActive(true);
-                tiles[i].AttachToken(tokens[i]);
+                validTokens.Add(token);
             }
+        }
+        
+        Assert.IsTrue(tiles.Count >= validTokens.Count);
+
+        // Sort the valid tokens alphabetically
+        validTokens.Sort((a, b) => a.GetLetters().CompareTo(b.GetLetters()));
+        
+        // Clear all tiles first
+        for (int i = 0; i < tiles.Count; i++)
+        {
+            if (tiles[i].HasToken())
+            {
+                tiles[i].LetTheTokenGo();
+            }
+        }
+
+        // Assign valid tokens from the beginning of the grid
+        for (int i = 0; i < validTokens.Count; i++)
+        {
+            validTokens[i].gameObject.SetActive(true);
+            tiles[i].AttachToken(validTokens[i]);
         }
     }
 
@@ -70,21 +88,17 @@ public class Store : ScrollableGrid, IDropHandler
 
     public void OnDrop(PointerEventData eventData)
     {
-        // List<GameObject> hoveredList = eventData.hovered;
-        // foreach (var GO in hoveredList)
-        // {
-        //     if (GO.name == "Store")
-        //     {
-        //         BasicToken token = eventData.pointerDrag.GetComponent<BasicToken>();
-        //         if (token == null)
-        //         {
-        //             return;
-        //         }
-        //         token.SwapTileUnder(null);
-        //         token.SetInBoard(false);
-        //         token.gameObject.SetActive(false);
-        //     }
-        // }
+        if (eventData.pointerDrag != null)
+        {
+            BasicToken token = eventData.pointerDrag.GetComponent<BasicToken>();
+            if (token == null)
+            {
+                return;
+            }
+            // Mark token as not on board - UpdateStorage will handle the rest
+            token.SetInBoard(false);
+            token.SetDraggedOnTile(true);
+        }
     }
 
     public List<BasicToken> GetTokenInStorage()

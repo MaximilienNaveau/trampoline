@@ -5,6 +5,8 @@ using System.Collections.Generic;
 
 public class Board : ScrollableGrid
 {
+    private TokenPool tokenPool_;
+    
     private void Start()
     {
         // Configure the scrollable grid layout.
@@ -14,7 +16,10 @@ public class Board : ScrollableGrid
         // Create 2 new lines of tiles.
         ResizeGrid(2);
         Assert.AreEqual(GetNbRows(), 2);
-
+        
+        // Get the token pool reference
+        tokenPool_ = FindAnyObjectByType<TokenPool>();
+        Assert.IsTrue(tokenPool_ != null);
     }
 
     public List<Word> GetListOfWords()
@@ -93,7 +98,7 @@ public class Board : ScrollableGrid
     public bool ResizeBoardGrid()
     {
         bool hasResized = false;
-        // Ensure there are at least 2 rows with tiles and 1 empty row
+        // Ensure there are at least 2 rows
         if (GetNbRows() < 2)
         {
             ResizeGrid(2);
@@ -101,21 +106,24 @@ public class Board : ScrollableGrid
         }
         else if (GetNbRows() == 2)
         {
+            // With 2 rows, add a third if the last row is not empty
             if (!IsRowEmpty(GetNbRows() - 1))
             {
                 AddNewRow();
                 hasResized = true;
             }
-        } else
+        } 
+        else // GetNbRows() > 2
         {
-            // Remove all extra empty rows.
-            while (GetNbRows() > 2 && IsRowEmpty(GetNbRows() - 1))
+            // Remove excess empty rows, keeping at least one empty row and minimum 2 rows total
+            // Keep removing the last row while: we have more than 2 rows AND the last TWO rows are both empty
+            while (GetNbRows() > 2 && IsRowEmpty(GetNbRows() - 1) && IsRowEmpty(GetNbRows() - 2))
             {
                 RemoveLastRow();
                 hasResized = true;
             }
-            // Ensure there is always at least one empty row at the bottom.
-            if(GetNbRows() < rows_)
+            // Add a row if the last row is not empty (and we haven't reached max)
+            if(GetNbRows() < rows_ && !IsRowEmpty(GetNbRows() - 1))
             {
                 AddNewRow();
                 hasResized = true;
@@ -131,6 +139,37 @@ public class Board : ScrollableGrid
     // Update is called once per frame
     public void Update()
     {
-        ResizeBoardGrid();
+        // Check for screen size changes and update layout if needed
+        CheckAndUpdateLayout();
+        
+        // Don't resize the board while any token is being dragged
+        // This prevents crashes when tiles are destroyed during drag operations
+        if (IsAnyTokenBeingDragged())
+        {
+            return;
+        }
+        
+        if(ResizeBoardGrid())
+        {
+            UpdateContentSize();
+        }
+    }
+    
+    private bool IsAnyTokenBeingDragged()
+    {
+        if (tokenPool_ == null)
+        {
+            return false;
+        }
+        
+        List<BasicToken> tokens = tokenPool_.GetPool();
+        foreach (BasicToken token in tokens)
+        {
+            if (token != null && token.BeingDragged())
+            {
+                return true;
+            }
+        }
+        return false;
     }
 }
