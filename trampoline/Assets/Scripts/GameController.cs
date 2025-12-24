@@ -21,6 +21,7 @@ public class GameController : MonoBehaviour
         for (int i = 0; i < listOfWords.Count; i++)
         {
             Word word = listOfWords[i];
+            Debug.Log($"Found word: {word.word_} with {word.nb_green_letters_} green letters.");
             if (frenchDictionary_.isWordValid(word.word_))
             {
                 listOfValidWords.Add(word);
@@ -47,6 +48,7 @@ public class GameController : MonoBehaviour
     {
         // frenchDictionary_ = FindAnyObjectByType<Singletons>().GetFrenchDictionary();
         frenchDictionary_ = new();
+        frenchDictionary_.initialize(async: false); // Initialize the dictionary synchronously
         score_ = FindAnyObjectByType<Score>();
         score_.SetScore(0);
         board_ = FindAnyObjectByType<Board>();
@@ -68,5 +70,11 @@ public class GameController : MonoBehaviour
         List<Word> listOfValidWords = ComputeListOfValidWords(listOfWords);
         int score = ComputeScore(listOfValidWords);
         score_.SetScore(score);
+        
+        // Debug output
+        if (listOfWords.Count > 0)
+        {
+            Debug.Log($"Words found: {listOfWords.Count}, Valid words: {listOfValidWords.Count}, Score: {score}");
+        }
     }
 }

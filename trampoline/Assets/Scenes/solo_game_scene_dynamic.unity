@@ -161,8 +161,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 966.77, y: -243.56}
-  m_SizeDelta: {x: 1906.5, y: 0}
+  m_AnchoredPosition: {x: 231.24, y: -73.880005}
+  m_SizeDelta: {x: 446.46, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &111950565
 MonoBehaviour:
@@ -260,10 +260,8 @@ GameObject:
   - component: {fileID: 439414743}
   - component: {fileID: 439414749}
   - component: {fileID: 439414746}
-  - component: {fileID: 439414750}
   - component: {fileID: 439414754}
   - component: {fileID: 439414753}
-  - component: {fileID: 439414755}
   m_Layer: 5
   m_Name: Board
   m_TagString: Untagged
@@ -287,8 +285,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 964, y: -469.35}
-  m_SizeDelta: {x: 1912, y: 0}
+  m_AnchoredPosition: {x: 231.23, y: -206.03}
+  m_SizeDelta: {x: 446.47, y: 131.26}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &439414746
 MonoBehaviour:
@@ -318,30 +316,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   tilePrefab_: {fileID: 960154668344192920, guid: 0472a1b77bf36e0358fd644e4dbebbbe, type: 3}
---- !u!114 &439414750
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 439414742}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8a8695521f0d02e499659fee002a26c2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_Padding:
-    m_Left: 10
-    m_Right: 10
-    m_Top: 10
-    m_Bottom: 10
-  m_ChildAlignment: 4
-  m_StartCorner: 0
-  m_StartAxis: 0
-  m_CellSize: {x: 65, y: 65}
-  m_Spacing: {x: 8, y: 8}
-  m_Constraint: 1
-  m_ConstraintCount: 9
 --- !u!114 &439414753
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -380,20 +354,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 439414742}
   m_CullTransparentMesh: 1
---- !u!114 &439414755
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 439414742}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3245ec927659c4140ac4f8d17403cc18, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_HorizontalFit: 0
-  m_VerticalFit: 1
 --- !u!1 &520444677
 GameObject:
   m_ObjectHideFlags: 0
@@ -491,6 +451,7 @@ MonoBehaviour:
   m_VerticalAlignment: 512
   m_textAlignment: 65535
   m_characterSpacing: 0
+  m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
   m_lineSpacingMax: 0
@@ -572,8 +533,6 @@ GameObject:
   - component: {fileID: 563207905}
   - component: {fileID: 563207903}
   - component: {fileID: 563207902}
-  - component: {fileID: 563207913}
-  - component: {fileID: 563207914}
   m_Layer: 5
   m_Name: Store
   m_TagString: Untagged
@@ -597,8 +556,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 964, y: -925.18}
-  m_SizeDelta: {x: 1862.85, y: 208.79}
+  m_AnchoredPosition: {x: 231.23, y: -683.61}
+  m_SizeDelta: {x: 446.47, y: 203.58}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &563207902
 MonoBehaviour:
@@ -711,50 +670,6 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
---- !u!114 &563207913
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 563207900}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1aa08ab6e0800fa44ae55d278d1423e3, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_Content: {fileID: 0}
-  m_Horizontal: 0
-  m_Vertical: 1
-  m_MovementType: 0
-  m_Elasticity: 0.1
-  m_Inertia: 1
-  m_DecelerationRate: 0.135
-  m_ScrollSensitivity: 40
-  m_Viewport: {fileID: 563207901}
-  m_HorizontalScrollbar: {fileID: 0}
-  m_VerticalScrollbar: {fileID: 0}
-  m_HorizontalScrollbarVisibility: 0
-  m_VerticalScrollbarVisibility: 0
-  m_HorizontalScrollbarSpacing: 0
-  m_VerticalScrollbarSpacing: 0
-  m_OnValueChanged:
-    m_PersistentCalls:
-      m_Calls: []
---- !u!114 &563207914
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 563207900}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3312d7739989d2b4e91e6319e9a96d76, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_Padding: {x: 0, y: 0, z: 0, w: 0}
-  m_Softness: {x: 0, y: 0}
 --- !u!1 &724206302
 GameObject:
   m_ObjectHideFlags: 0
@@ -927,7 +842,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 501.43332, y: 104.78}
+  m_SizeDelta: {x: 221.7, y: 62.559}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1119621217
 MonoBehaviour:
@@ -949,9 +864,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 'Trampoline
-
-    Un jeu pour faire rebondir les mots'
+  m_text: Trampoline
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -981,14 +894,15 @@ MonoBehaviour:
   m_fontSize: 20
   m_fontSizeBase: 20
   m_fontWeight: 400
-  m_enableAutoSizing: 0
+  m_enableAutoSizing: 1
   m_fontSizeMin: 20
-  m_fontSizeMax: 50
+  m_fontSizeMax: 800
   m_fontStyle: 1
   m_HorizontalAlignment: 2
   m_VerticalAlignment: 512
   m_textAlignment: 65535
   m_characterSpacing: 0
+  m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
   m_lineSpacingMax: 0
@@ -1016,7 +930,7 @@ MonoBehaviour:
   m_VertexBufferAutoSizeReduction: 0
   m_useMaxVisibleDescender: 1
   m_pageToDisplay: 1
-  m_margin: {x: 0.00018307887, y: 104.33176, z: 0, w: 104.991295}
+  m_margin: {x: 0.00018307887, y: 62.74695, z: 4.013519, w: 64.45846}
   m_isUsingLegacyAnimationComponent: 0
   m_isVolumetricText: 0
   m_hasFontAssetChanged: 0
@@ -1226,7 +1140,6 @@ GameObject:
   - component: {fileID: 1954361552}
   - component: {fileID: 1954361548}
   - component: {fileID: 1954361551}
-  - component: {fileID: 1954361550}
   - component: {fileID: 1954361549}
   - component: {fileID: 1954361554}
   m_Layer: 5
@@ -1265,29 +1178,6 @@ MonoBehaviour:
   m_BlockingMask:
     serializedVersion: 2
     m_Bits: 4294967295
---- !u!114 &1954361550
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1954361547}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0cd44c1031e13a943bb63640046fad76, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_UiScaleMode: 1
-  m_ReferencePixelsPerUnit: 100
-  m_ScaleFactor: 1
-  m_ReferenceResolution: {x: 720, y: 1280}
-  m_ScreenMatchMode: 1
-  m_MatchWidthOrHeight: 0.5
-  m_PhysicalUnit: 3
-  m_FallbackScreenDPI: 96
-  m_DefaultSpriteDPI: 96
-  m_DynamicPixelsPerUnit: 1
-  m_PresetInfoIsWorld: 0
 --- !u!223 &1954361551
 Canvas:
   m_ObjectHideFlags: 0
@@ -1357,6 +1247,10 @@ PrefabInstance:
     - target: {fileID: 7828570642525303418, guid: 2dc9b029d549bf2dbb70a37842db07d7, type: 3}
       propertyPath: m_fontSize
       value: 53.7
+      objectReference: {fileID: 0}
+    - target: {fileID: 7828570642525303418, guid: 2dc9b029d549bf2dbb70a37842db07d7, type: 3}
+      propertyPath: m_fontSizeMax
+      value: 800
       objectReference: {fileID: 0}
     - target: {fileID: 7828570642525303418, guid: 2dc9b029d549bf2dbb70a37842db07d7, type: 3}
       propertyPath: 'm_ActiveFontFeatures.Array.data[0]'
