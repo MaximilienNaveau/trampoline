@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using NUnit.Framework;
 using UnityEngine;
 
 public class TokenPool : MonoBehaviour
@@ -11,7 +10,11 @@ public class TokenPool : MonoBehaviour
         GameObject newTokenObject = Instantiate(
             tilePrefab_, position, orientation,
             GameObject.FindGameObjectWithTag("GameCanvas").transform);
-        Assert.AreNotEqual(newTokenObject, null);
+        if (newTokenObject == null)
+        {
+            Debug.LogError("Failed to instantiate token object.");
+            throw new System.Exception("Failed to instantiate token object.");
+        }
         return newTokenObject;
     }
 
@@ -68,7 +71,11 @@ public class TokenPool : MonoBehaviour
         // for (int i = 0; i < 1; i++)
         {
             GameObject newBasicTokenObject = SpawnNewTokenObject();
-            Assert.AreNotEqual(newBasicTokenObject, null);
+            if (newBasicTokenObject == null)
+            {
+                Debug.LogError("Failed to instantiate basic token object.");
+                throw new System.Exception("Failed to instantiate basic token object.");
+            }
             BasicToken newBasicToken = GetBasicTokenFromObject(newBasicTokenObject);
             tokenObjPool_.Add(newBasicTokenObject);
             tokenPool_.Add(newBasicToken);

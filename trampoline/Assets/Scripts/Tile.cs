@@ -14,7 +14,11 @@ public class Tile : MonoBehaviour, IDropHandler
     public void Start()
     {
         game_canvas_ = FindAnyObjectByType<Canvas>().transform;
-        Assert.AreNotEqual(game_canvas_, null);
+        if (game_canvas_ == null)
+        {
+            Debug.LogError("Tile: Canvas component is missing.");
+            throw new System.Exception("Tile: Canvas component is missing.");
+        }
         
         // Ensure the tile has an Image component that can receive raycasts
         // This is required for IDropHandler to work properly

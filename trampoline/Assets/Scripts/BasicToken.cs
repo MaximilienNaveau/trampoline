@@ -69,7 +69,11 @@ public class BasicToken : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDr
         rectTransform_ = GetComponent<RectTransform>();
         canvasGroup_ = GetComponent<CanvasGroup>();
         canvas_ = FindAnyObjectByType<Canvas>();
-        Assert.AreNotEqual(canvas_, null);
+        if (canvas_ == null)
+        {
+            Debug.LogError("BasicToken: Canvas component is missing.");
+            throw new System.Exception("BasicToken: Canvas component is missing.");
+        }
         draggedOnTile_ = false;
 
         guiImages_ = GetComponentsInChildren<Image>();
@@ -81,8 +85,16 @@ public class BasicToken : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDr
             layoutElement.ignoreLayout = true;
         }
 
-        Assert.AreEqual(guiLetters_.Length, 2);
-        Assert.AreEqual(guiImages_.Length, 2);
+        if (guiLetters_.Length != 2)
+        {
+            Debug.LogError($"BasicToken: Expected 2 guiLetters but found {guiLetters_.Length}.");
+            throw new System.Exception($"BasicToken: Expected 2 guiLetters but found {guiLetters_.Length}.");
+        }
+        if (guiImages_.Length != 2)
+        {
+            Debug.LogError($"BasicToken: Expected 2 guiImages but found {guiImages_.Length}.");
+            throw new System.Exception($"BasicToken: Expected 2 guiImages but found {guiImages_.Length}.");
+        }
 
         UpdateContent();
     }

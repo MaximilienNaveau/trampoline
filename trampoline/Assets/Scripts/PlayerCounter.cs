@@ -15,7 +15,11 @@ public class PlayerCounter: MonoBehaviour
     private void Start()
     {
         playerCountUI_ = GetComponentInChildren<TMPro.TextMeshProUGUI>();
-        Assert.IsTrue(playerCountUI_ != null, "PlayerCounter: TextMeshPro component is missing.");
+        if (playerCountUI_ == null)
+        {
+            Debug.LogError("PlayerCounter: TextMeshPro component is missing.");
+            throw new System.Exception("PlayerCounter: TextMeshPro component is missing.");
+        }
     }
 
     public void Update()

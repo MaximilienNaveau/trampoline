@@ -15,11 +15,19 @@ public class Board : ScrollableGrid
         ClearGrid();
         // Create 2 new lines of tiles.
         ResizeGrid(2);
-        Assert.AreEqual(GetNbRows(), 2);
+        if (GetNbRows() != 2)
+        {
+            Debug.LogError($"Board: Expected 2 rows but found {GetNbRows()}.");
+            throw new System.Exception($"Board: Expected 2 rows but found {GetNbRows()}.");
+        }
         
         // Get the token pool reference
         tokenPool_ = FindAnyObjectByType<TokenPool>();
-        Assert.IsTrue(tokenPool_ != null);
+        if (tokenPool_ == null)
+        {
+            Debug.LogError("Board: TokenPool is null.");
+            throw new System.Exception("Board: TokenPool is null.");
+        }
     }
 
     public List<Word> GetListOfWords()
@@ -130,9 +138,21 @@ public class Board : ScrollableGrid
             }
         }
 
-        Assert.IsTrue(grid_.transform.childCount % cols_ == 0);
-        Assert.IsTrue(GetNbRows() >= 2);
-        Assert.IsTrue(GetNbRows() <= rows_);
+        if (grid_.transform.childCount % cols_ != 0)
+        {
+            Debug.LogError($"Board: Child count ({grid_.transform.childCount}) is not divisible by columns ({cols_}).");
+            throw new System.Exception($"Board: Child count ({grid_.transform.childCount}) is not divisible by columns ({cols_}).");
+        }
+        if (GetNbRows() < 2)
+        {
+            Debug.LogError($"Board: Number of rows ({GetNbRows()}) is less than minimum (2).");
+            throw new System.Exception($"Board: Number of rows ({GetNbRows()}) is less than minimum (2).");
+        }
+        if (GetNbRows() > rows_)
+        {
+            Debug.LogError($"Board: Number of rows ({GetNbRows()}) exceeds maximum ({rows_}).");
+            throw new System.Exception($"Board: Number of rows ({GetNbRows()}) exceeds maximum ({rows_}).");
+        }
         return hasResized;
     }
 

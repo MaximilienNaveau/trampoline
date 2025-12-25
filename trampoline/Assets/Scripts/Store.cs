@@ -27,11 +27,27 @@ public class Store : ScrollableGrid, IDropHandler
         List<Tile> tiles = GetTiles();
         for (int i = 0; i < tiles.Count; i++)
         {
-            Assert.IsTrue(tiles[i].HasToken());
+            if (!tiles[i].HasToken())
+            {
+                Debug.LogError($"Store: Tile at index {i} does not have a token.");
+                throw new System.Exception($"Store: Tile at index {i} does not have a token.");
+            }
         }
-        Assert.IsTrue(tokenPool_ != null);
-        Assert.AreNotEqual(tiles.Count, 0);
-        Assert.AreEqual(NumberOfStoredToken(), 117);
+        if (tokenPool_ == null)
+        {
+            Debug.LogError("Store: TokenPool is null.");
+            throw new System.Exception("Store: TokenPool is null.");
+        }
+        if (tiles.Count == 0)
+        {
+            Debug.LogError("Store: No tiles found.");
+            throw new System.Exception("Store: No tiles found.");
+        }
+        if (NumberOfStoredToken() != 117)
+        {
+            Debug.LogError($"Store: Expected 117 stored tokens but found {NumberOfStoredToken()}.");
+            throw new System.Exception($"Store: Expected 117 stored tokens but found {NumberOfStoredToken()}.");
+        }
     }
 
     void Update()
@@ -59,7 +75,11 @@ public class Store : ScrollableGrid, IDropHandler
             }
         }
         
-        Assert.IsTrue(tiles.Count >= validTokens.Count);
+        if (tiles.Count < validTokens.Count)
+        {
+            Debug.LogError($"Store: Not enough tiles ({tiles.Count}) for valid tokens ({validTokens.Count}).");
+            throw new System.Exception($"Store: Not enough tiles ({tiles.Count}) for valid tokens ({validTokens.Count}).");
+        }
 
         // Sort the valid tokens alphabetically
         validTokens.Sort((a, b) => a.GetLetters().CompareTo(b.GetLetters()));

@@ -95,9 +95,21 @@ public class FrenchDictionary
 
     private void FrenchDictionaryLoaded_Completed(AsyncOperation handle)
     {
-        Assert.IsTrue(handle.isDone);
-        Assert.IsTrue(resourceRequest_.isDone);
-        Assert.IsNotNull(resourceRequest_.asset);
+        if (!handle.isDone)
+        {
+            Debug.LogError("FrenchDictionary: Async operation not completed.");
+            throw new System.Exception("FrenchDictionary: Async operation not completed.");
+        }
+        if (!resourceRequest_.isDone)
+        {
+            Debug.LogError("FrenchDictionary: Resource request not completed.");
+            throw new System.Exception("FrenchDictionary: Resource request not completed.");
+        }
+        if (resourceRequest_.asset == null)
+        {
+            Debug.LogError("FrenchDictionary: Resource asset is null.");
+            throw new System.Exception("FrenchDictionary: Resource asset is null.");
+        }
         frenchDictionary_ =
             LoadDictionary(
                 (resourceRequest_.asset as TextAsset).text);

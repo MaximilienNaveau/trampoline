@@ -19,7 +19,11 @@ public class GameSceneController: MonoBehaviour
     {
         // Retrieve the number of players
         playerCounter_ = FindAnyObjectByType<PlayerCounter>();
-        Assert.IsTrue(playerCounter_ != null, "GameSceneController: PlayerCounter component is missing.");
+        if (playerCounter_ == null)
+        {
+            Debug.LogError("GameSceneController: PlayerCounter component is missing.");
+            throw new System.Exception("GameSceneController: PlayerCounter component is missing.");
+        }
         PlayerPrefs.SetInt("NumberOfPlayers", playerCounter_.GetNumberOfPlayer()); // Default to 1 if not set
         if (playerCounter_.GetNumberOfPlayer() == 1)
         {

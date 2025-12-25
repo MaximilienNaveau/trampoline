@@ -17,9 +17,21 @@ public class LayoutManager : MonoBehaviour
         board_ = (RectTransform)transform.Find("Board");
         store_ = (RectTransform)transform.Find("Store");
         
-        Assert.AreNotEqual(header_, null);
-        Assert.AreNotEqual(board_, null);
-        Assert.AreNotEqual(store_, null);
+        if (header_ == null)
+        {
+            Debug.LogError("LayoutManager: Header component is missing.");
+            throw new System.Exception("LayoutManager: Header component is missing.");
+        }
+        if (board_ == null)
+        {
+            Debug.LogError("LayoutManager: Board component is missing.");
+            throw new System.Exception("LayoutManager: Board component is missing.");
+        }
+        if (store_ == null)
+        {
+            Debug.LogError("LayoutManager: Store component is missing.");
+            throw new System.Exception("LayoutManager: Store component is missing.");
+        }
         
         // Initialize screen size tracking
         lastScreenSize_ = new Vector2(Screen.width, Screen.height);
@@ -116,12 +128,12 @@ public class LayoutManager : MonoBehaviour
 
     void CheckSize()
     {
-        Assert.AreEqual(
-            header_.sizeDelta.y +
-            board_.sizeDelta.y +
-            store_.sizeDelta.y +
-            4 * spacing_,
-            Screen.height);
+        float totalHeight = header_.sizeDelta.y + board_.sizeDelta.y + store_.sizeDelta.y + 4 * spacing_;
+        if (Mathf.Abs(totalHeight - Screen.height) > 0.01f)
+        {
+            Debug.LogError($"LayoutManager: Total height ({totalHeight}) does not match screen height ({Screen.height}).");
+            throw new System.Exception($"LayoutManager: Total height ({totalHeight}) does not match screen height ({Screen.height}).");
+        }
     }
 
     private int lastBoardRowCount_ = -1;

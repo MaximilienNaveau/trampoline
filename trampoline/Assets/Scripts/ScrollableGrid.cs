@@ -171,7 +171,11 @@ public class ScrollableGrid : MonoBehaviour, IScrollHandler
 
     public int GetNbRows()
     {
-        Assert.AreEqual(grid_.transform.childCount % cols_, 0);
+        if (grid_.transform.childCount % cols_ != 0)
+        {
+            Debug.LogError($"ScrollableGrid: Child count ({grid_.transform.childCount}) is not divisible by columns ({cols_}).");
+            throw new System.Exception($"ScrollableGrid: Child count ({grid_.transform.childCount}) is not divisible by columns ({cols_}).");
+        }
         return  grid_.transform.childCount / cols_ ;
     }
 
@@ -198,8 +202,16 @@ public class ScrollableGrid : MonoBehaviour, IScrollHandler
                 AddNewRow();
             }
         }
-        Assert.AreEqual(GetNbRows(), nbRows);
-        Assert.AreEqual(grid_.transform.childCount, nbRows * cols_);
+        if (GetNbRows() != nbRows)
+        {
+            Debug.LogError($"ScrollableGrid: Expected {nbRows} rows but found {GetNbRows()}.");
+            throw new System.Exception($"ScrollableGrid: Expected {nbRows} rows but found {GetNbRows()}.");
+        }
+        if (grid_.transform.childCount != nbRows * cols_)
+        {
+            Debug.LogError($"ScrollableGrid: Expected {nbRows * cols_} children but found {grid_.transform.childCount}.");
+            throw new System.Exception($"ScrollableGrid: Expected {nbRows * cols_} children but found {grid_.transform.childCount}.");
+        }
 
         // Ajustez la taille du contenu après avoir redimensionné la grille
         UpdateContentSize();
@@ -220,7 +232,11 @@ public class ScrollableGrid : MonoBehaviour, IScrollHandler
             // This prevents infinite loops in resize logic that checks row counts
             DestroyImmediate(grid_.transform.GetChild(i).gameObject);
         }
-        Assert.AreEqual(grid_.transform.childCount % cols_, 0);
+        if (grid_.transform.childCount % cols_ != 0)
+        {
+            Debug.LogError($"ScrollableGrid: After removing row, child count ({grid_.transform.childCount}) is not divisible by columns ({cols_}).");
+            throw new System.Exception($"ScrollableGrid: After removing row, child count ({grid_.transform.childCount}) is not divisible by columns ({cols_}).");
+        }
     }
 
     protected void AddNewRow()
@@ -231,7 +247,11 @@ public class ScrollableGrid : MonoBehaviour, IScrollHandler
             Quaternion orientation = new();
             Instantiate(tilePrefab_, position, orientation, grid_.transform);
         }
-        Assert.AreEqual(grid_.transform.childCount % cols_, 0);
+        if (grid_.transform.childCount % cols_ != 0)
+        {
+            Debug.LogError($"ScrollableGrid: After adding row, child count ({grid_.transform.childCount}) is not divisible by columns ({cols_}).");
+            throw new System.Exception($"ScrollableGrid: After adding row, child count ({grid_.transform.childCount}) is not divisible by columns ({cols_}).");
+        }
     }
 
     protected void UpdateContentSize()
@@ -259,7 +279,11 @@ public class ScrollableGrid : MonoBehaviour, IScrollHandler
         {
             tiles.Add(grid_.transform.GetChild(i).GetComponent<Tile>());
         }
-        Assert.AreEqual(tiles.Count, grid_.transform.childCount);
+        if (tiles.Count != grid_.transform.childCount)
+        {
+            Debug.LogError($"ScrollableGrid: Tile count ({tiles.Count}) does not match child count ({grid_.transform.childCount}).");
+            throw new System.Exception($"ScrollableGrid: Tile count ({tiles.Count}) does not match child count ({grid_.transform.childCount}).");
+        }
         return tiles;
     }
 
