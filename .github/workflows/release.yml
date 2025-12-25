@@ -22,7 +22,7 @@ jobs:
           df -h
       
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           lfs: true
 
@@ -98,7 +98,7 @@ jobs:
           df -h
       
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           lfs: true
       
@@ -181,7 +181,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Fetch all tags
         run: git fetch --tags
@@ -272,7 +272,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Get the latest tag
         id: get_latest_tag
@@ -298,7 +298,7 @@ jobs:
   #   runs-on: ubuntu-latest
   #   steps:
   #     - name: Checkout code
-  #       uses: actions/checkout@v5
+  #       uses: actions/checkout@v6
 
   #     - name: Get the latest tag
   #       id: get_latest_tag
