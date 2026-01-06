@@ -1,0 +1,69 @@
+﻿
+
+                                                         TRAMPOLINE
+
+Voici un nouveau jeu de lettres s'écartant des principes habituellement utilisés dans la plupart des jeux actuellement connus, qui conduisent, à partir d'un tirage, à construire une grille en croisant des mots 
+
+ Là aussi on cherche à trouver des mots à partir d' un tirage mais seulement sur le plan horizontal
+
+ L’idée qui a conduit à la construction de ce jeu s’articule sur une découverte simple : 
+ On peut, avec une quantité de lettres constante ( en l’occurrence 117 ), réparties dans l’alphabet de manière constante, (c'est à dire toujours le même nombre de A, de B, de C, etc…) construire de nombreuses séries de 13 mots de 9 lettres, chaque série utilisant toutes, et seulement toutes, les 117 lettres choisies. 
+
+ Toutefois, imaginer un jeu sur cette seule observation n'était pas complètement satisfaisant, le nombre de combinaisons de 13 mots de 9 lettres utilisant toujours une même répartition alphabétique n’est, forcément, pas inépuisable.
+ Il fallait donc trouver le moyen de faire varier de façon simple et permanente la répartition alphabétique de ce groupe de lettres; une solution originale s’est alors vite imposée :
+ Utiliser la seconde face des jetons dans une autre couleur en combinant utilement les deux côtés! 
+ 
+Cette construction de jetons à double face élargit alors considérablement le nombre de combinaisons, elle ouvre le jeu, de façon presque intarissable, à l’écriture de tous les mots utilisant 9 lettres ou moins, qu’elle que soit leur construction grammaticale (masculin, féminin, singulier, pluriel, conjugaisons, etc…, les noms propres étant également permis.)
+
+L’Objectif du jeu est d’utiliser à sa guise les 117 jetons à deux faces, pour composer finalement 13 mots de 9 lettres.
+ Pour atteindre ce résultat, on progresse pas à pas à partir de tirages successifs, en passant éventuellement par des mots inférieurs qui se transforment, et s’allongent tant qu'ils ne sont pas complets(9 lettres), mais jamais ne se réduisent.
+Les anagrammes, les remplacements de lettres sont permis selon des règles précises et simples.
+ 
+ Une partie peut se jouer à 2, 3 ou 4 joueurs.
+ On peut aussi et c’est agréable composer seul une grille.
+ Le challenge, collectif ou individuel, est d’abord d’aboutir à 13 mots de 9 lettres 
+ On recherche aussi à réaliser un score, en utilisant au mieux les lettres les plus "rémunératrices"
+
+ Une partie dure au maximum 1 heure ! 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    - EXEMPLE  d’un début de  partie
+
+1ER TIRAGE
+
+9 LETTRES PLACEES : 18 points bruts 
+                                        - 6 points pour lettres vertes 
+                                     = 12 points nets
+
+2EME TIRAGE
+                                                                                                    
+
+9 LETTRES PLACEES : 18 points bruts 
+                                      +10  pour 2mots de 9 lettres
+                                      +  1 pour réduction de1 lettre verte sur la grille 
+                                      =29 points nets
+
+
+3EME TIRAGE
+
+6 LETTRES PLACEES : 12 points bruts
+                                        -2 points pour de 2 lettres vertes en plus sur le plateau
+                                        =10 points nets
+
+LETTRES NON UTILISEES  A  REJETER
+

@@ -8,15 +8,15 @@ public class ScrollableGrid : MonoBehaviour, IScrollHandler
 {
     [SerializeField] protected GameObject tilePrefab_;
     protected GridLayoutGroup grid_;
-    private ScrollRect scrollRect_;
-    private RectTransform content_;
-    private Scrollbar verticalScrollbar_;
+    protected ScrollRect scrollRect_;
+    protected RectTransform content_;
+    protected Scrollbar verticalScrollbar_;
     protected const int rows_ = 13;
     protected const int cols_ = 9;
     
-    private Vector2 lastScreenSize_;
-    private RectTransform containerRect_;
-    private float spacing_ = 8f;
+    protected Vector2 lastScreenSize_;
+    protected RectTransform containerRect_;
+    protected float spacing_ = 8f;
 
     protected void ConfigureLayout()
     {

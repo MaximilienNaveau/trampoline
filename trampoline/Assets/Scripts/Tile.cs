@@ -63,8 +63,8 @@ public class Tile : MonoBehaviour, IDropHandler
 
     public bool IsBoardTile()
     {
-        // Check if this tile belongs to a Board component (not Store)
-        return GetComponentInParent<Board>() != null;
+        // Check if this tile belongs to a Board or BoardMultiplayer component (not Store)
+        return GetComponentInParent<Board>() != null || GetComponentInParent<BoardMultiplayer>() != null;
     }
 
     public bool IsStoreTile()
