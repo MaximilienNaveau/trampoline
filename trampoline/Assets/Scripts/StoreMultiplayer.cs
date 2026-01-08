@@ -40,6 +40,7 @@ public class StoreMultiplayer : ScrollableGrid, IDropHandler
   private bool isInitialized_ = false;
   private bool initialTokensDrawn_ = false;
   private Color[] activePlayerColors_;
+  private bool needsStorageUpdate_ = false;
 
 
   void Start()
@@ -525,6 +526,13 @@ public class StoreMultiplayer : ScrollableGrid, IDropHandler
       initialTokensDrawn_ = true;
       UpdateStorage();
     }
+    
+    // Update storage if needed (after drag operations complete)
+    if (needsStorageUpdate_)
+    {
+      needsStorageUpdate_ = false;
+      UpdateStorage();
+    }
   }
 
   /// <summary>
@@ -611,20 +619,31 @@ public class StoreMultiplayer : ScrollableGrid, IDropHandler
     // Sort alphabetically
     displayTokens.Sort((a, b) => a.GetLetters().CompareTo(b.GetLetters()));
     
-    // Clear all tiles
+    // Clear all tiles and fully detach any tokens
     for (int i = 0; i < tiles.Count; i++)
     {
       if (tiles[i].HasToken())
       {
+        BasicToken tileToken = tiles[i].GetToken();
         tiles[i].LetTheTokenGo();
+        // Ensure token is properly detached
+        if (tileToken != null)
+        {
+          tileToken.gameObject.SetActive(false);
+        }
       }
     }
     
     // Assign current player's tokens to tiles and make them visible
     for (int i = 0; i < displayTokens.Count && i < tiles.Count; i++)
     {
-      displayTokens[i].gameObject.SetActive(true);
-      tiles[i].AttachToken(displayTokens[i]);
+      BasicToken token = displayTokens[i];
+      token.gameObject.SetActive(true);
+      
+      // Ensure token is properly positioned by explicitly calling SwapTileUnder
+      token.SwapTileUnder(tiles[i]);
+      
+      tiles[i].AttachToken(token);
     }
   }
 
@@ -686,12 +705,22 @@ public class StoreMultiplayer : ScrollableGrid, IDropHandler
         return;
       }
       
-      // Mark token as not on board - UpdateStorage will handle the rest
+      // Mark token as not on board
       token.SetInBoard(false);
       token.SetDraggedOnTile(true);
       
-      // Update the storage display immediately
-      UpdateStorage();
+      // Force token to detach from its current tile
+      if (token.GetTileUnder() != null)
+      {
+        token.GetTileUnder().LetTheTokenGo();
+      }
+      
+      // Immediately hide the token to avoid visual glitches
+      // It will be repositioned and shown by UpdateStorage next frame
+      token.gameObject.SetActive(false);
+      
+      // Schedule storage update for next frame (after drag ends)
+      needsStorageUpdate_ = true;
     }
   }
 

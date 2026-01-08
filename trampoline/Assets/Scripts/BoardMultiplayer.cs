@@ -391,11 +391,6 @@ public class BoardMultiplayer : ScrollableGrid
             return;
         }
         
-        if(ResizeBoardGrid())
-        {
-            UpdateContentSize();
-        }
-        
         // Update row ownership based on current state
         UpdateRowOwnership();
     }
