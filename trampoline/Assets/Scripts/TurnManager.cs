@@ -9,9 +9,7 @@ using System;
 /// </summary>
 public class TurnManager : MonoBehaviour
 {
-    private int currentPlayerId_ = 0;
-    private int numberOfPlayers_ = 2;
-    private bool[] playerFinished_;
+    private PlayerManager playerManager_;
     private bool gameStarted_ = false;
     
     // Events
@@ -20,23 +18,20 @@ public class TurnManager : MonoBehaviour
 
     void Start()
     {
-        // Get number of players from PlayerPrefs
-        numberOfPlayers_ = PlayerPrefs.GetInt("NumberOfPlayers", 2);
-        numberOfPlayers_ = Mathf.Clamp(numberOfPlayers_, 2, 4);
-        
-        playerFinished_ = new bool[numberOfPlayers_];
-        for (int i = 0; i < numberOfPlayers_; i++)
+        playerManager_ = PlayerManager.Instance;
+        if (playerManager_ == null)
         {
-            playerFinished_[i] = false;
+            Debug.LogError("TurnManager: PlayerManager not found!");
+            throw new System.Exception("TurnManager: PlayerManager not found!");
         }
         
         gameStarted_ = true;
-        currentPlayerId_ = 0;
+        playerManager_.SetCurrentPlayer(0);
         
         // Notify listeners of initial turn
-        OnTurnChanged?.Invoke(currentPlayerId_);
+        OnTurnChanged?.Invoke(playerManager_.GetCurrentPlayerId());
         
-        Debug.Log($"TurnManager: Game started with {numberOfPlayers_} players. Player {currentPlayerId_ + 1}'s turn.");
+        Debug.Log($"TurnManager: Game started with {playerManager_.GetNumberOfPlayers()} players. Player {playerManager_.GetCurrentPlayerId() + 1}'s turn.");
     }
 
     /// <summary>
@@ -44,7 +39,13 @@ public class TurnManager : MonoBehaviour
     /// </summary>
     public int GetCurrentPlayerId()
     {
-        return currentPlayerId_;
+        PlayerManager pm = PlayerManager.Instance;
+        if (pm == null)
+        {
+            Debug.LogError("TurnManager.GetCurrentPlayerId: PlayerManager.Instance is null!");
+            return 0; // Default fallback
+        }
+        return pm.GetCurrentPlayerId();
     }
 
     /// <summary>
@@ -52,7 +53,13 @@ public class TurnManager : MonoBehaviour
     /// </summary>
     public int GetNumberOfPlayers()
     {
-        return numberOfPlayers_;
+        PlayerManager pm = PlayerManager.Instance;
+        if (pm == null)
+        {
+            Debug.LogError("TurnManager.GetNumberOfPlayers: PlayerManager.Instance is null!");
+            return 2; // Default fallback
+        }
+        return pm.GetNumberOfPlayers();
     }
 
     /// <summary>
@@ -60,11 +67,11 @@ public class TurnManager : MonoBehaviour
     /// </summary>
     public bool IsPlayerTurn(int playerId)
     {
-        if (playerId < 0 || playerId >= numberOfPlayers_)
+        if (playerId < 0 || playerId >= playerManager_.GetNumberOfPlayers())
         {
             return false;
         }
-        return currentPlayerId_ == playerId;
+        return playerManager_.GetCurrentPlayerId() == playerId;
     }
 
     /// <summary>
@@ -79,16 +86,18 @@ public class TurnManager : MonoBehaviour
             return;
         }
 
-        Debug.Log($"TurnManager: Player {currentPlayerId_ + 1} ended their turn.");
+        int currentPlayer = playerManager_.GetCurrentPlayerId();
+        Debug.Log($"TurnManager: Player {currentPlayer + 1} ended their turn.");
         
         // Move to next player
-        int startPlayerId = currentPlayerId_;
+        int startPlayerId = currentPlayer;
+        int nextPlayer = currentPlayer;
         do
         {
-            currentPlayerId_ = (currentPlayerId_ + 1) % numberOfPlayers_;
+            nextPlayer = (nextPlayer + 1) % playerManager_.GetNumberOfPlayers();
             
             // If we've cycled through all players, check if game is complete
-            if (currentPlayerId_ == startPlayerId)
+            if (nextPlayer == startPlayerId)
             {
                 if (IsGameComplete())
                 {
@@ -99,10 +108,11 @@ public class TurnManager : MonoBehaviour
                 }
             }
         }
-        while (playerFinished_[currentPlayerId_]);
+        while (playerManager_.IsPlayerFinished(nextPlayer));
         
-        Debug.Log($"TurnManager: Now Player {currentPlayerId_ + 1}'s turn.");
-        OnTurnChanged?.Invoke(currentPlayerId_);
+        playerManager_.SetCurrentPlayer(nextPlayer);
+        Debug.Log($"TurnManager: Now Player {nextPlayer + 1}'s turn.");
+        OnTurnChanged?.Invoke(nextPlayer);
     }
 
     /// <summary>
@@ -110,17 +120,17 @@ public class TurnManager : MonoBehaviour
     /// </summary>
     public void SetPlayerFinished(int playerId, bool finished)
     {
-        if (playerId < 0 || playerId >= numberOfPlayers_)
+        if (playerId < 0 || playerId >= playerManager_.GetNumberOfPlayers())
         {
             Debug.LogError($"TurnManager: Invalid player ID {playerId}");
             return;
         }
         
-        playerFinished_[playerId] = finished;
+        playerManager_.SetPlayerFinished(playerId, finished);
         Debug.Log($"TurnManager: Player {playerId + 1} finished status set to {finished}.");
         
         // If current player just finished, automatically move to next turn
-        if (finished && playerId == currentPlayerId_)
+        if (finished && playerId == playerManager_.GetCurrentPlayerId())
         {
             EndCurrentTurn();
         }
@@ -131,11 +141,11 @@ public class TurnManager : MonoBehaviour
     /// </summary>
     public bool IsPlayerFinished(int playerId)
     {
-        if (playerId < 0 || playerId >= numberOfPlayers_)
+        if (playerId < 0 || playerId >= playerManager_.GetNumberOfPlayers())
         {
             return false;
         }
-        return playerFinished_[playerId];
+        return playerManager_.IsPlayerFinished(playerId);
     }
 
     /// <summary>
@@ -143,9 +153,9 @@ public class TurnManager : MonoBehaviour
     /// </summary>
     public bool IsGameComplete()
     {
-        for (int i = 0; i < numberOfPlayers_; i++)
+        for (int i = 0; i < playerManager_.GetNumberOfPlayers(); i++)
         {
-            if (!playerFinished_[i])
+            if (!playerManager_.IsPlayerFinished(i))
             {
                 return false;
             }
@@ -158,21 +168,21 @@ public class TurnManager : MonoBehaviour
     /// </summary>
     public void ForcePlayerTurn(int playerId)
     {
-        if (playerId < 0 || playerId >= numberOfPlayers_)
+        if (playerId < 0 || playerId >= playerManager_.GetNumberOfPlayers())
         {
             Debug.LogError($"TurnManager: Invalid player ID {playerId}");
             return;
         }
         
-        if (playerFinished_[playerId])
+        if (playerManager_.IsPlayerFinished(playerId))
         {
             Debug.LogWarning($"TurnManager: Player {playerId + 1} has already finished.");
             return;
         }
         
-        currentPlayerId_ = playerId;
-        Debug.Log($"TurnManager: Forced turn to Player {currentPlayerId_ + 1}.");
-        OnTurnChanged?.Invoke(currentPlayerId_);
+        playerManager_.SetCurrentPlayer(playerId);
+        Debug.Log($"TurnManager: Forced turn to Player {playerId + 1}.");
+        OnTurnChanged?.Invoke(playerId);
     }
 
     /// <summary>
@@ -180,13 +190,9 @@ public class TurnManager : MonoBehaviour
     /// </summary>
     public void ResetGame()
     {
-        currentPlayerId_ = 0;
-        for (int i = 0; i < numberOfPlayers_; i++)
-        {
-            playerFinished_[i] = false;
-        }
+        playerManager_.ResetAllPlayers();
         gameStarted_ = true;
-        OnTurnChanged?.Invoke(currentPlayerId_);
+        OnTurnChanged?.Invoke(playerManager_.GetCurrentPlayerId());
         Debug.Log("TurnManager: Game reset.");
     }
 
@@ -196,9 +202,9 @@ public class TurnManager : MonoBehaviour
     public int GetFinishedPlayerCount()
     {
         int count = 0;
-        for (int i = 0; i < numberOfPlayers_; i++)
+        for (int i = 0; i < playerManager_.GetNumberOfPlayers(); i++)
         {
-            if (playerFinished_[i])
+            if (playerManager_.IsPlayerFinished(i))
             {
                 count++;
             }

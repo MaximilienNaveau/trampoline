@@ -12,10 +12,10 @@ public class GameControllerMultiplayer : MonoBehaviour
     private TokenPool tokenPool_;
     private TokenDistributor tokenDistributor_;
     private TurnManager turnManager_;
+    private PlayerManager playerManager_;
     private StoreMultiplayer[] playerStores_;
     
     private int numberOfPlayers_ = 2;
-    private int[] playerScores_;
     private List<WordWithOwner>[] playerValidWords_;  // Track valid words per player
 
     void Start()
@@ -24,16 +24,21 @@ public class GameControllerMultiplayer : MonoBehaviour
         frenchDictionary_ = new FrenchDictionary();
         frenchDictionary_.initialize(async: false);
         
-        // Get number of players
-        numberOfPlayers_ = PlayerPrefs.GetInt("NumberOfPlayers", 2);
-        numberOfPlayers_ = Mathf.Clamp(numberOfPlayers_, 2, 4);
+        // Get PlayerManager
+        playerManager_ = PlayerManager.Instance;
+        if (playerManager_ == null)
+        {
+            Debug.LogError("GameControllerMultiplayer: PlayerManager not found!");
+            throw new System.Exception("GameControllerMultiplayer: PlayerManager not found!");
+        }
         
-        // Initialize score tracking
-        playerScores_ = new int[numberOfPlayers_];
+        // Get number of players
+        numberOfPlayers_ = playerManager_.GetNumberOfPlayers();
+        
+        // Initialize valid words tracking
         playerValidWords_ = new List<WordWithOwner>[numberOfPlayers_];
         for (int i = 0; i < numberOfPlayers_; i++)
         {
-            playerScores_[i] = 0;
             playerValidWords_[i] = new List<WordWithOwner>();
         }
         
@@ -128,7 +133,7 @@ public class GameControllerMultiplayer : MonoBehaviour
             List<WordWithOwner> validWords = ComputeListOfValidWords(playerWords);
             
             playerValidWords_[playerId] = validWords;
-            playerScores_[playerId] = ComputeScore(validWords);
+            playerManager_.SetPlayerScore(playerId, ComputeScore(validWords));
         }
     }
 
@@ -197,7 +202,7 @@ public class GameControllerMultiplayer : MonoBehaviour
         {
             return 0;
         }
-        return playerScores_[playerId];
+        return playerManager_.GetPlayerScore(playerId);
     }
 
     /// <summary>
@@ -205,7 +210,7 @@ public class GameControllerMultiplayer : MonoBehaviour
     /// </summary>
     public int[] GetAllPlayerScores()
     {
-        return (int[])playerScores_.Clone();
+        return playerManager_.GetAllPlayerScores();
     }
 
     /// <summary>
@@ -244,16 +249,17 @@ public class GameControllerMultiplayer : MonoBehaviour
         Debug.Log("=== FINAL RESULTS ===");
         
         int winnerIndex = 0;
-        int highestScore = playerScores_[0];
+        int highestScore = playerManager_.GetPlayerScore(0);
         
         for (int i = 0; i < numberOfPlayers_; i++)
         {
             int completeWords = board_.GetPlayerCompleteWordCount(i);
-            Debug.Log($"Player {i + 1}: {playerScores_[i]} points, {completeWords} complete words");
+            int playerScore = playerManager_.GetPlayerScore(i);
+            Debug.Log($"Player {i + 1}: {playerScore} points, {completeWords} complete words");
             
-            if (playerScores_[i] > highestScore)
+            if (playerScore > highestScore)
             {
-                highestScore = playerScores_[i];
+                highestScore = playerScore;
                 winnerIndex = i;
             }
         }
@@ -272,13 +278,14 @@ public class GameControllerMultiplayer : MonoBehaviour
         }
         
         int winnerIndex = 0;
-        int highestScore = playerScores_[0];
+        int highestScore = playerManager_.GetPlayerScore(0);
         
         for (int i = 1; i < numberOfPlayers_; i++)
         {
-            if (playerScores_[i] > highestScore)
+            int playerScore = playerManager_.GetPlayerScore(i);
+            if (playerScore > highestScore)
             {
-                highestScore = playerScores_[i];
+                highestScore = playerScore;
                 winnerIndex = i;
             }
         }

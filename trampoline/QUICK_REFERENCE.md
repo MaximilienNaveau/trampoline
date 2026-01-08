@@ -10,7 +10,7 @@
 5. **GameControllerMultiplayer.cs** - Manages scores and game flow
 
 ### UI Helper Components
-6. **MultiplayerScoreDisplay.cs** - Shows all player scores
+6. **ScoreDisplay.cs** - Shows all player scores
 7. **EndTurnButton.cs** - Button to end current player's turn
 
 ### Modified Files
@@ -43,7 +43,7 @@ Create empty GameObject "GameManagers" with:
 ### 5. Optional UI
 **Score Display:**
 - Create UI Text elements (4x TextMeshPro)
-- Add `MultiplayerScoreDisplay` component
+- Add `ScoreDisplay` component
 - Assign text elements to array
 
 **End Turn Button:**
@@ -62,7 +62,7 @@ Background Image: [Assign Image component]
 Player Colors: [4 colors in array]
 ```
 
-### MultiplayerScoreDisplay
+### ScoreDisplay
 ```
 Player Score Texts: [Array of 4 TextMeshProUGUI]
 Player Highlights: [Optional: Array of Images]
@@ -238,7 +238,7 @@ Assets/Scripts/
 ├── StoreMultiplayer.cs
 ├── BoardMultiplayer.cs
 ├── GameControllerMultiplayer.cs
-├── MultiplayerScoreDisplay.cs
+├── ScoreDisplay.cs
 └── EndTurnButton.cs
 ```
 

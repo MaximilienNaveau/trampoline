@@ -26,28 +26,17 @@ public class StoreMultiplayer : ScrollableGrid, IDropHandler
   [Tooltip("Text to display current player (e.g., 'Player 1')")]
   private TextMeshProUGUI playerLabel_;
   
-  [SerializeField]
-  [Tooltip("Player colors for visual distinction (will be resized based on number of players)")]
-  private readonly Color[] playerColors_ = {
-    new Color(0.13f, 0.59f, 0.95f, 0.9f),  // Blue 500 - Bleu tech fiable
-    new Color(0.30f, 0.69f, 0.31f, 0.9f),  // Green 500 - Vert nature
-    new Color(1f, 0.76f, 0.03f, 0.9f),     // Amber 500 - Jaune doré
-    new Color(0.61f, 0.15f, 0.69f, 0.9f),  // Purple 500 - Violet créatif
-    new Color(1f, 0.60f, 0f, 0.9f),        // Orange 500 - Orange action
-    new Color(0f, 0.59f, 0.53f, 0.9f),     // Teal 500 - Sarcelle calme
-    new Color(0.91f, 0.12f, 0.39f, 0.9f),  // Pink 500 - Rose moderne
-    new Color(0.38f, 0.49f, 0.55f, 0.9f)   // Blue Grey 500 - Gris bleu
-  };
-  
   private TokenPool tokenPool_;
   private TokenDistributor tokenDistributor_;
   private TurnManager turnManager_;
+  private PlayerManager playerManager_;
   
   // Track tokens for ALL players (key = playerId, value = list of tokens)
   private Dictionary<int, List<BasicToken>> playerTokens_;
   private int currentPlayerId_ = 0;
   private int numberOfPlayers_ = 2;
   private bool isInitialized_ = false;
+  private bool initialTokensDrawn_ = false;
   private Color[] activePlayerColors_;
 
 
@@ -66,6 +55,7 @@ public class StoreMultiplayer : ScrollableGrid, IDropHandler
     tokenPool_ = FindAnyObjectByType<TokenPool>();
     tokenDistributor_ = FindAnyObjectByType<TokenDistributor>();
     turnManager_ = FindAnyObjectByType<TurnManager>();
+    playerManager_ = PlayerManager.Instance;
     
     if (tokenPool_ == null)
     {
@@ -85,6 +75,12 @@ public class StoreMultiplayer : ScrollableGrid, IDropHandler
       throw new System.Exception("StoreMultiplayer: TurnManager not found!");
     }
 
+    if (playerManager_ == null)
+    {
+      Debug.LogError("StoreMultiplayer: PlayerManager not found!");
+      throw new System.Exception("StoreMultiplayer: PlayerManager not found!");
+    }
+
     if (backgroundImage_ == null)
     {
       Debug.LogError("StoreMultiplayer: Background Image component not found!");
@@ -94,8 +90,14 @@ public class StoreMultiplayer : ScrollableGrid, IDropHandler
     // Get number of players
     numberOfPlayers_ = turnManager_.GetNumberOfPlayers();
     
-    // Initialize active player colors based on number of players
-    InitializePlayerColors();
+    // Initialize active player colors from PlayerManager
+    activePlayerColors_ = playerManager_.GetPlayerColors();
+    
+    if (activePlayerColors_ == null)
+    {
+      Debug.LogError("StoreMultiplayer: PlayerManager.GetPlayerColors() returned null!");
+      throw new System.Exception("StoreMultiplayer: PlayerManager.GetPlayerColors() returned null!");
+    }
     
     // Initialize token storage for all players
     playerTokens_ = new Dictionary<int, List<BasicToken>>();
@@ -113,14 +115,13 @@ public class StoreMultiplayer : ScrollableGrid, IDropHandler
     // Subscribe to turn changes
     turnManager_.OnTurnChanged += OnTurnChanged;
     
-    // Initial draw for first player
-    DrawNewTokensForPlayer(currentPlayerId_);
-    
     // Mark as initialized BEFORE calling UpdateVisualState
     isInitialized_ = true;
     
     // Apply initial visual state
     UpdateVisualState();
+    
+    // Note: Initial token draw happens in first Update() to ensure TokenDistributor is ready
     
     Debug.Log($"StoreMultiplayer: Initialized for {numberOfPlayers_} players.");
   }
@@ -237,28 +238,6 @@ public class StoreMultiplayer : ScrollableGrid, IDropHandler
   /// <summary>
   /// Initialize the active player colors array based on number of players.
   /// </summary>
-  private void InitializePlayerColors()
-  {
-    activePlayerColors_ = new Color[numberOfPlayers_];
-    
-    for (int i = 0; i < numberOfPlayers_; i++)
-    {
-      if (i < playerColors_.Length)
-      {
-        activePlayerColors_[i] = playerColors_[i];
-      }
-      else
-      {
-        // Fallback: generate a distinct color if we exceed predefined colors
-        float hue = (float)i / numberOfPlayers_;
-        activePlayerColors_[i] = Color.HSVToRGB(hue, 0.6f, 1f);
-        activePlayerColors_[i].a = 0.6f;
-      }
-    }
-    
-    Debug.Log($"StoreMultiplayer: Initialized {numberOfPlayers_} player colors.");
-  }
-
   /// <summary>
   /// Auto-create the player label TextMeshProUGUI if not assigned in Inspector.
   /// </summary>
@@ -321,8 +300,13 @@ public class StoreMultiplayer : ScrollableGrid, IDropHandler
 
   void Update()
   {
-    // Update storage display for current player
-    UpdateStorage();
+    // Draw initial tokens on first update (after TokenDistributor is initialized)
+    if (!initialTokensDrawn_ && isInitialized_)
+    {
+      DrawNewTokensForPlayer(currentPlayerId_);
+      initialTokensDrawn_ = true;
+      UpdateStorage();
+    }
   }
 
   /// <summary>
@@ -341,6 +325,9 @@ public class StoreMultiplayer : ScrollableGrid, IDropHandler
     
     // Update visuals
     UpdateVisualState();
+
+    // Update storage display
+    UpdateStorage();
     
     Debug.Log($"StoreMultiplayer: Switched to Player {currentPlayerId_ + 1}");
   }
@@ -555,6 +542,14 @@ public class StoreMultiplayer : ScrollableGrid, IDropHandler
       return activePlayerColors_[playerId];
     }
     return Color.white;
+  }
+
+  /// <summary>
+  /// Get all player colors array.
+  /// </summary>
+  public Color[] GetPlayerColors()
+  {
+    return activePlayerColors_;
   }
 
   /// <summary>

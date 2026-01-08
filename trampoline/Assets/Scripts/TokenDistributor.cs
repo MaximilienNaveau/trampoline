@@ -16,7 +16,7 @@ public class TokenDistributor : MonoBehaviour
     // Track which tokens are currently drawn by which player
     private Dictionary<int, List<BasicToken>> playerDrawnTokens_;
 
-    void Start()
+    void Awake()
     {
         tokenPool_ = FindAnyObjectByType<TokenPool>();
         if (tokenPool_ == null)
@@ -27,15 +27,25 @@ public class TokenDistributor : MonoBehaviour
         
         random_ = new System.Random();
         playerDrawnTokens_ = new Dictionary<int, List<BasicToken>>();
-        
+    }
+
+    void Start()
+    {
+        // Initialize token queue in Start (after TokenPool is ready)
         InitializeTokenQueue();
     }
 
     /// <summary>
     /// Initialize the token queue by shuffling all available tokens.
+    /// Called from Start() or lazily if needed.
     /// </summary>
     private void InitializeTokenQueue()
     {
+        if (initialized_)
+        {
+            return; // Already initialized
+        }
+        
         availableTokens_ = new Queue<BasicToken>();
         
         // Get all tokens from the pool
@@ -65,9 +75,16 @@ public class TokenDistributor : MonoBehaviour
     /// <returns>List of drawn tokens</returns>
     public List<BasicToken> DrawTokensForPlayer(int playerId, int count)
     {
+        // Initialize if not done yet (lazy initialization)
         if (!initialized_)
         {
-            Debug.LogError("TokenDistributor: Not initialized yet!");
+            Debug.LogWarning("TokenDistributor: Not initialized in Start, initializing now...");
+            InitializeTokenQueue();
+        }
+        
+        if (!initialized_)
+        {
+            Debug.LogError("TokenDistributor: Failed to initialize!");
             return new List<BasicToken>();
         }
         
