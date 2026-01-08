@@ -308,6 +308,73 @@ public class LayoutManagerMultiplayer : MonoBehaviour
     }
     
     /// <summary>
+    /// Create a rounded rectangle sprite for buttons.
+    /// </summary>
+    private Sprite CreateRoundedRectSprite(int width, int height, int cornerRadius)
+    {
+        Texture2D texture = new Texture2D(width, height, TextureFormat.RGBA32, false);
+        Color[] pixels = new Color[width * height];
+        
+        for (int y = 0; y < height; y++)
+        {
+            for (int x = 0; x < width; x++)
+            {
+                // Calculate distance from corners
+                bool inCornerRegion = false;
+                float distanceToCorner = 0f;
+                
+                // Top-left corner
+                if (x < cornerRadius && y >= height - cornerRadius)
+                {
+                    float dx = cornerRadius - x;
+                    float dy = y - (height - cornerRadius);
+                    distanceToCorner = Mathf.Sqrt(dx * dx + dy * dy);
+                    inCornerRegion = true;
+                }
+                // Top-right corner
+                else if (x >= width - cornerRadius && y >= height - cornerRadius)
+                {
+                    float dx = x - (width - cornerRadius);
+                    float dy = y - (height - cornerRadius);
+                    distanceToCorner = Mathf.Sqrt(dx * dx + dy * dy);
+                    inCornerRegion = true;
+                }
+                // Bottom-left corner
+                else if (x < cornerRadius && y < cornerRadius)
+                {
+                    float dx = cornerRadius - x;
+                    float dy = cornerRadius - y;
+                    distanceToCorner = Mathf.Sqrt(dx * dx + dy * dy);
+                    inCornerRegion = true;
+                }
+                // Bottom-right corner
+                else if (x >= width - cornerRadius && y < cornerRadius)
+                {
+                    float dx = x - (width - cornerRadius);
+                    float dy = cornerRadius - y;
+                    distanceToCorner = Mathf.Sqrt(dx * dx + dy * dy);
+                    inCornerRegion = true;
+                }
+                
+                // Set pixel: white if inside shape, transparent if outside
+                if (inCornerRegion)
+                {
+                    pixels[y * width + x] = distanceToCorner <= cornerRadius ? Color.white : Color.clear;
+                }
+                else
+                {
+                    pixels[y * width + x] = Color.white;
+                }
+            }
+        }
+        
+        texture.SetPixels(pixels);
+        texture.Apply();
+        
+        return Sprite.Create(texture, new Rect(0, 0, width, height), new Vector2(0.5f, 0.5f), 100f);
+    }
+    
+    /// <summary>
     /// Apply 3D button styling to a button GameObject.
     /// </summary>
     private void StyleButton3D(RectTransform buttonRect, Color baseColor)
@@ -332,6 +399,9 @@ public class LayoutManagerMultiplayer : MonoBehaviour
             DestroyImmediate(img);
         }
         
+        // Create rounded sprite
+        Sprite roundedSprite = CreateRoundedRectSprite(128, 128, 24);
+        
         // Create shadow layer for 3D depth effect
         GameObject shadowObj = new GameObject("Shadow", typeof(RectTransform));
         shadowObj.transform.SetParent(buttonObj.transform, false);
@@ -344,12 +414,8 @@ public class LayoutManagerMultiplayer : MonoBehaviour
         shadowRect.offsetMax = new Vector2(4, 0);  // Offset right
         
         Image shadowImage = shadowObj.AddComponent<Image>();
+        shadowImage.sprite = roundedSprite;
         shadowImage.color = new Color(0f, 0f, 0f, 0.3f); // Semi-transparent black
-        
-        // Add Outline to shadow for rounded effect
-        Outline shadowOutline = shadowObj.AddComponent<Outline>();
-        shadowOutline.effectColor = new Color(0f, 0f, 0f, 0.3f);
-        shadowOutline.effectDistance = new Vector2(2, -2);
         
         // Create main button background with rounded corners
         GameObject bgObj = new GameObject("Background", typeof(RectTransform));
@@ -362,12 +428,8 @@ public class LayoutManagerMultiplayer : MonoBehaviour
         bgRect.offsetMax = Vector2.zero;
         
         Image buttonImage = bgObj.AddComponent<Image>();
+        buttonImage.sprite = roundedSprite;
         buttonImage.color = baseColor;
-        
-        // Add Outline for rounded corners effect
-        Outline bgOutline = bgObj.AddComponent<Outline>();
-        bgOutline.effectColor = baseColor;
-        bgOutline.effectDistance = new Vector2(1, -1);
         
         // Create highlight layer for 3D top light effect
         GameObject highlightObj = new GameObject("Highlight", typeof(RectTransform));
@@ -380,6 +442,7 @@ public class LayoutManagerMultiplayer : MonoBehaviour
         highlightRect.offsetMax = Vector2.zero;
         
         Image highlightImage = highlightObj.AddComponent<Image>();
+        highlightImage.sprite = roundedSprite;
         highlightImage.color = new Color(1f, 1f, 1f, 0.2f); // Semi-transparent white on top half
         
         // Set button target as the background image
@@ -437,7 +500,7 @@ public class LayoutManagerMultiplayer : MonoBehaviour
             iconText.alignment = TMPro.TextAlignmentOptions.Center;
             iconText.color = Color.white;
             iconText.fontStyle = TMPro.FontStyles.Bold;
-            iconText.enableWordWrapping = false;
+            iconText.textWrappingMode = TMPro.TextWrappingModes.NoWrap;
         }
     }
 }

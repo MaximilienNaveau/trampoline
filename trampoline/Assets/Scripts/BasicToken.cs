@@ -126,7 +126,7 @@ public class BasicToken : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDr
     {
         canvasGroup_.alpha = 1.0f;
         canvasGroup_.blocksRaycasts = true;
-        if (!draggedOnTile_)
+        if (!draggedOnTile_ && startTileUnder_ != null)
         {
             startTileUnder_.AttachToken(this);
         }

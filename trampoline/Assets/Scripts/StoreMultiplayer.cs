@@ -220,36 +220,108 @@ public class StoreMultiplayer : ScrollableGrid, IDropHandler
   }
 
   /// <summary>
+  /// Create a rounded rectangle sprite for buttons.
+  /// </summary>
+  private Sprite CreateRoundedRectSprite(int width, int height, int cornerRadius)
+  {
+    Texture2D texture = new Texture2D(width, height, TextureFormat.RGBA32, false);
+    Color[] pixels = new Color[width * height];
+    
+    for (int y = 0; y < height; y++)
+    {
+      for (int x = 0; x < width; x++)
+      {
+        // Calculate distance from corners
+        bool inCornerRegion = false;
+        float distanceToCorner = 0f;
+        
+        // Top-left corner
+        if (x < cornerRadius && y >= height - cornerRadius)
+        {
+          float dx = cornerRadius - x;
+          float dy = y - (height - cornerRadius);
+          distanceToCorner = Mathf.Sqrt(dx * dx + dy * dy);
+          inCornerRegion = true;
+        }
+        // Top-right corner
+        else if (x >= width - cornerRadius && y >= height - cornerRadius)
+        {
+          float dx = x - (width - cornerRadius);
+          float dy = y - (height - cornerRadius);
+          distanceToCorner = Mathf.Sqrt(dx * dx + dy * dy);
+          inCornerRegion = true;
+        }
+        // Bottom-left corner
+        else if (x < cornerRadius && y < cornerRadius)
+        {
+          float dx = cornerRadius - x;
+          float dy = cornerRadius - y;
+          distanceToCorner = Mathf.Sqrt(dx * dx + dy * dy);
+          inCornerRegion = true;
+        }
+        // Bottom-right corner
+        else if (x >= width - cornerRadius && y < cornerRadius)
+        {
+          float dx = x - (width - cornerRadius);
+          float dy = cornerRadius - y;
+          distanceToCorner = Mathf.Sqrt(dx * dx + dy * dy);
+          inCornerRegion = true;
+        }
+        
+        // Set pixel: white if inside shape, transparent if outside
+        if (inCornerRegion)
+        {
+          pixels[y * width + x] = distanceToCorner <= cornerRadius ? Color.white : Color.clear;
+        }
+        else
+        {
+          pixels[y * width + x] = Color.white;
+        }
+      }
+    }
+    
+    texture.SetPixels(pixels);
+    texture.Apply();
+    
+    return Sprite.Create(texture, new Rect(0, 0, width, height), new Vector2(0.5f, 0.5f), 100f);
+  }
+
+  /// <summary>
   /// Create a Next Turn button next to the player label.
   /// </summary>
   private void CreateNextTurnButton()
   {
-    // Create button GameObject as a sibling to player label
+    // Create button GameObject as child of store
     GameObject buttonObj = new GameObject("NextTurnButton", typeof(RectTransform));
     buttonObj.transform.SetParent(transform, false);
     
     RectTransform buttonRect = buttonObj.GetComponent<RectTransform>();
     
-    // Position button to the right of the player label area
     // Calculate button size based on label height
     float labelHeight = Screen.height * 0.05f;
-    float buttonSize = labelHeight * 0.8f; // Slightly smaller than label height
-    float spacing = 8f;
+    float buttonSize = labelHeight * 0.8f;
+    float padding = spacing_;
     
-    // Position in top-right area, aligned with label
+    // Position button at top-right, aligned with player label
     buttonRect.anchorMin = new Vector2(1, 1);
     buttonRect.anchorMax = new Vector2(1, 1);
     buttonRect.pivot = new Vector2(1, 1);
-    buttonRect.anchoredPosition = new Vector2(-spacing, -spacing);
+    buttonRect.anchoredPosition = new Vector2(-padding, -padding); // Top-right with padding
     buttonRect.sizeDelta = new Vector2(buttonSize, buttonSize);
+    
+    // Add Canvas to ensure button is on top and receives clicks
+    Canvas buttonCanvas = buttonObj.AddComponent<Canvas>();
+    buttonCanvas.overrideSorting = true;
+    buttonCanvas.sortingOrder = 100;
+    
+    // Add GraphicRaycaster to enable click detection
+    buttonObj.AddComponent<GraphicRaycaster>();
     
     // Add Button component
     nextTurnButton_ = buttonObj.AddComponent<Button>();
     
-    // Add CanvasGroup to ensure button is clickable
-    CanvasGroup canvasGroup = buttonObj.AddComponent<CanvasGroup>();
-    canvasGroup.interactable = true;
-    canvasGroup.blocksRaycasts = true;
+    // Create rounded sprite for button
+    Sprite roundedSprite = CreateRoundedRectSprite(128, 128, 24);
     
     // Create shadow layer for 3D depth effect
     GameObject shadowObj = new GameObject("Shadow", typeof(RectTransform));
@@ -263,12 +335,9 @@ public class StoreMultiplayer : ScrollableGrid, IDropHandler
     shadowRect.offsetMax = new Vector2(4, 0);  // Offset right
     
     Image shadowImage = shadowObj.AddComponent<Image>();
+    shadowImage.sprite = roundedSprite;
     shadowImage.color = new Color(0f, 0f, 0f, 0.3f); // Semi-transparent black
-    
-    // Add Outline to shadow for rounded effect
-    Outline shadowOutline = shadowObj.AddComponent<Outline>();
-    shadowOutline.effectColor = new Color(0f, 0f, 0f, 0.3f);
-    shadowOutline.effectDistance = new Vector2(2, -2);
+    shadowImage.raycastTarget = false;
     
     // Create main button background with rounded corners
     GameObject bgObj = new GameObject("Background", typeof(RectTransform));
@@ -281,7 +350,9 @@ public class StoreMultiplayer : ScrollableGrid, IDropHandler
     bgRect.offsetMax = Vector2.zero;
     
     Image buttonImage = bgObj.AddComponent<Image>();
+    buttonImage.sprite = roundedSprite;
     buttonImage.color = new Color(0.2f, 0.8f, 0.2f, 1f); // Green
+    buttonImage.raycastTarget = true;
     
     // Create highlight layer for 3D top light effect
     GameObject highlightObj = new GameObject("Highlight", typeof(RectTransform));
@@ -295,7 +366,9 @@ public class StoreMultiplayer : ScrollableGrid, IDropHandler
     
     Image highlightImage = highlightObj.AddComponent<Image>();
     highlightImage.color = new Color(1f, 1f, 1f, 0.2f); // Semi-transparent white on top half
-    
+    highlightImage.sprite = roundedSprite;
+    highlightImage.color = new Color(1f, 1f, 1f, 0.2f); // Semi-transparent white on top half
+    highlightImage.raycastTarget = false;
     // Set button target as the background image
     nextTurnButton_.targetGraphic = buttonImage;
     nextTurnButton_.interactable = true;
@@ -332,7 +405,8 @@ public class StoreMultiplayer : ScrollableGrid, IDropHandler
     iconText.alignment = TextAlignmentOptions.Center;
     iconText.color = Color.white;
     iconText.fontStyle = FontStyles.Bold;
-    iconText.enableWordWrapping = false;
+    iconText.textWrappingMode = TMPro.TextWrappingModes.NoWrap;
+    iconText.raycastTarget = false; // Don't block button clicks
     
     // Hook up button click
     nextTurnButton_.onClick.AddListener(OnNextTurnClicked);
@@ -345,15 +419,17 @@ public class StoreMultiplayer : ScrollableGrid, IDropHandler
   /// </summary>
   private void OnNextTurnClicked()
   {
-    if (turnManager_ != null)
+    Debug.Log("=== Next Turn button CLICKED ===");
+    
+    if (turnManager_ == null)
     {
-      Debug.Log("Next Turn button clicked - ending current turn");
-      turnManager_.EndCurrentTurn();
+      Debug.LogError("Next Turn button clicked but TurnManager is null!");
+      return;
     }
-    else
-    {
-      Debug.LogWarning("Next Turn button clicked but TurnManager is null!");
-    }
+    
+    Debug.Log($"Calling EndCurrentTurn on TurnManager (current player: {turnManager_.GetCurrentPlayerId()})");
+    turnManager_.EndCurrentTurn();
+    Debug.Log("EndCurrentTurn called successfully");
   }
 
   /// <summary>
@@ -510,6 +586,18 @@ public class StoreMultiplayer : ScrollableGrid, IDropHandler
     
     List<Tile> tiles = GetTiles();
     
+    // Hide all tokens from ALL players first
+    foreach (var playerTokenList in playerTokens_.Values)
+    {
+      foreach (BasicToken token in playerTokenList)
+      {
+        if (token != null)
+        {
+          token.gameObject.SetActive(false);
+        }
+      }
+    }
+    
     // Get current player's tokens that should be displayed
     List<BasicToken> displayTokens = new List<BasicToken>();
     foreach (BasicToken token in playerTokens_[currentPlayerId_])
@@ -532,7 +620,7 @@ public class StoreMultiplayer : ScrollableGrid, IDropHandler
       }
     }
     
-    // Assign current player's tokens to tiles
+    // Assign current player's tokens to tiles and make them visible
     for (int i = 0; i < displayTokens.Count && i < tiles.Count; i++)
     {
       displayTokens[i].gameObject.SetActive(true);
