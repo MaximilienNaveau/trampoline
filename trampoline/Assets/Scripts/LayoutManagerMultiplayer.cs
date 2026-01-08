@@ -99,11 +99,17 @@ public class LayoutManagerMultiplayer : MonoBehaviour
             quit.anchorMax = new Vector2(1, 0.5f);
             quit.pivot = new Vector2(1, 0.5f);
             quit.anchoredPosition = new Vector2(-spacing_, 0);
+            
+            // Apply 3D styling to quit button
+            StyleButton3D(quit, new Color(0.8f, 0.2f, 0.2f, 1f)); // Red color
         }
         
         // Calculate available width for score area
         float availableWidth = header_.rect.width - quitSize - spacing_ * 2;
         float scoreStartX = spacing_;
+        
+        // Calculate score box size to match quit button
+        float scoreBoxSize = quitSize;
         
         // Handle title visibility
         if (title != null)
@@ -119,9 +125,8 @@ public class LayoutManagerMultiplayer : MonoBehaviour
                 title.anchoredPosition = new Vector2(scoreStartX, 0);
                 title.gameObject.SetActive(true);
                 
-                // Adjust score start position and width
+                // Adjust score start position
                 scoreStartX += titleWidth + spacing_;
-                availableWidth -= titleWidth + spacing_;
             }
             else
             {
@@ -130,17 +135,24 @@ public class LayoutManagerMultiplayer : MonoBehaviour
             }
         }
         
-        // Score container takes remaining space
+        // Score container: calculate width based on number of players and box size
+        // Layout: 1 column for 1-2 players, 2 columns for 3-4 players
         if (scoreContainer != null)
         {
-            scoreContainer.sizeDelta = new Vector2(availableWidth, header_.rect.height);
+            int numberOfPlayers = PlayerManager.Instance != null ? PlayerManager.Instance.GetNumberOfPlayers() : 2;
+            int columns = (numberOfPlayers <= 2) ? numberOfPlayers : 2;
+            float scoreSpacing = 8f;
+            float scoreContainerWidth = columns * scoreBoxSize + (columns - 1) * scoreSpacing;
+            
+            float topPadding = 8f; // Add padding from top
+            scoreContainer.sizeDelta = new Vector2(scoreContainerWidth, header_.rect.height - topPadding * 2);
             scoreContainer.anchorMin = new Vector2(0, 0);
             scoreContainer.anchorMax = new Vector2(0, 1);
             scoreContainer.pivot = new Vector2(0, 0.5f);
             scoreContainer.anchoredPosition = new Vector2(scoreStartX, 0);
             
-            // Setup ScoreDisplay component (now self-contained)
-            SetupScoreDisplay(scoreContainer);
+            // Setup ScoreDisplay component and pass the box size
+            SetupScoreDisplay(scoreContainer, scoreBoxSize);
         }
     }
     
@@ -148,12 +160,20 @@ public class LayoutManagerMultiplayer : MonoBehaviour
     /// Setup the multiplayer score display in the header score container.
     /// Now the score display creates its own grid automatically.
     /// </summary>
-    private void SetupScoreDisplay(RectTransform scoreContainer)
+    private void SetupScoreDisplay(RectTransform scoreContainer, float boxSize)
     {
         ScoreDisplay scoreDisplay = scoreContainer.GetComponent<ScoreDisplay>();
         if (scoreDisplay == null)
         {
             scoreDisplay = scoreContainer.gameObject.AddComponent<ScoreDisplay>();
+        }
+        
+        // Set the box size using reflection
+        var boxSizeField = typeof(ScoreDisplay).GetField("fixedBoxSize_", 
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        if (boxSizeField != null)
+        {
+            boxSizeField.SetValue(scoreDisplay, boxSize);
         }
         
         // Set the sprites and settings using reflection or direct assignment
@@ -285,5 +305,139 @@ public class LayoutManagerMultiplayer : MonoBehaviour
             boardScript.RecalculateGridLayout();
         }
         // StoreMultiplayer has fixed layout, no recalculation needed
+    }
+    
+    /// <summary>
+    /// Apply 3D button styling to a button GameObject.
+    /// </summary>
+    private void StyleButton3D(RectTransform buttonRect, Color baseColor)
+    {
+        GameObject buttonObj = buttonRect.gameObject;
+        
+        // Get or add Button component
+        Button button = buttonObj.GetComponent<Button>();
+        if (button == null)
+        {
+            button = buttonObj.AddComponent<Button>();
+        }
+        
+        // Clear existing children and components
+        for (int i = buttonObj.transform.childCount - 1; i >= 0; i--)
+        {
+            DestroyImmediate(buttonObj.transform.GetChild(i).gameObject);
+        }
+        Image[] existingImages = buttonObj.GetComponents<Image>();
+        foreach (Image img in existingImages)
+        {
+            DestroyImmediate(img);
+        }
+        
+        // Create shadow layer for 3D depth effect
+        GameObject shadowObj = new GameObject("Shadow", typeof(RectTransform));
+        shadowObj.transform.SetParent(buttonObj.transform, false);
+        shadowObj.transform.SetAsFirstSibling(); // Draw behind
+        
+        RectTransform shadowRect = shadowObj.GetComponent<RectTransform>();
+        shadowRect.anchorMin = Vector2.zero;
+        shadowRect.anchorMax = Vector2.one;
+        shadowRect.offsetMin = new Vector2(0, -4); // Offset down
+        shadowRect.offsetMax = new Vector2(4, 0);  // Offset right
+        
+        Image shadowImage = shadowObj.AddComponent<Image>();
+        shadowImage.color = new Color(0f, 0f, 0f, 0.3f); // Semi-transparent black
+        
+        // Add Outline to shadow for rounded effect
+        Outline shadowOutline = shadowObj.AddComponent<Outline>();
+        shadowOutline.effectColor = new Color(0f, 0f, 0f, 0.3f);
+        shadowOutline.effectDistance = new Vector2(2, -2);
+        
+        // Create main button background with rounded corners
+        GameObject bgObj = new GameObject("Background", typeof(RectTransform));
+        bgObj.transform.SetParent(buttonObj.transform, false);
+        
+        RectTransform bgRect = bgObj.GetComponent<RectTransform>();
+        bgRect.anchorMin = Vector2.zero;
+        bgRect.anchorMax = Vector2.one;
+        bgRect.offsetMin = Vector2.zero;
+        bgRect.offsetMax = Vector2.zero;
+        
+        Image buttonImage = bgObj.AddComponent<Image>();
+        buttonImage.color = baseColor;
+        
+        // Add Outline for rounded corners effect
+        Outline bgOutline = bgObj.AddComponent<Outline>();
+        bgOutline.effectColor = baseColor;
+        bgOutline.effectDistance = new Vector2(1, -1);
+        
+        // Create highlight layer for 3D top light effect
+        GameObject highlightObj = new GameObject("Highlight", typeof(RectTransform));
+        highlightObj.transform.SetParent(bgObj.transform, false);
+        
+        RectTransform highlightRect = highlightObj.GetComponent<RectTransform>();
+        highlightRect.anchorMin = new Vector2(0, 0.5f);
+        highlightRect.anchorMax = new Vector2(1, 1);
+        highlightRect.offsetMin = Vector2.zero;
+        highlightRect.offsetMax = Vector2.zero;
+        
+        Image highlightImage = highlightObj.AddComponent<Image>();
+        highlightImage.color = new Color(1f, 1f, 1f, 0.2f); // Semi-transparent white on top half
+        
+        // Set button target as the background image
+        button.targetGraphic = buttonImage;
+        button.interactable = true;
+        
+        // Add CanvasGroup to ensure button is clickable
+        CanvasGroup canvasGroup = buttonObj.GetComponent<CanvasGroup>();
+        if (canvasGroup == null)
+        {
+            canvasGroup = buttonObj.AddComponent<CanvasGroup>();
+        }
+        canvasGroup.interactable = true;
+        canvasGroup.blocksRaycasts = true;
+        
+        // Add visual feedback with lighter/darker colors
+        ColorBlock colors = button.colors;
+        colors.normalColor = baseColor;
+        colors.highlightedColor = new Color(
+            Mathf.Min(baseColor.r + 0.1f, 1f),
+            Mathf.Min(baseColor.g + 0.1f, 1f),
+            Mathf.Min(baseColor.b + 0.1f, 1f),
+            1f);
+        colors.pressedColor = new Color(
+            Mathf.Max(baseColor.r - 0.1f, 0f),
+            Mathf.Max(baseColor.g - 0.1f, 0f),
+            Mathf.Max(baseColor.b - 0.1f, 0f),
+            1f);
+        colors.disabledColor = new Color(0.5f, 0.5f, 0.5f, 0.5f);
+        button.colors = colors;
+        
+        // Add X icon if this is the quit button
+        if (buttonObj.name == "Quit")
+        {
+            GameObject iconObj = new GameObject("Icon", typeof(RectTransform));
+            iconObj.transform.SetParent(bgObj.transform, false);
+            
+            RectTransform iconRect = iconObj.GetComponent<RectTransform>();
+            iconRect.anchorMin = Vector2.zero;
+            iconRect.anchorMax = Vector2.one;
+            iconRect.offsetMin = new Vector2(8, 8);
+            iconRect.offsetMax = new Vector2(-8, -8);
+            
+            TMPro.TextMeshProUGUI iconText = iconObj.AddComponent<TMPro.TextMeshProUGUI>();
+            
+            // Try to load TextMeshPro default font
+            var defaultFont = Resources.Load<TMPro.TMP_FontAsset>("Fonts & Materials/LiberationSans SDF");
+            if (defaultFont != null)
+            {
+                iconText.font = defaultFont;
+            }
+            
+            iconText.text = "X"; // Simple X character
+            iconText.fontSize = buttonRect.sizeDelta.x * 0.5f;
+            iconText.alignment = TMPro.TextAlignmentOptions.Center;
+            iconText.color = Color.white;
+            iconText.fontStyle = TMPro.FontStyles.Bold;
+            iconText.enableWordWrapping = false;
+        }
     }
 }

@@ -26,6 +26,8 @@ public class StoreMultiplayer : ScrollableGrid, IDropHandler
   [Tooltip("Text to display current player (e.g., 'Player 1')")]
   private TextMeshProUGUI playerLabel_;
   
+  private Button nextTurnButton_;
+  
   private TokenPool tokenPool_;
   private TokenDistributor tokenDistributor_;
   private TurnManager turnManager_;
@@ -47,6 +49,9 @@ public class StoreMultiplayer : ScrollableGrid, IDropHandler
     
     // Setup background image
     SetupBackgroundImage();
+    
+    // Create Next Turn button
+    CreateNextTurnButton();
     
     // Auto-create player label if not assigned
     CreatePlayerLabelIfNeeded();
@@ -212,6 +217,143 @@ public class StoreMultiplayer : ScrollableGrid, IDropHandler
     grid_.childAlignment = TextAnchor.UpperCenter;
     
     Debug.Log($"StoreMultiplayer: Fixed layout - Width: {availableWidth}px, Cell: {cellSize}px, Label: {labelHeight}px, Grid: {gridHeight}px, Total: {totalHeight}px");
+  }
+
+  /// <summary>
+  /// Create a Next Turn button next to the player label.
+  /// </summary>
+  private void CreateNextTurnButton()
+  {
+    // Create button GameObject as a sibling to player label
+    GameObject buttonObj = new GameObject("NextTurnButton", typeof(RectTransform));
+    buttonObj.transform.SetParent(transform, false);
+    
+    RectTransform buttonRect = buttonObj.GetComponent<RectTransform>();
+    
+    // Position button to the right of the player label area
+    // Calculate button size based on label height
+    float labelHeight = Screen.height * 0.05f;
+    float buttonSize = labelHeight * 0.8f; // Slightly smaller than label height
+    float spacing = 8f;
+    
+    // Position in top-right area, aligned with label
+    buttonRect.anchorMin = new Vector2(1, 1);
+    buttonRect.anchorMax = new Vector2(1, 1);
+    buttonRect.pivot = new Vector2(1, 1);
+    buttonRect.anchoredPosition = new Vector2(-spacing, -spacing);
+    buttonRect.sizeDelta = new Vector2(buttonSize, buttonSize);
+    
+    // Add Button component
+    nextTurnButton_ = buttonObj.AddComponent<Button>();
+    
+    // Add CanvasGroup to ensure button is clickable
+    CanvasGroup canvasGroup = buttonObj.AddComponent<CanvasGroup>();
+    canvasGroup.interactable = true;
+    canvasGroup.blocksRaycasts = true;
+    
+    // Create shadow layer for 3D depth effect
+    GameObject shadowObj = new GameObject("Shadow", typeof(RectTransform));
+    shadowObj.transform.SetParent(buttonObj.transform, false);
+    shadowObj.transform.SetAsFirstSibling(); // Draw behind
+    
+    RectTransform shadowRect = shadowObj.GetComponent<RectTransform>();
+    shadowRect.anchorMin = Vector2.zero;
+    shadowRect.anchorMax = Vector2.one;
+    shadowRect.offsetMin = new Vector2(0, -4); // Offset down
+    shadowRect.offsetMax = new Vector2(4, 0);  // Offset right
+    
+    Image shadowImage = shadowObj.AddComponent<Image>();
+    shadowImage.color = new Color(0f, 0f, 0f, 0.3f); // Semi-transparent black
+    
+    // Add Outline to shadow for rounded effect
+    Outline shadowOutline = shadowObj.AddComponent<Outline>();
+    shadowOutline.effectColor = new Color(0f, 0f, 0f, 0.3f);
+    shadowOutline.effectDistance = new Vector2(2, -2);
+    
+    // Create main button background with rounded corners
+    GameObject bgObj = new GameObject("Background", typeof(RectTransform));
+    bgObj.transform.SetParent(buttonObj.transform, false);
+    
+    RectTransform bgRect = bgObj.GetComponent<RectTransform>();
+    bgRect.anchorMin = Vector2.zero;
+    bgRect.anchorMax = Vector2.one;
+    bgRect.offsetMin = Vector2.zero;
+    bgRect.offsetMax = Vector2.zero;
+    
+    Image buttonImage = bgObj.AddComponent<Image>();
+    buttonImage.color = new Color(0.2f, 0.8f, 0.2f, 1f); // Green
+    
+    // Create highlight layer for 3D top light effect
+    GameObject highlightObj = new GameObject("Highlight", typeof(RectTransform));
+    highlightObj.transform.SetParent(bgObj.transform, false);
+    
+    RectTransform highlightRect = highlightObj.GetComponent<RectTransform>();
+    highlightRect.anchorMin = new Vector2(0, 0.5f);
+    highlightRect.anchorMax = new Vector2(1, 1);
+    highlightRect.offsetMin = Vector2.zero;
+    highlightRect.offsetMax = Vector2.zero;
+    
+    Image highlightImage = highlightObj.AddComponent<Image>();
+    highlightImage.color = new Color(1f, 1f, 1f, 0.2f); // Semi-transparent white on top half
+    
+    // Set button target as the background image
+    nextTurnButton_.targetGraphic = buttonImage;
+    nextTurnButton_.interactable = true;
+    
+    // Add visual feedback
+    ColorBlock colors = nextTurnButton_.colors;
+    colors.normalColor = new Color(0.25f, 0.85f, 0.25f, 1f);      // Bright green
+    colors.highlightedColor = new Color(0.35f, 0.95f, 0.35f, 1f); // Lighter green
+    colors.pressedColor = new Color(0.15f, 0.65f, 0.15f, 1f);     // Darker green
+    colors.disabledColor = new Color(0.5f, 0.5f, 0.5f, 0.5f);     // Gray
+    nextTurnButton_.colors = colors;
+    
+    // Create checkmark icon
+    GameObject iconObj = new GameObject("Icon", typeof(RectTransform));
+    iconObj.transform.SetParent(buttonObj.transform, false);
+    
+    RectTransform iconRect = iconObj.GetComponent<RectTransform>();
+    iconRect.anchorMin = Vector2.zero;
+    iconRect.anchorMax = Vector2.one;
+    iconRect.offsetMin = new Vector2(8, 8);
+    iconRect.offsetMax = new Vector2(-8, -8);
+    
+    TextMeshProUGUI iconText = iconObj.AddComponent<TextMeshProUGUI>();
+    
+    // Try to load TextMeshPro default font
+    var defaultFont = Resources.Load<TMPro.TMP_FontAsset>("Fonts & Materials/LiberationSans SDF");
+    if (defaultFont != null)
+    {
+        iconText.font = defaultFont;
+    }
+    
+    iconText.text = ">"; // Simple text that's guaranteed to be in the font
+    iconText.fontSize = buttonSize * 0.5f;
+    iconText.alignment = TextAlignmentOptions.Center;
+    iconText.color = Color.white;
+    iconText.fontStyle = FontStyles.Bold;
+    iconText.enableWordWrapping = false;
+    
+    // Hook up button click
+    nextTurnButton_.onClick.AddListener(OnNextTurnClicked);
+    
+    Debug.Log($"StoreMultiplayer: Created Next Turn button next to player label, size: {buttonSize}px, font: {(defaultFont != null ? "LiberationSans SDF" : "default")}");
+  }
+  
+  /// <summary>
+  /// Handle Next Turn button click.
+  /// </summary>
+  private void OnNextTurnClicked()
+  {
+    if (turnManager_ != null)
+    {
+      Debug.Log("Next Turn button clicked - ending current turn");
+      turnManager_.EndCurrentTurn();
+    }
+    else
+    {
+      Debug.LogWarning("Next Turn button clicked but TurnManager is null!");
+    }
   }
 
   /// <summary>

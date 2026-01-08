@@ -27,6 +27,9 @@ public class ScoreDisplay : MonoBehaviour
     [Tooltip("Maximum font size for scores")]
     private float maxFontSize_ = 32f;
     
+    // Fixed box size (set by LayoutManager)
+    private float fixedBoxSize_ = 0f;
+    
     // Internal references (created dynamically)
     private GameObject[] playerBoxes_;
     private Image[] backgroundImages_;
@@ -50,6 +53,14 @@ public class ScoreDisplay : MonoBehaviour
         
         numberOfPlayers_ = playerManager_.GetNumberOfPlayers();
         playerColors_ = playerManager_.GetPlayerColors();
+        
+        // Add padding from top of screen
+        RectTransform rect = GetComponent<RectTransform>();
+        if (rect != null)
+        {
+            float topPadding = 8f;
+            rect.anchoredPosition = new Vector2(rect.anchoredPosition.x, rect.anchoredPosition.y - topPadding);
+        }
         
         // Create the score grid
         CreateScoreGrid();
@@ -99,22 +110,33 @@ public class ScoreDisplay : MonoBehaviour
         float calculatedMaxFontSize = Mathf.Min(maxFontSize_, baseFontSize);
         float calculatedMinFontSize = Mathf.Max(minFontSize_, isMobile ? 16f : 12f);
         
-        // Calculate squared box size based on font size
-        // Box should be about the size of the font, with minimal padding
-        float padding = 4f; // Minimal padding
-        float boxSize = calculatedMaxFontSize * 2.5f + padding * 2; // ~2.5x font size for 2 lines of text
-        
-        // Calculate box sizes accounting for spacing between boxes
-        float totalHorizontalSpacing = (columns - 1) * spacing_;
-        float totalVerticalSpacing = (rows - 1) * spacing_;
-        
-        // Ensure boxes don't overflow container
-        float maxBoxWidthFromContainer = (containerWidth - totalHorizontalSpacing) / columns;
-        float maxBoxHeightFromContainer = (containerHeight - totalVerticalSpacing) / rows;
-        
-        // Use the smallest constraint to keep boxes squared
-        float maxBoxSize = Mathf.Min(maxBoxWidthFromContainer, maxBoxHeightFromContainer);
-        boxSize = Mathf.Min(boxSize, maxBoxSize);
+        // Use fixed box size if set by LayoutManager, otherwise calculate
+        float boxSize;
+        if (fixedBoxSize_ > 0f)
+        {
+            boxSize = fixedBoxSize_;
+            // Adjust font size to fit the fixed box
+            calculatedMaxFontSize = Mathf.Min(calculatedMaxFontSize, boxSize * 0.4f);
+        }
+        else
+        {
+            // Calculate squared box size based on font size
+            // Box should be about the size of the font, with minimal padding
+            float padding = 4f; // Minimal padding
+            boxSize = calculatedMaxFontSize * 2.5f + padding * 2; // ~2.5x font size for 2 lines of text
+            
+            // Calculate box sizes accounting for spacing between boxes
+            float totalHorizontalSpacing = (columns - 1) * spacing_;
+            float totalVerticalSpacing = (rows - 1) * spacing_;
+            
+            // Ensure boxes don't overflow container
+            float maxBoxWidthFromContainer = (containerWidth - totalHorizontalSpacing) / columns;
+            float maxBoxHeightFromContainer = (containerHeight - totalVerticalSpacing) / rows;
+            
+            // Use the smallest constraint to keep boxes squared
+            float maxBoxSize = Mathf.Min(maxBoxWidthFromContainer, maxBoxHeightFromContainer);
+            boxSize = Mathf.Min(boxSize, maxBoxSize);
+        }
         
         // Make boxes squared
         float boxWidth = boxSize;
