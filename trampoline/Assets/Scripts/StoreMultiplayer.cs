@@ -586,23 +586,23 @@ public class StoreMultiplayer : ScrollableGrid, IDropHandler
     
     List<Tile> tiles = GetTiles();
     
-    // Hide all tokens from ALL players first
+    // Hide all tokens from ALL players that are NOT on the board
     foreach (var playerTokenList in playerTokens_.Values)
     {
       foreach (BasicToken token in playerTokenList)
       {
-        if (token != null)
+        if (token != null && !token.GetInBoard())
         {
           token.gameObject.SetActive(false);
         }
       }
     }
     
-    // Get current player's tokens that should be displayed
+    // Get current player's tokens that should be displayed in store
     List<BasicToken> displayTokens = new List<BasicToken>();
     foreach (BasicToken token in playerTokens_[currentPlayerId_])
     {
-      if (token != null && !token.GetInBoard() && !token.BeingDragged())
+      if (token != null && !token.GetInBoard())
       {
         displayTokens.Add(token);
       }
@@ -689,6 +689,9 @@ public class StoreMultiplayer : ScrollableGrid, IDropHandler
       // Mark token as not on board - UpdateStorage will handle the rest
       token.SetInBoard(false);
       token.SetDraggedOnTile(true);
+      
+      // Update the storage display immediately
+      UpdateStorage();
     }
   }
 

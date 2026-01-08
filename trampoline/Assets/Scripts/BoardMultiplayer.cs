@@ -201,30 +201,8 @@ public class BoardMultiplayer : ScrollableGrid
             return;
         }
         
-        // Color the tiles in this row with a subtle background
-        List<Tile> tiles = GetTiles();
-        int startIndex = rowIndex * cols_;
-        int endIndex = Mathf.Min(startIndex + cols_, tiles.Count);
-        
-        Color playerColor = playerId < playerColors_.Length ? 
-            playerColors_[playerId] : 
-            Color.white;
-        
-        for (int i = startIndex; i < endIndex; i++)
-        {
-            Image tileImage = tiles[i].GetComponent<Image>();
-            if (tileImage != null)
-            {
-                // Apply a subtle tint to show ownership
-                Color tintedColor = new Color(
-                    playerColor.r,
-                    playerColor.g,
-                    playerColor.b,
-                    0.2f  // Low alpha for subtle effect
-                );
-                tileImage.color = tintedColor;
-            }
-        }
+        // Visual feedback removed - tiles remain their default color
+        // Players can identify their rows by the token colors on the board
     }
 
     /// <summary>

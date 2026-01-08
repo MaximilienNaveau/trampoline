@@ -126,10 +126,24 @@ public class BasicToken : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDr
     {
         canvasGroup_.alpha = 1.0f;
         canvasGroup_.blocksRaycasts = true;
-        if (!draggedOnTile_ && startTileUnder_ != null)
+        
+        // If token was dropped on a tile or store, draggedOnTile_ will be true
+        // Otherwise, return it to where it started
+        if (!draggedOnTile_)
         {
-            startTileUnder_.AttachToken(this);
+            if (startTileUnder_ != null)
+            {
+                // Return to original tile
+                startTileUnder_.AttachToken(this);
+            }
+            else if (parentOnDragStart_ != null)
+            {
+                // Return to original parent position
+                transform.SetParent(parentOnDragStart_);
+                rectTransform_.anchoredPosition = Vector2.zero;
+            }
         }
+        
         parentOnDragStart_ = null;
     }
 
