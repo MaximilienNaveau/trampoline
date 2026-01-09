@@ -261,6 +261,13 @@ public class BasicToken : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDr
         }
         // Change the parent of the BasicToken to the new Tile
         transform.SetParent(tile_under_.transform);
+        
+        // Center the token on the tile by setting anchors and pivot to center
+        rectTransform_.anchorMin = new Vector2(0.5f, 0.5f);
+        rectTransform_.anchorMax = new Vector2(0.5f, 0.5f);
+        rectTransform_.pivot = new Vector2(0.5f, 0.5f);
+        rectTransform_.anchoredPosition = Vector2.zero;
+        
         draggedOnTile_ = true;
         UpdateSize(((RectTransform)(tile_under_.transform)).sizeDelta);
     }

@@ -640,10 +640,10 @@ public class StoreMultiplayer : ScrollableGrid, IDropHandler
       BasicToken token = displayTokens[i];
       token.gameObject.SetActive(true);
       
-      // Ensure token is properly positioned by explicitly calling SwapTileUnder
-      token.SwapTileUnder(tiles[i]);
-      
+      // AttachToken already calls SwapTileUnder internally, so we don't need to call it twice
       tiles[i].AttachToken(token);
+      
+      Debug.Log($"StoreMultiplayer.UpdateStorage: Attached token '{token.GetLetters()}' to tile {i} '{tiles[i].name}', Parent={token.transform.parent?.name}, Position={((RectTransform)token.transform).anchoredPosition}");
     }
   }
 
@@ -705,22 +705,31 @@ public class StoreMultiplayer : ScrollableGrid, IDropHandler
         return;
       }
       
+      Debug.Log($"StoreMultiplayer.OnDrop: Token '{token.GetLetters()}' dropped. InBoard={token.GetInBoard()}, TileUnder={token.GetTileUnder()}, Parent={token.transform.parent?.name}");
+      
       // Mark token as not on board
       token.SetInBoard(false);
-      token.SetDraggedOnTile(true);
       
       // Force token to detach from its current tile
       if (token.GetTileUnder() != null)
       {
-        token.GetTileUnder().LetTheTokenGo();
+        Tile oldTile = token.GetTileUnder();
+        oldTile.LetTheTokenGo();
+        // Clear the token's tile reference too (important!)
+        token.SwapTileUnder(null);
+        Debug.Log($"StoreMultiplayer.OnDrop: Detached token from tile '{oldTile.name}'");
       }
       
-      // Immediately hide the token to avoid visual glitches
-      // It will be repositioned and shown by UpdateStorage next frame
-      token.gameObject.SetActive(false);
+      Debug.Log($"StoreMultiplayer.OnDrop: Before UpdateStorage - Parent={token.transform.parent?.name}, Active={token.gameObject.activeSelf}");
       
-      // Schedule storage update for next frame (after drag ends)
-      needsStorageUpdate_ = true;
+      // Update storage immediately to reposition the token BEFORE OnEndDrag completes
+      // This ensures the token is properly attached to a store tile
+      UpdateStorage();
+      
+      Debug.Log($"StoreMultiplayer.OnDrop: After UpdateStorage - TileUnder={token.GetTileUnder()?.name}, Parent={token.transform.parent?.name}, Position={((RectTransform)token.transform).anchoredPosition}");
+      
+      // Mark this as successfully dropped on a tile so OnEndDrag doesn't reset position
+      token.SetDraggedOnTile(true);
     }
   }
 
