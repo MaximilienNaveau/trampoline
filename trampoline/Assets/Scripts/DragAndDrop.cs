@@ -33,18 +33,22 @@ public class DragAndDrop : MonoBehaviour, IPointerDownHandler, IBeginDragHandler
 
     public void OnBeginDrag(PointerEventData eventData)
     {
+        BasicToken token = GetComponent<BasicToken>();
+        if (token == null)
+        {
+            return;
+        }
+        
+        // Frozen tokens can now be dragged (as a group), so no need to block them
+        
         // Check if this is multiplayer mode and if it's the correct player's turn
         if (turnManager_ != null && store_ != null)
         {
-            BasicToken token = GetComponent<BasicToken>();
-            if (token != null)
+            // Check if this token belongs to the current player in the store
+            if (!store_.OwnsToken(token))
             {
-                // Check if this token belongs to the current player in the store
-                if (!store_.OwnsToken(token))
-                {
-                    Debug.Log($"DragAndDrop: Cannot drag - not current player's token.");
-                    return;
-                }
+                Debug.Log($"DragAndDrop: Cannot drag - not current player's token.");
+                return;
             }
         }
         

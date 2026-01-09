@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -17,6 +18,16 @@ public class BasicToken : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDr
     private CanvasGroup canvasGroup_;
     private Canvas canvas_;
     private bool inBoard_ = false;
+    
+    // Multiplayer ownership and scoring
+    private int ownerId_ = -1;              // Which player placed this token (-1 = unplaced)
+    private int positionScore_ = 0;         // Score value (1, 2, 3... based on placement order)
+    private bool isFrozen_ = false;         // Is this part of a validated, frozen word?
+    private int frozenWordId_ = -1;         // Which frozen word group this belongs to (-1 = not frozen)
+    
+    // Group dragging for frozen words
+    private List<BasicToken> groupDragTokens_ = null;  // Other tokens being dragged with this one
+    private Vector2[] groupDragOffsets_ = null;        // Original offsets from lead token
 
     // Double click management.
     private float lastTapTime_ = -1000000.0f;
@@ -101,6 +112,53 @@ public class BasicToken : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDr
 
     public void OnBeginDrag(PointerEventData eventData)
     {
+        // If this is a frozen token, prepare for group drag
+        if (isFrozen_ && frozenWordId_ >= 0)
+        {
+            Debug.Log($"BasicToken: Starting group drag for frozen word ID {frozenWordId_}");
+            BoardMultiplayer board = FindAnyObjectByType<BoardMultiplayer>();
+            if (board != null)
+            {
+                groupDragTokens_ = board.GetTokensInFrozenWord(frozenWordId_);
+                // Remove self from the group list
+                groupDragTokens_.Remove(this);
+                
+                // Calculate offsets from this token to others
+                groupDragOffsets_ = new Vector2[groupDragTokens_.Count];
+                for (int i = 0; i < groupDragTokens_.Count; i++)
+                {
+                    RectTransform otherRect = (RectTransform)groupDragTokens_[i].transform;
+                    groupDragOffsets_[i] = otherRect.anchoredPosition - rectTransform_.anchoredPosition;
+                }
+                
+        
+        // Move group tokens along with this one
+        if (groupDragTokens_ != null && groupDragOffsets_ != null)
+        {
+            for (int i = 0; i < groupDragTokens_.Count; i++)
+            {
+                RectTransform otherRect = (RectTransform)groupDragTokens_[i].transform;
+                otherRect.anchoredPosition = rectTransform_.anchoredPosition + groupDragOffsets_[i];
+            }
+        }
+                // Set all group tokens to dragging state
+                foreach (BasicToken token in groupDragTokens_)
+                {
+                    CanvasGroup cg = token.GetComponent<CanvasGroup>();
+                    if (cg != null)
+                    {
+                        cg.alpha = 0.6f;
+                        cg.blocksRaycasts = false;
+                    }
+                    token.draggedOnTile_ = false;
+                    token.startTileUnder_ = token.tile_under_;
+                    token.SwapTileUnder(null);
+                }
+                
+                Debug.Log($"BasicToken: Group dragging {groupDragTokens_.Count + 1} tokens together");
+            }
+        }
+        
         canvasGroup_.alpha = 0.6f;
         canvasGroup_.blocksRaycasts = false;
         draggedOnTile_ = false;
@@ -117,6 +175,47 @@ public class BasicToken : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDr
 
     public void OnDrag(PointerEventData eventData)
     {
+        // Handle group tokens
+        if (groupDragTokens_ != null)
+        {
+            // If we didn't successfully drop on a tile, return all group tokens to their original positions
+            if (!draggedOnTile_)
+            {
+                foreach (BasicToken token in groupDragTokens_)
+                {
+                    if (token.startTileUnder_ != null)
+                    {
+                        token.startTileUnder_.AttachToken(token);
+                    }
+                    CanvasGroup cg = token.GetComponent<CanvasGroup>();
+                    if (cg != null)
+                    {
+                        cg.alpha = 1.0f;
+                        cg.blocksRaycasts = true;
+                    }
+                }
+            }
+            else
+            {
+                // Successfully dropped - restore visual state for group tokens
+                foreach (BasicToken token in groupDragTokens_)
+                {
+                    CanvasGroup cg = token.GetComponent<CanvasGroup>();
+                    if (cg != null)
+                    {
+                        cg.alpha = 1.0f;
+                        cg.blocksRaycasts = true;
+                    }
+                    // Note: Group tokens should already be positioned correctly from OnDrag
+                    token.draggedOnTile_ = true;  // Mark as successfully dropped
+                }
+            }
+            
+            // Clear group drag state
+            groupDragTokens_ = null;
+            groupDragOffsets_ = null;
+        }
+        
         // Calculate the new position using delta and scaleFactor
         Vector2 delta = eventData.delta / canvas_.scaleFactor;
         rectTransform_.anchoredPosition += delta;
@@ -280,5 +379,69 @@ public class BasicToken : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDr
     public void Update()
     {
         // Nothing to do for now.
+    }
+    
+    // === Multiplayer Ownership & Scoring Methods ===
+    
+    /// <summary>
+    /// Set which player owns this token and its position score.
+    /// No longer adds outline here - outlines are now drawn around entire words.
+    /// </summary>
+    public void SetOwnership(int playerId, int positionScore, Color playerColor)
+    {
+        ownerId_ = playerId;
+        positionScore_ = positionScore;
+        // Outline is now handled at word level, not per token
+    }
+    
+    /// <summary>
+    /// Get the player ID who owns this token.
+    /// </summary>
+    public int GetOwnerId()
+    {
+        return ownerId_;
+    }
+    
+    /// <summary>
+    /// Get the position score for this token.
+    /// </summary>
+    public int GetPositionScore()
+    {
+        return positionScore_;
+    }
+    
+    /// <summary>
+    /// Set whether this token is frozen (part of a validated word).
+    /// </summary>
+    public void SetFrozen(bool frozen, int wordId = -1)
+    {
+        isFrozen_ = frozen;
+        frozenWordId_ = wordId;
+    }
+    
+    /// <summary>
+    /// Check if this token is frozen (part of a validated word).
+    /// </summary>
+    public bool IsFrozen()
+    {
+        return isFrozen_;
+    }
+    
+    /// <summary>
+    /// Get the frozen word ID this token belongs to.
+    /// </summary>
+    public int GetFrozenWordId()
+    {
+        return frozenWordId_;
+    }
+    
+    /// <summary>
+    /// Clear the player outline (when token is returned to store).
+    /// Outline system now managed at word level.
+    /// </summary>
+    public void ClearOwnership()
+    {
+        ownerId_ = -1;
+        positionScore_ = 0;
     }
 }

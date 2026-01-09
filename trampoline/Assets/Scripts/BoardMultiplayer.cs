@@ -26,8 +26,11 @@ public class BoardMultiplayer : ScrollableGrid
     
     private TokenPool tokenPool_;
     private TurnManager turnManager_;
+    private PlayerManager playerManager_;
     private int[] rowOwnership_;  // -1 = unowned, 0-3 = player ID
     private List<Image> rowIndicators_;  // Visual indicators for each row
+    private RowLetterHistory[] rowHistories_;  // Track letter placement history for progressive scoring
+    private List<GameObject> wordOutlines_;  // Visual outlines around complete words
 
     private void Start()
     {
@@ -61,12 +64,23 @@ public class BoardMultiplayer : ScrollableGrid
             throw new System.Exception("BoardMultiplayer: TurnManager is null.");
         }
         
+        // Get player manager
+        playerManager_ = FindAnyObjectByType<PlayerManager>();
+        if (playerManager_ == null)
+        {
+            Debug.LogError("BoardMultiplayer: PlayerManager is null.");
+            throw new System.Exception("BoardMultiplayer: PlayerManager is null.");
+        }
+        
         // Initialize row ownership tracking
         rowOwnership_ = new int[rows_];
         rowIndicators_ = new List<Image>();
+        rowHistories_ = new RowLetterHistory[rows_];
+        wordOutlines_ = new List<GameObject>();
         for (int i = 0; i < rows_; i++)
         {
             rowOwnership_[i] = -1;  // -1 means unowned
+            rowHistories_[i] = new RowLetterHistory(i);
         }
         
         Debug.Log("BoardMultiplayer: Initialized.");
@@ -379,6 +393,205 @@ public class BoardMultiplayer : ScrollableGrid
         
         return hasResized;
     }
+    
+    /// <summary>
+    /// Assign position scores to new tokens placed in rows.
+    /// Called when a turn is validated to mark which letters are new.
+    /// </summary>
+    public void AssignPositionScoresToNewTokens(int playerId)
+    {
+        if (playerManager_ == null)
+        {
+            return;
+        }
+        
+        Color playerColor = playerManager_.GetPlayerColor(playerId);
+        List<Tile> tiles = GetTiles();
+        
+        // Process each row
+        for (int row = 0; row < GetNbRows(); row++)
+        {
+            // Get tokens in this row
+            List<BasicToken> tokensInRow = new List<BasicToken>();
+            
+            for (int col = 0; col < cols_; col++)
+            {
+                int tileIndex = row * cols_ + col;
+                if (tileIndex < tiles.Count)
+                {
+                    Tile tile = tiles[tileIndex];
+                    if (tile.HasToken())
+                    {
+                        tokensInRow.Add(tile.GetToken());
+                    }
+                }
+            }
+            
+            // Assign scores to new tokens
+            if (tokensInRow.Count > 0)
+            {
+                int newTokens = rowHistories_[row].AssignPositionScoresToNewTokens(tokensInRow, playerId, playerColor);
+                if (newTokens > 0)
+                {
+                    Debug.Log($"BoardMultiplayer: Assigned position scores to {newTokens} new tokens in row {row} for Player {playerId + 1}");
+                }
+            }
+        }
+    }
+    
+    /// <summary>
+    /// Assign position scores to tokens in real-time as they're placed.
+    /// This provides immediate score feedback during the turn.
+    /// </summary>
+    private void AssignPositionScoresToUnassignedTokens(int playerId)
+    {
+        if (playerManager_ == null)
+        {
+            return;
+        }
+        
+        Color playerColor = playerManager_.GetPlayerColor(playerId);
+        List<Tile> tiles = GetTiles();
+        
+        // Process each row
+        for (int row = 0; row < GetNbRows(); row++)
+        {
+            // Get tokens in this row
+            List<BasicToken> tokensInRow = new List<BasicToken>();
+            
+            for (int col = 0; col < cols_; col++)
+            {
+                int tileIndex = row * cols_ + col;
+                if (tileIndex < tiles.Count)
+                {
+                    Tile tile = tiles[tileIndex];
+                    if (tile.HasToken())
+                    {
+                        BasicToken token = tile.GetToken();
+                        // Only include tokens that are on the board
+                        if (token.GetInBoard())
+                        {
+                            tokensInRow.Add(token);
+                        }
+                    }
+                }
+            }
+            
+            // Assign scores to tokens that don't have them yet
+            if (tokensInRow.Count > 0)
+            {
+                rowHistories_[row].AssignPositionScoresToNewTokens(tokensInRow, playerId, playerColor);
+            }
+        }
+    }
+    
+    /// <summary>
+    /// Freeze a validated word so its tokens cannot be moved individually.
+    /// </summary>
+    public void FreezeValidatedWord(int rowIndex, string word)
+    {
+        if (rowIndex < 0 || rowIndex >= rows_)
+        {
+            return;
+        }
+        
+        List<Tile> tiles = GetTiles();
+        List<BasicToken> tokensInWord = new List<BasicToken>();
+        
+        // Get all tokens in this row that form the word
+        for (int col = 0; col < cols_; col++)
+        {
+            int tileIndex = rowIndex * cols_ + col;
+            if (tileIndex < tiles.Count)
+            {
+                Tile tile = tiles[tileIndex];
+                if (tile.HasToken())
+                {
+                    tokensInWord.Add(tile.GetToken());
+                }
+            }
+        }
+        
+        // Freeze the word
+        if (tokensInWord.Count > 0)
+        {
+            rowHistories_[rowIndex].FreezeWord(tokensInWord);
+            Debug.Log($"BoardMultiplayer: Froze word '{word}' in row {rowIndex} with {tokensInWord.Count} tokens");
+        }
+    }
+    
+    /// <summary>
+    /// Get the progressive score for a specific player.
+    /// Sum of all position scores (1+2+3...) for tokens they own.
+    /// Only counts tokens that are part of valid words.
+    /// </summary>
+    public int GetPlayerProgressiveScore(int playerId, FrenchDictionary dictionary)
+    {
+        int totalScore = 0;
+        
+        // Get all words for this player
+        List<WordWithOwner> playerWords = GetPlayerWords(playerId);
+        
+        // Only count scores for valid words
+        foreach (WordWithOwner wordInfo in playerWords)
+        {
+            if (dictionary.isWordValid(wordInfo.word_))
+            {
+                // Get score for this row
+                totalScore += rowHistories_[wordInfo.rowIndex_].GetPlayerScore(playerId);
+            }
+        }
+        
+        return totalScore;
+    }
+    
+    /// <summary>
+    /// Get the frozen score (from previous turns) for a specific player.
+    /// Only counts frozen tokens that are part of valid words.
+    /// </summary>
+    public int GetPlayerFrozenScore(int playerId, FrenchDictionary dictionary)
+    {
+        int totalScore = 0;
+        
+        // Get all words for this player
+        List<WordWithOwner> playerWords = GetPlayerWords(playerId);
+        
+        // Only count scores for valid words
+        foreach (WordWithOwner wordInfo in playerWords)
+        {
+            if (dictionary.isWordValid(wordInfo.word_))
+            {
+                // Get frozen score for this row
+                totalScore += rowHistories_[wordInfo.rowIndex_].GetPlayerFrozenScore(playerId);
+            }
+        }
+        
+        return totalScore;
+    }
+    
+    /// <summary>
+    /// Get the current turn score (unfrozen tokens) for a specific player.
+    /// Only counts unfrozen tokens that are part of valid words.
+    /// </summary>
+    public int GetPlayerCurrentTurnScore(int playerId, FrenchDictionary dictionary)
+    {
+        int totalScore = 0;
+        
+        // Get all words for this player
+        List<WordWithOwner> playerWords = GetPlayerWords(playerId);
+        
+        // Only count scores for valid words
+        foreach (WordWithOwner wordInfo in playerWords)
+        {
+            if (dictionary.isWordValid(wordInfo.word_))
+            {
+                // Get current turn score for this row
+                totalScore += rowHistories_[wordInfo.rowIndex_].GetPlayerCurrentTurnScore(playerId);
+            }
+        }
+        
+        return totalScore;
+    }
 
     public void Update()
     {
@@ -393,6 +606,254 @@ public class BoardMultiplayer : ScrollableGrid
         
         // Update row ownership based on current state
         UpdateRowOwnership();
+        
+        // Assign position scores to tokens that don't have them yet (real-time scoring)
+        if (turnManager_ != null)
+        {
+            int currentPlayer = turnManager_.GetCurrentPlayerId();
+            AssignPositionScoresToUnassignedTokens(currentPlayer);
+        }
+        
+        // Update word outlines to show player ownership
+        UpdateWordOutlines();
+    }
+    
+    /// <summary>
+    /// Update visual outlines around complete words to show player ownership.
+    /// Creates/destroys outline GameObjects as needed.
+    /// </summary>
+    private void UpdateWordOutlines()
+    {
+        // Clear existing outlines
+        foreach (GameObject outline in wordOutlines_)
+        {
+            if (outline != null)
+            {
+                Destroy(outline);
+            }
+        }
+        wordOutlines_.Clear();
+        
+        if (playerManager_ == null)
+        {
+            Debug.LogWarning("BoardMultiplayer: PlayerManager is null, cannot create word outlines");
+            return;
+        }
+        
+        List<Tile> tiles = GetTiles();
+        int totalTokensChecked = 0;
+        int tokensWithOwners = 0;
+        int frozenTokensFound = 0;
+        
+        // Process each row
+        for (int row = 0; row < GetNbRows(); row++)
+        {
+            // Find continuous sequences of tokens (words)
+            List<BasicToken> currentWord = new List<BasicToken>();
+            int wordStartCol = -1;
+            int currentOwnerId = -1;
+            
+            for (int col = 0; col <= cols_; col++)
+            {
+                BasicToken token = null;
+                int tokenOwnerId = -1;
+                bool isFrozen = false;
+                
+                // Get token at this position (if within bounds)
+                if (col < cols_)
+                {
+                    int tileIndex = row * cols_ + col;
+                    if (tileIndex < tiles.Count)
+                    {
+                        Tile tile = tiles[tileIndex];
+                        if (tile.HasToken())
+                        {
+                            token = tile.GetToken();
+                            totalTokensChecked++;
+                            if (token.GetInBoard())
+                            {
+                                tokenOwnerId = token.GetOwnerId();
+                                isFrozen = token.IsFrozen();
+                                if (tokenOwnerId >= 0)
+                                {
+                                    tokensWithOwners++;
+                                }
+                                if (isFrozen)
+                                {
+                                    frozenTokensFound++;
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                // Check if we're continuing the current word (only frozen tokens!)
+                if (token != null && tokenOwnerId >= 0 && isFrozen && (currentOwnerId == -1 || currentOwnerId == tokenOwnerId))
+                {
+                    if (currentWord.Count == 0)
+                    {
+                        wordStartCol = col;
+                    }
+                    currentWord.Add(token);
+                    currentOwnerId = tokenOwnerId;
+                }
+                else
+                {
+                    // Word ended, create outline if word exists
+                    if (currentWord.Count > 0 && currentOwnerId >= 0)
+                    {
+                        Debug.Log($"BoardMultiplayer: Creating outline for {currentWord.Count} frozen tokens owned by Player {currentOwnerId + 1} in row {row}, col {wordStartCol}");
+                        CreateWordOutline(row, wordStartCol, currentWord.Count, currentOwnerId);
+                    }
+                    
+                    // Start new word if current token exists and is frozen
+                    currentWord.Clear();
+                    if (token != null && tokenOwnerId >= 0 && isFrozen)
+                    {
+                        currentWord.Add(token);
+                        currentOwnerId = tokenOwnerId;
+                        wordStartCol = col;
+                    }
+                    else
+                    {
+                        currentOwnerId = -1;
+                    }
+                }
+            }
+        }
+        
+        if (totalTokensChecked > 0 || frozenTokensFound > 0)
+        {
+            Debug.Log($"BoardMultiplayer: Checked {totalTokensChecked} tokens, {tokensWithOwners} had owners, {frozenTokensFound} frozen. Created {wordOutlines_.Count} outlines.");
+        }
+    }
+    
+    /// <summary>
+    /// Create an outline around a word segment.
+    /// </summary>
+    private void CreateWordOutline(int row, int startCol, int length, int ownerId)
+    {
+        if (playerManager_ == null)
+        {
+            return;
+        }
+        
+        List<Tile> tiles = GetTiles();
+        
+        // Get the first and last tile positions
+        int startTileIndex = row * cols_ + startCol;
+        int endTileIndex = row * cols_ + startCol + length - 1;
+        
+        if (startTileIndex >= tiles.Count || endTileIndex >= tiles.Count)
+        {
+            return;
+        }
+        
+        Tile startTile = tiles[startTileIndex];
+        Tile endTile = tiles[endTileIndex];
+        
+        RectTransform startRect = (RectTransform)startTile.transform;
+        RectTransform endRect = (RectTransform)endTile.transform;
+        
+        // Create outline GameObject and parent it to a non-grid container (grid's parent)
+        GameObject outlineObj = new GameObject($"WordOutline_R{row}_C{startCol}");
+        Transform gridParent = startRect.parent != null ? startRect.parent.parent : transform;
+        outlineObj.transform.SetParent(gridParent, false);
+        outlineObj.transform.SetAsLastSibling(); // Render on top within the parent
+        outlineObj.layer = gameObject.layer;
+        
+        RectTransform outlineRect = outlineObj.AddComponent<RectTransform>();
+        Image outlineImage = outlineObj.AddComponent<Image>();
+        Outline outline = outlineObj.AddComponent<Outline>();
+        
+        // Create a white sprite for the image
+        Texture2D whiteTexture = new Texture2D(1, 1);
+        whiteTexture.SetPixel(0, 0, Color.white);
+        whiteTexture.Apply();
+        Sprite whiteSprite = Sprite.Create(whiteTexture, new Rect(0, 0, 1, 1), new Vector2(0.5f, 0.5f));
+        outlineImage.sprite = whiteSprite;
+        
+        // Get player color and configure outline
+        Color playerColor = playerManager_.GetPlayerColor(ownerId);
+        
+        // No fill: keep the image fully transparent so only the border shows
+        outlineImage.color = new Color(1f, 1f, 1f, 0f);
+        outlineImage.raycastTarget = false;
+        
+        // Configure outline (visible border only)
+        outline.effectColor = playerColor;
+        outline.effectDistance = new Vector2(3f, -3f); // Thinner border to avoid covering tiles
+        outline.useGraphicAlpha = false;
+        
+        // Add CanvasGroup to prevent raycast blocking
+        CanvasGroup canvasGroup = outlineObj.AddComponent<CanvasGroup>();
+        canvasGroup.blocksRaycasts = false;
+        canvasGroup.interactable = false;
+        canvasGroup.alpha = 1f;
+        
+        // Use center anchors in parent space
+        outlineRect.anchorMin = new Vector2(0.5f, 0.5f);
+        outlineRect.anchorMax = new Vector2(0.5f, 0.5f);
+        outlineRect.pivot = new Vector2(0.5f, 0.5f);
+
+        // Position outline using world coordinates to avoid space mismatch
+        Vector3 startWorldPos = startRect.position;
+        Vector3 endWorldPos = endRect.position;
+        float centerX = (startWorldPos.x + endWorldPos.x) / 2f;
+        float centerY = (startWorldPos.y + endWorldPos.y) / 2f;
+
+        // Size using tile rects in pixels
+        float width = startRect.rect.width * length;
+        float height = startRect.rect.height;
+
+        outlineRect.position = new Vector3(centerX, centerY, startWorldPos.z);
+        outlineRect.sizeDelta = new Vector2(width, height);
+
+        // Debug hierarchy path
+        string HierarchyPath(Transform t)
+        {
+            System.Text.StringBuilder sb = new System.Text.StringBuilder();
+            while (t != null)
+            {
+                sb.Insert(0, "/" + t.name);
+                t = t.parent;
+            }
+            return sb.ToString();
+        }
+        Debug.Log($"BoardMultiplayer: Outline parent path: {HierarchyPath(outlineObj.transform.parent)}");
+        
+        Debug.Log($"BoardMultiplayer: Created outline with Outline component, color {playerColor}, size {width}x{height}, at local pos ({centerX}, {centerY})");
+        
+        // Store reference
+        wordOutlines_.Add(outlineObj);
+    }
+    
+    /// <summary>
+    /// Get all tokens that belong to the same frozen word as the given token.
+    /// </summary>
+    public List<BasicToken> GetTokensInFrozenWord(int frozenWordId)
+    {
+        List<BasicToken> tokensInWord = new List<BasicToken>();
+        
+        if (frozenWordId < 0)
+        {
+            return tokensInWord;
+        }
+        
+        List<Tile> tiles = GetTiles();
+        foreach (Tile tile in tiles)
+        {
+            if (tile.HasToken())
+            {
+                BasicToken token = tile.GetToken();
+                if (token.IsFrozen() && token.GetFrozenWordId() == frozenWordId)
+                {
+                    tokensInWord.Add(token);
+                }
+            }
+        }
+        
+        return tokensInWord;
     }
     
     private bool IsAnyTokenBeingDragged()

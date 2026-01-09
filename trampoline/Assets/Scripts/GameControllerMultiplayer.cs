@@ -17,6 +17,7 @@ public class GameControllerMultiplayer : MonoBehaviour
     
     private int numberOfPlayers_ = 2;
     private List<WordWithOwner>[] playerValidWords_;  // Track valid words per player
+    private int[] playerFrozenScores_;  // Frozen scores from previous turns
 
     void Start()
     {
@@ -37,9 +38,11 @@ public class GameControllerMultiplayer : MonoBehaviour
         
         // Initialize valid words tracking
         playerValidWords_ = new List<WordWithOwner>[numberOfPlayers_];
+        playerFrozenScores_ = new int[numberOfPlayers_];
         for (int i = 0; i < numberOfPlayers_; i++)
         {
             playerValidWords_[i] = new List<WordWithOwner>();
+            playerFrozenScores_[i] = 0;
         }
         
         // Get required components
@@ -96,8 +99,13 @@ public class GameControllerMultiplayer : MonoBehaviour
 
     void Update()
     {
-        // Update scores for all players
-        UpdateAllPlayerScores();
+        // Only update current player's score in real-time
+        // Other players' scores remain frozen until their turn
+        if (turnManager_ != null)
+        {
+            int currentPlayer = turnManager_.GetCurrentPlayerId();
+            UpdateCurrentPlayerScore(currentPlayer);
+        }
         
         // Check if current player has completed 13 words
         CheckPlayerCompletion();
@@ -108,7 +116,20 @@ public class GameControllerMultiplayer : MonoBehaviour
     /// </summary>
     private void OnTurnChanged(int newPlayerId)
     {
-        Debug.Log($"GameControllerMultiplayer: Turn changed to Player {newPlayerId + 1}.");
+        // When turn changes, the previous player's turn just ended
+        // Assign position scores to new tokens and freeze validated words
+        int previousPlayerId = (newPlayerId - 1 + numberOfPlayers_) % numberOfPlayers_;
+        
+        Debug.Log($"GameControllerMultiplayer: Turn changed to Player {newPlayerId + 1}. Processing Player {previousPlayerId + 1}'s moves.");
+        
+        // Assign position scores to newly placed tokens
+        board_.AssignPositionScoresToNewTokens(previousPlayerId);
+        
+        // Freeze validated words
+        FreezeValidatedWordsForPlayer(previousPlayerId);
+        
+        // Finalize and freeze the score for the previous player
+        FinalizePlayerScore(previousPlayerId);
         
         // The StoreMultiplayer will automatically draw tokens when turn changes
     }
@@ -124,17 +145,71 @@ public class GameControllerMultiplayer : MonoBehaviour
 
     /// <summary>
     /// Update scores for all players based on their valid words.
+    /// Uses progressive scoring: 1+2+3+4... for each letter placed.
+    /// Only counts scores for dictionary-validated words.
     /// </summary>
     private void UpdateAllPlayerScores()
     {
         for (int playerId = 0; playerId < numberOfPlayers_; playerId++)
         {
-            List<WordWithOwner> playerWords = board_.GetPlayerWords(playerId);
-            List<WordWithOwner> validWords = ComputeListOfValidWords(playerWords);
-            
-            playerValidWords_[playerId] = validWords;
-            playerManager_.SetPlayerScore(playerId, ComputeScore(validWords));
+            FinalizePlayerScore(playerId);
         }
+    }
+    
+    /// <summary>
+    /// Update the current player's score in real-time (frozen + current turn).
+    /// </summary>
+    private void UpdateCurrentPlayerScore(int playerId)
+    {
+        if (playerId < 0 || playerId >= numberOfPlayers_)
+        {
+            return;
+        }
+        
+        // Get current turn score (unfrozen tokens)
+        int currentTurnScore = board_.GetPlayerCurrentTurnScore(playerId, frenchDictionary_);
+        
+        // Get word-based penalties for current turn
+        List<WordWithOwner> playerWords = board_.GetPlayerWords(playerId);
+        List<WordWithOwner> validWords = ComputeListOfValidWords(playerWords);
+        int greenLetterPenalty = ComputeGreenLetterPenalty(validWords);
+        
+        // Current score = frozen score (from previous turns) + current turn score - penalty
+        int currentScore = playerFrozenScores_[playerId] + currentTurnScore - greenLetterPenalty;
+        
+        playerValidWords_[playerId] = validWords;
+        playerManager_.SetPlayerScore(playerId, currentScore);
+    }
+    
+    /// <summary>
+    /// Finalize a player's score after their turn ends.
+    /// Freezes the current turn score and adds it to their frozen score.
+    /// </summary>
+    private void FinalizePlayerScore(int playerId)
+    {
+        if (playerId < 0 || playerId >= numberOfPlayers_)
+        {
+            return;
+        }
+        
+        // Get total progressive score (frozen + current turn)
+        int totalProgressiveScore = board_.GetPlayerProgressiveScore(playerId, frenchDictionary_);
+        
+        // Get word-based penalties (green letters)
+        List<WordWithOwner> playerWords = board_.GetPlayerWords(playerId);
+        List<WordWithOwner> validWords = ComputeListOfValidWords(playerWords);
+        int greenLetterPenalty = ComputeGreenLetterPenalty(validWords);
+        
+        // Final score after this turn
+        int finalScore = totalProgressiveScore - greenLetterPenalty;
+        
+        // Store as frozen score for next turn
+        playerFrozenScores_[playerId] = finalScore;
+        
+        playerValidWords_[playerId] = validWords;
+        playerManager_.SetPlayerScore(playerId, finalScore);
+        
+        Debug.Log($"GameControllerMultiplayer: Player {playerId + 1} frozen score: {playerFrozenScores_[playerId]}");
     }
 
     /// <summary>
@@ -156,7 +231,40 @@ public class GameControllerMultiplayer : MonoBehaviour
     }
 
     /// <summary>
-    /// Compute score for a list of valid words.
+    /// Compute green letter penalty for valid words.
+    /// Green letters subtract 5 points each.
+    /// </summary>
+    private int ComputeGreenLetterPenalty(List<WordWithOwner> listOfValidWords)
+    {
+        int penalty = 0;
+        
+        foreach (WordWithOwner word in listOfValidWords)
+        {
+            penalty += word.nb_green_letters_ * 5;
+        }
+        
+        return penalty;
+    }
+    
+    /// <summary>
+    /// Freeze validated words for a player after their turn ends.
+    /// </summary>
+    private void FreezeValidatedWordsForPlayer(int playerId)
+    {
+        List<WordWithOwner> playerWords = board_.GetPlayerWords(playerId);
+        List<WordWithOwner> validWords = ComputeListOfValidWords(playerWords);
+        
+        foreach (WordWithOwner word in validWords)
+        {
+            board_.FreezeValidatedWord(word.rowIndex_, word.word_);
+        }
+        
+        Debug.Log($"GameControllerMultiplayer: Froze {validWords.Count} validated words for Player {playerId + 1}");
+    }
+
+    /// <summary>
+    /// Compute score for a list of valid words (OLD METHOD - kept for reference).
+    /// Now we use progressive scoring instead.
     /// </summary>
     private int ComputeScore(List<WordWithOwner> listOfValidWords)
     {
