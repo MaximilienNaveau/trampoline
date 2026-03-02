@@ -67,12 +67,12 @@ jobs:
           projectPath: trampoline # Specify the path to your Unity project
 
       # Output
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: Test results
           path: ${{ steps.testRunner.outputs.artifactsPath }}      
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: Coverage results
