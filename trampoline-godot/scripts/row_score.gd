@@ -76,3 +76,30 @@ func forget(col: int) -> void:
 func restore(col: int, score: int, player_id: int) -> void:
 	_scores[col] = score
 	_owners[col] = player_id
+
+
+# Exports this row's state — see save_game.gd. `_scores`/`_owners` are
+# keyed by column (an int), but JSON only supports string dictionary
+# keys, so the keys are converted to strings explicitly here rather than
+# leaving it to chance.
+func export_state() -> Dictionary:
+	var scores := {}
+	for col in _scores:
+		scores[str(col)] = _scores[col]
+	var owners := {}
+	for col in _owners:
+		owners[str(col)] = _owners[col]
+	return {"next_score": _next_score, "scores": scores, "owners": owners}
+
+
+# Overwrites this row's entire state from `data` (see `export_state`),
+# converting column keys back from strings to ints and every number back
+# from JSON's float to int — see turn_manager.gd's restore_state for why.
+func restore_state(data: Dictionary) -> void:
+	_next_score = int(data["next_score"])
+	_scores.clear()
+	for col in data["scores"]:
+		_scores[int(col)] = int(data["scores"][col])
+	_owners.clear()
+	for col in data["owners"]:
+		_owners[int(col)] = int(data["owners"][col])

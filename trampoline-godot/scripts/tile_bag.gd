@@ -82,3 +82,17 @@ func hand(player_id: int) -> Array[Tile]:
 # How many tiles are left to draw from the bag.
 func remaining_count() -> int:
 	return _undrawn.size()
+
+
+# Every tile still waiting to be drawn, next draw first — exposed for
+# save_game.gd (gameplay code should go through `draw()` instead).
+func undrawn_tiles() -> Array[Tile]:
+	return _undrawn
+
+
+# Overwrites the bag's entire state — the undrawn pile and every player's
+# hand — with exactly what's given, bypassing the constructor's shuffle.
+# Used only by save_game.gd when loading a save file; never for gameplay.
+func restore_state(undrawn: Array[Tile], hands: Dictionary) -> void:
+	_undrawn = undrawn
+	_hands = hands

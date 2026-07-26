@@ -145,3 +145,34 @@ func draw_for_player(bag: TileBag, player_id: int) -> Array[Tile]:
 		size = DrawPlan.subsequent_draw_size(number_of_players)
 	_draws_taken[player_id] += 1
 	return bag.draw(player_id, size)
+
+
+# Exports every bit of this class's state — see save_game.gd. Plain data
+# only (no Tile references, unlike TileBag/Scoring), so this round-trips
+# through JSON without any tile-identity bookkeeping to worry about.
+func export_state() -> Dictionary:
+	return {
+		"current_player_id": _current_player_id,
+		"scores": _scores,
+		"finished": _finished,
+		"draws_taken": _draws_taken,
+		"game_complete": _game_complete,
+	}
+
+
+# Overwrites this class's entire state from `data` (see `export_state`).
+# JSON round-trips every number as a float, so each one is explicitly
+# cast back to `int` here — GDScript's typed `Array[int]` fields would
+# otherwise refuse a float element.
+func restore_state(data: Dictionary) -> void:
+	_current_player_id = int(data["current_player_id"])
+	_scores.clear()
+	for score in data["scores"]:
+		_scores.append(int(score))
+	_finished.clear()
+	for finished in data["finished"]:
+		_finished.append(finished)
+	_draws_taken.clear()
+	for draws in data["draws_taken"]:
+		_draws_taken.append(int(draws))
+	_game_complete = data["game_complete"]

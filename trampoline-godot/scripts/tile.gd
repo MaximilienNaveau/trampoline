@@ -43,6 +43,7 @@ var _back_is_green: bool
 # game (yellow side up).
 var _showing_front: bool = true
 
+
 # `_init` is GDScript's constructor — always named `_init`, called
 # automatically by `Tile.new(...)`, equivalent to a C++ constructor body.
 func _init(front_letter: String, back_letter: String, back_is_green: bool) -> void:
@@ -50,16 +51,19 @@ func _init(front_letter: String, back_letter: String, back_is_green: bool) -> vo
 	_back_letter = back_letter
 	_back_is_green = back_is_green
 
+
 # Flips the tile in place: swaps which face is showing. This never removes
 # a letter that already "grew" into a word — it only changes which letter
 # this specific tile currently contributes.
 func flip() -> void:
 	_showing_front = not _showing_front
 
+
 # The letter this tile currently shows. Returns "" if showing a blank back
 # face (the shorten mechanic).
 func current_letter() -> String:
 	return _front_letter if _showing_front else _back_letter
+
 
 # Whether the currently-showing face counts as green for the -5 scoring
 # penalty. The yellow face is never green; the back face is green unless
@@ -67,10 +71,12 @@ func current_letter() -> String:
 func current_is_green() -> bool:
 	return not _showing_front and _back_is_green
 
+
 # Whether the currently-showing face is blank (the shorten mechanic). Only
 # ever true when showing the back face of one of the 12 shorten tiles.
 func is_blank() -> bool:
 	return current_letter() == ""
+
 
 # Static-definition accessors below — these describe the tile itself
 # (which letters/colors it was made with), independent of whichever face
@@ -81,8 +87,25 @@ func is_blank() -> bool:
 func front_letter() -> String:
 	return _front_letter
 
+
 func back_letter() -> String:
 	return _back_letter
 
+
 func back_is_green() -> bool:
 	return _back_is_green
+
+
+# Whether the front face is currently showing — the one piece of mutable
+# state a tile has. Exposed (alongside `set_showing_front` below)
+# specifically for save_game.gd: everything else about a tile is fixed at
+# construction and reconstructible from TilePool alone, so a save file
+# only needs to record this one bit per tile, not the whole object.
+func is_showing_front() -> bool:
+	return _showing_front
+
+
+# Restores the flip state saved via `is_showing_front` — see save_game.gd.
+# Not for gameplay use: flipping mid-game should go through `flip()`.
+func set_showing_front(showing_front: bool) -> void:
+	_showing_front = showing_front

@@ -163,6 +163,35 @@ func restore_placement(row: int, col: int, score: int, player_id: int) -> void:
 	_row_scores[row].restore(col, score, player_id)
 
 
+# Exports every bit of this class's state (including all 13 RowScores) —
+# see save_game.gd.
+func export_state() -> Dictionary:
+	var row_scores := []
+	for row_score in _row_scores:
+		row_scores.append(row_score.export_state())
+	return {
+		"row_scores": row_scores,
+		"line_bonus_claimed": _line_bonus_claimed,
+		"board_bonus_claimed": _board_bonus_claimed,
+		"filled_count_at_turn_start": _filled_count_at_turn_start,
+	}
+
+
+# Overwrites this class's entire state from `data` (see `export_state`).
+# See turn_manager.gd's restore_state for why numbers need an explicit
+# `int(...)` cast after a JSON round-trip.
+func restore_state(data: Dictionary) -> void:
+	for row in range(Board.ROWS):
+		_row_scores[row].restore_state(data["row_scores"][row])
+	_line_bonus_claimed.clear()
+	for claimed in data["line_bonus_claimed"]:
+		_line_bonus_claimed.append(claimed)
+	_board_bonus_claimed = data["board_bonus_claimed"]
+	_filled_count_at_turn_start.clear()
+	for filled in data["filled_count_at_turn_start"]:
+		_filled_count_at_turn_start.append(int(filled))
+
+
 # How many letters in `columns` are green, regardless of who placed them —
 # used for the bonus, which cares about the whole word's color mix.
 func _all_green_letter_count(board: Board, row: int, columns: Array) -> int:

@@ -101,6 +101,12 @@ func _test_tile_flip() -> void:
 	shorten.flip()
 	_check(shorten.is_blank(), "flipped shorten tile reads as blank")
 
+	var restorable := Tile.new("A", "E", true)
+	_check(restorable.is_showing_front(), "a fresh tile reports showing its front")
+	restorable.set_showing_front(false)
+	_check(restorable.current_letter() == "E", "set_showing_front restores the back face directly")
+	_check(not restorable.is_showing_front(), "...and is_showing_front reflects it")
+
 
 func _test_tile_bag() -> void:
 	var pool := TilePool.new()

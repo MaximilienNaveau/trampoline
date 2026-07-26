@@ -7,6 +7,7 @@ class_name GameSession
 extends RefCounted
 
 var board: Board
+var pool: TilePool
 var bag: TileBag
 var turns: TurnManager
 var scoring: Scoring
@@ -18,7 +19,12 @@ var dictionary: FrenchDictionary
 # normalizes ~79000 lines every time) — defaults to loading a fresh one.
 func _init(number_of_players: int, a_dictionary: FrenchDictionary = null) -> void:
 	board = Board.new()
-	bag = TileBag.new(TilePool.new())
+	# Kept as its own field (not just handed to TileBag and forgotten) so
+	# save_game.gd has one canonical, indexable list of all 117 tiles to
+	# save/restore flip-state against, regardless of which of them are
+	# currently on the board, in a hand, or still undrawn.
+	pool = TilePool.new()
+	bag = TileBag.new(pool)
 	turns = TurnManager.new(number_of_players)
 	scoring = Scoring.new()
 	dictionary = a_dictionary if a_dictionary != null else FrenchDictionary.new()
