@@ -9,6 +9,7 @@ extends SceneTree
 
 var _failures := 0
 
+
 func _check(condition: bool, message: String) -> void:
 	if condition:
 		print("PASS: ", message)
@@ -16,11 +17,13 @@ func _check(condition: bool, message: String) -> void:
 		print("FAIL: ", message)
 		_failures += 1
 
+
 func _initialize() -> void:
 	_test_empty_board()
 	_test_place_and_remove()
 	_test_word_in_row()
 	_test_rows_are_independent()
+	_test_is_row_finished()
 
 	if _failures == 0:
 		print("\nAll checks passed.")
@@ -28,12 +31,14 @@ func _initialize() -> void:
 		print("\n", _failures, " check(s) failed.")
 	quit(1 if _failures > 0 else 0)
 
+
 func _test_empty_board() -> void:
 	var board := Board.new()
 	_check(board.leftmost_filled(0) == -1, "empty row has no leftmost filled cell")
 	_check(board.rightmost_filled(0) == -1, "empty row has no rightmost filled cell")
 	_check(board.word_in_row(0) == "", "empty row spells the empty string")
 	_check(board.is_empty(0, 4), "an untouched cell is empty")
+
 
 func _test_place_and_remove() -> void:
 	var board := Board.new()
@@ -59,6 +64,7 @@ func _test_place_and_remove() -> void:
 	var real_letter_removable := removed_letter != null and removed_letter.current_letter() == "H"
 	_check(real_letter_removable, "a real-letter tile can be removed from the raw board")
 
+
 func _test_word_in_row() -> void:
 	var board := Board.new()
 	board.place(2, 2, Tile.new("C", "Z", true))
@@ -73,9 +79,40 @@ func _test_word_in_row() -> void:
 	shorten_tile.flip()  # show the blank back face
 	_check(board.word_in_row(2) == "CAT", "a blank-showing tile truncates the word, not included")
 	_check(board.rightmost_filled(2) == 5, "but the blank tile's cell still counts as occupied")
+	_check(board.word_columns(2) == [2, 3, 4], "word_columns lists exactly the word's own columns")
+
 
 func _test_rows_are_independent() -> void:
 	var board := Board.new()
 	board.place(4, 0, Tile.new("X", "Z", true))
 	_check(board.word_in_row(5) == "", "placing in one row leaves another row untouched")
 	_check(board.leftmost_filled(5) == -1, "an untouched row still reports no filled cells")
+
+
+func _test_is_row_finished() -> void:
+	var board := Board.new()
+	_check(not board.is_row_finished(0), "an empty row is not finished")
+
+	board.place(0, 0, Tile.new("X", "Z", true))
+	_check(not board.is_row_finished(0), "a single real letter, uncapped, is not finished")
+
+	var shorten_tile := Tile.new("Y", "", true)
+	board.place(0, 1, shorten_tile)
+	_check(
+		not board.is_row_finished(0),
+		"...not finished either while the capping tile still shows a letter"
+	)
+	shorten_tile.flip()
+	_check(board.is_row_finished(0), "...but IS finished once that tile shows blank")
+
+	for col in range(Board.COLUMNS):
+		board.place(1, col, Tile.new("Z", "Z", true))
+	_check(
+		board.is_row_finished(1), "a row with all 9 cells filled is finished, capping tile or not"
+	)
+
+	board.place(2, 8, Tile.new("Z", "Z", true))
+	_check(
+		not board.is_row_finished(2),
+		"jammed against the edge without reaching 9 or a blank cap: not finished"
+	)

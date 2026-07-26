@@ -74,20 +74,46 @@ func remove(row: int, col: int) -> Tile:
 	_cells[row][col] = null
 	return tile
 
-# The word currently spelled out by a row, reading from its leftmost filled
-# cell. Stops at the first blank-showing tile (the "shorten" mechanic —
-# see doc/RULES.md) or the first empty cell, whichever comes first, WITHOUT
-# including a blank tile itself, since a blank marks "the word ends here"
-# even though the row might still have empty cells left to grow into later.
-# Returns "" for a completely empty row.
-func word_in_row(row: int) -> String:
+# The column indices that make up a row's current word, reading from its
+# leftmost filled cell. Stops at the first blank-showing tile (the
+# "shorten" mechanic — see doc/RULES.md) or the first empty cell, whichever
+# comes first, WITHOUT including a blank tile's column, since a blank marks
+# "the word ends here" even though the row might still have empty cells
+# left to grow into later. Empty for a completely empty row.
+func word_columns(row: int) -> Array[int]:
 	var left := leftmost_filled(row)
+	var columns: Array[int] = []
 	if left == -1:
-		return ""
-	var word := ""
+		return columns
 	for col in range(left, COLUMNS):
 		var tile: Tile = _cells[row][col]
 		if tile == null or tile.is_blank():
 			break
-		word += tile.current_letter()
+		columns.append(col)
+	return columns
+
+# The word currently spelled out by a row — see `word_columns` above for
+# exactly which cells that covers. Returns "" for a completely empty row.
+func word_in_row(row: int) -> String:
+	var word := ""
+	for col in word_columns(row):
+		word += _cells[row][col].current_letter()
 	return word
+
+# Whether a row needs no further growth: either its word has reached the
+# full 9 letters, or it was deliberately cut short by a blank-showing tile
+# (the "shorten" mechanic) — in both cases nothing more is expected to be
+# added to this row. A word merely jammed against the board's edge without
+# reaching 9 letters and without a blank cap does NOT count — it could
+# still grow further as a prefix.
+func is_row_finished(row: int) -> bool:
+	var columns := word_columns(row)
+	if columns.size() == COLUMNS:
+		return true
+	if columns.is_empty():
+		return false
+	var col_after_word: int = columns[-1] + 1
+	if col_after_word >= COLUMNS:
+		return false
+	var tile: Tile = _cells[row][col_after_word]
+	return tile != null and tile.is_blank()
