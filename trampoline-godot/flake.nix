@@ -13,9 +13,11 @@
       in
       {
         # `nix develop` drops you into a shell with a `godot4` binary on
-        # PATH (GDScript needs nothing else — no separate compiler/SDK).
+        # PATH (GDScript needs nothing else — no separate compiler/SDK),
+        # plus `gdlint`/`gdformat` (gdtoolkit) — the closest thing GDScript
+        # has to `flutter analyze`, since Godot itself ships no linter.
         devShells.default = pkgs.mkShell {
-          buildInputs = [ pkgs.godot_4 ];
+          buildInputs = [ pkgs.godot_4 pkgs.gdtoolkit_4 ];
         };
       });
 }
