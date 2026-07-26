@@ -22,6 +22,7 @@ func _initialize() -> void:
 	_test_game_completion_and_winner()
 	_test_solo_play()
 	_test_draw_for_player()
+	_test_has_more_scheduled_draws()
 
 	if _failures == 0:
 		print("\nAll checks passed.")
@@ -135,3 +136,14 @@ func _test_draw_for_player() -> void:
 	var bag3 := TileBag.new(pool)
 	var turns3 := TurnManager.new(3)
 	_check(turns3.draw_for_player(bag3, 0).size() == 12, "3-player initial draw has no bonus tile")
+
+
+func _test_has_more_scheduled_draws() -> void:
+	var pool := TilePool.new()
+	var bag := TileBag.new(pool)
+	var turns := TurnManager.new(3)  # 1 initial + 3 subsequent = 4 total draws
+
+	for i in range(4):
+		_check(turns.has_more_scheduled_draws(0), "draw %d/4 hasn't happened yet" % (i + 1))
+		turns.draw_for_player(bag, 0)
+	_check(not turns.has_more_scheduled_draws(0), "after all 4 scheduled draws, none are left")

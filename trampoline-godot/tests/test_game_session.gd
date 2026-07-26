@@ -1,0 +1,136 @@
+# Standalone checks for game_session.gd, runnable via:
+#   godot4 --headless --path . --script tests/test_game_session.gd
+extends SceneTree
+
+var _failures := 0
+var _dictionary: FrenchDictionary
+
+
+func _check(condition: bool, message: String) -> void:
+	if condition:
+		print("PASS: ", message)
+	else:
+		print("FAIL: ", message)
+		_failures += 1
+
+
+func _initialize() -> void:
+	_dictionary = FrenchDictionary.new()
+
+	_test_initial_draw()
+	_test_place_tile_from_hand()
+	_test_place_tile_not_in_hand_fails()
+	_test_place_tile_illegal_location_fails()
+	_test_can_end_turn_blocks_bad_word()
+	_test_end_turn_scores_and_advances()
+	_test_game_over_via_exhaustion()
+	_test_game_over_via_board_completion()
+
+	if _failures == 0:
+		print("\nAll checks passed.")
+	else:
+		print("\n", _failures, " check(s) failed.")
+	quit(1 if _failures > 0 else 0)
+
+
+# Injects `tile` directly into `player_id`'s hand. TileBag has no "just
+# give me this specific tile" API on purpose (a real player draws
+# randomly) — this leans on `hand()` returning the live array by
+# reference, purely so these tests can set up deterministic scenarios
+# ("place exactly this word") instead of whatever the shuffle happened to
+# deal.
+func _give_hand_tile(session: GameSession, player_id: int, tile: Tile) -> void:
+	session.bag.hand(player_id).append(tile)
+
+
+func _test_initial_draw() -> void:
+	var session := GameSession.new(2, _dictionary)
+	_check(
+		session.bag.hand(0).size() == 14, "2-player starter's initial hand includes the bonus tile"
+	)
+	_check(session.bag.hand(1).size() == 13, "the non-starter's initial hand has no bonus")
+
+
+func _test_place_tile_from_hand() -> void:
+	var session := GameSession.new(2, _dictionary)
+	var tile: Tile = session.bag.hand(0)[0]
+	_check(
+		session.place_tile(0, 4, tile), "placing a tile actually in hand, on an empty row, succeeds"
+	)
+	_check(session.board.tile_at(0, 4) == tile, "the tile is now on the board")
+	_check(not session.bag.hand(0).has(tile), "...and gone from the hand")
+
+
+func _test_place_tile_not_in_hand_fails() -> void:
+	var session := GameSession.new(2, _dictionary)
+	var foreign_tile := Tile.new("A", "Z", true)
+	_check(not session.place_tile(1, 4, foreign_tile), "a tile nobody drew can't be placed")
+	_check(session.board.is_empty(1, 4), "the board is untouched by the refused placement")
+
+
+func _test_place_tile_illegal_location_fails() -> void:
+	var session := GameSession.new(2, _dictionary)
+	var first: Tile = session.bag.hand(0)[0]
+	var second: Tile = session.bag.hand(0)[1]
+	session.place_tile(2, 4, first)
+	_check(
+		not session.place_tile(2, 2, second), "a non-adjacent placement is refused by GrowthRules"
+	)
+	_check(session.bag.hand(0).has(second), "the refused tile stays in hand, not consumed")
+
+
+func _test_can_end_turn_blocks_bad_word() -> void:
+	var session := GameSession.new(1, _dictionary)
+	var word := "QSXWZY"  # confirmed gibberish elsewhere (test_french_dictionary.gd)
+	for i in range(word.length()):
+		var tile := Tile.new(word[i], "Z", true)
+		_give_hand_tile(session, 0, tile)
+		session.place_tile(3, i, tile)
+	_check(not session.can_end_turn(), "gibberish on the board blocks ending the turn")
+	_check(not session.end_turn(), "end_turn() itself refuses too")
+	_check(session.turns.current_player_id() == 0, "...and doesn't advance the turn")
+
+
+func _test_end_turn_scores_and_advances() -> void:
+	var session := GameSession.new(2, _dictionary)
+	var word := "maison"
+	for i in range(word.length()):
+		var tile := Tile.new(word[i], "Z", true)
+		_give_hand_tile(session, 0, tile)
+		session.place_tile(4, i, tile)
+
+	_check(session.can_end_turn(), "a valid word allows ending the turn")
+	_check(session.end_turn(), "end_turn() succeeds")
+	_check(session.turns.player_score(0) == 21, "player 0 scores 1+2+3+4+5+6 for their own word")
+	_check(session.turns.current_player_id() == 1, "play moves on to player 1")
+
+
+func _test_game_over_via_exhaustion() -> void:
+	var session := GameSession.new(2, _dictionary)
+	session.turns.set_player_score(0, 50)
+	session.turns.set_player_score(1, 30)
+	session.turns.set_player_finished(0, true)
+	session.turns.set_player_finished(1, true)
+	_check(session.is_game_over(), "the game is over once every player is exhausted")
+	_check(session.winner_id() == 0, "the higher scorer wins")
+
+
+func _test_game_over_via_board_completion() -> void:
+	var session := GameSession.new(2, _dictionary)
+	_check(not session.is_game_over(), "sanity: a fresh session isn't over")
+
+	# Fill the whole board directly (bypassing GrowthRules — this test is
+	# about GameSession's aggregation, not placement legality, which has
+	# its own tests already).
+	for row in range(12):
+		session.board.place(row, 0, Tile.new("X", "Z", true))
+		var shorten_tile := Tile.new("Y", "", true)
+		session.board.place(row, 1, shorten_tile)
+		shorten_tile.flip()
+	for col in range(Board.COLUMNS):
+		session.board.place(12, col, Tile.new("Z", "Z", true))
+
+	_check(
+		session.is_game_over(),
+		"the game is over once the board fills up, even with nobody marked exhausted"
+	)

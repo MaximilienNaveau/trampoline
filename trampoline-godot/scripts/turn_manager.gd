@@ -121,6 +121,16 @@ func _all_finished() -> bool:
 	return true
 
 
+# Whether `player_id` still has at least one scheduled draw left to take
+# (see draw_plan.gd) — the initial draw counts as their first. Once this
+# is false AND their hand is empty, they have nothing left to ever
+# contribute and should be marked finished (see this file's header
+# comment) — the caller (not this class) checks their hand via TileBag.
+func has_more_scheduled_draws(player_id: int) -> bool:
+	var total_draws := 1 + DrawPlan.subsequent_draw_count(number_of_players)
+	return _draws_taken[player_id] < total_draws
+
+
 # Draws `player_id`'s next scheduled batch of tiles from `bag` (see
 # draw_plan.gd): their initial draw the first time this is called for
 # them, 9 every time after. Also hands the starter (player 0) the 117th
