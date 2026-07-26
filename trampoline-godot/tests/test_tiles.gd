@@ -14,6 +14,7 @@ extends SceneTree
 # everything passed, without needing a test framework to interpret it.
 var _failures := 0
 
+
 # Prints FAIL and records it if `condition` is false; otherwise prints PASS.
 # `message` should describe what was being checked.
 func _check(condition: bool, message: String) -> void:
@@ -22,6 +23,7 @@ func _check(condition: bool, message: String) -> void:
 	else:
 		print("FAIL: ", message)
 		_failures += 1
+
 
 func _initialize() -> void:
 	_test_tile_pool()
@@ -36,6 +38,7 @@ func _initialize() -> void:
 	# without this the headless run would hang forever waiting for a next
 	# frame that never comes, since there's no window/game loop driving it.
 	quit(1 if _failures > 0 else 0)
+
 
 func _test_tile_pool() -> void:
 	var pool := TilePool.new()
@@ -79,6 +82,7 @@ func _test_tile_pool() -> void:
 			green_letter_count += 1
 	_check(green_letter_count == 103, "103 real green letters")
 
+
 func _test_tile_flip() -> void:
 	var normal := Tile.new("A", "E", true)
 	_check(normal.current_letter() == "A", "fresh tile shows its yellow letter")
@@ -96,6 +100,7 @@ func _test_tile_flip() -> void:
 	var shorten := Tile.new("E", "", true)
 	shorten.flip()
 	_check(shorten.is_blank(), "flipped shorten tile reads as blank")
+
 
 func _test_tile_bag() -> void:
 	var pool := TilePool.new()
@@ -119,3 +124,8 @@ func _test_tile_bag() -> void:
 	var too_many := bag.draw(1, 9999)
 	_check(too_many.size() == 109, "drawing more than remaining returns only what's left")
 	_check(bag.remaining_count() == 0, "bag is empty after draining it")
+
+	var picked_up_tile := Tile.new("Q", "", true)
+	bag.give_to_hand(0, picked_up_tile)
+	_check(bag.hand(0).has(picked_up_tile), "give_to_hand adds the tile straight to that hand")
+	_check(bag.remaining_count() == 0, "...without touching what's left in the bag")

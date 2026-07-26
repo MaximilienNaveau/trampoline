@@ -16,6 +16,7 @@ var _undrawn: Array[Tile] = []
 # `Dictionary<int, List<BasicToken>>` in `TokenDistributor.cs`.
 var _hands: Dictionary = {}
 
+
 # Takes every tile from `pool` (see tile_pool.gd), shuffles the draw order,
 # and starts with every player's hand empty.
 func _init(pool: TilePool) -> void:
@@ -25,6 +26,7 @@ func _init(pool: TilePool) -> void:
 	# `Tile` instance for the whole game.
 	_undrawn = pool.tiles.duplicate()
 	_undrawn.shuffle()
+
 
 # Draws up to `count` tiles for `player_id`, adding them to that player's
 # hand. Returns the tiles actually drawn — fewer than `count` if the bag
@@ -39,6 +41,7 @@ func draw(player_id: int, count: int) -> Array[Tile]:
 		_hands[player_id].append(tile)
 	return drawn
 
+
 # Returns one tile from a player's hand back to the bag (e.g. a player
 # decides not to play a tile they drew). Does nothing if that player isn't
 # actually holding it.
@@ -52,15 +55,29 @@ func return_tile(player_id: int, tile: Tile) -> void:
 	hand.remove_at(index)
 	_undrawn.append(tile)
 
+
 # Removes a tile from a player's hand without returning it to the bag —
 # call this once the tile has actually been placed on the board.
 func consume(player_id: int, tile: Tile) -> void:
 	if _hands.has(player_id):
 		_hands[player_id].erase(tile)
 
+
+# Adds `tile` directly to `player_id`'s hand, bypassing the shuffled
+# `_undrawn` queue entirely — used when a tile comes from somewhere other
+# than a fresh draw, e.g. picking a blank tile back up off the board (see
+# game_session.gd's `remove_tile`). Unlike `draw`, this doesn't touch
+# what's left in the bag at all.
+func give_to_hand(player_id: int, tile: Tile) -> void:
+	if not _hands.has(player_id):
+		_hands[player_id] = [] as Array[Tile]
+	_hands[player_id].append(tile)
+
+
 # The tiles a player currently holds, unplaced.
 func hand(player_id: int) -> Array[Tile]:
 	return _hands.get(player_id, [])
+
 
 # How many tiles are left to draw from the bag.
 func remaining_count() -> int:

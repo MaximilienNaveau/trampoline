@@ -1,14 +1,8 @@
 # Ties every other piece together into an actual playable turn loop:
 # Board + TileBag + TurnManager + Scoring + FrenchDictionary +
-# GrowthRules + WordChallenge. The equivalent of the Unity project's
-# GameControllerMultiplayer, but for the current design (see doc/RULES.md
-# and this project's other scripts for the individual rules).
-#
-# Deliberately NOT wired in yet: GrowthRules.remove (picking a blank tile
-# back up) and WordMove (relocating a whole word). Both already work as
-# standalone pieces; this first version only covers the core loop of
-# placing tiles and ending turns. A natural next step, not a missing
-# requirement of this file.
+# GrowthRules + WordMove + WordChallenge. The equivalent of the Unity
+# project's GameControllerMultiplayer, but for the current design (see
+# doc/RULES.md and this project's other scripts for the individual rules).
 class_name GameSession
 extends RefCounted
 
@@ -73,6 +67,32 @@ func place_tile(row: int, col: int, tile: Tile) -> bool:
 	bag.consume(player_id, tile)
 	scoring.record_placement(row, col, player_id)
 	return true
+
+
+# Picks a currently-blank-showing tile at (row, col) back up (see
+# growth_rules.gd's `can_remove` — a real letter can never be removed this
+# way, only a blank one, and only from its own word's edge). The tile goes
+# into the CURRENT player's hand — whoever performs the removal receives
+# it, regardless of who originally placed it (assumption worth flagging:
+# doc/RULES.md doesn't say where a picked-up tile should go; giving it to
+# the remover, rather than back into the shared bag, was the simplest
+# reasonable default). Returns null and does nothing if the removal isn't
+# legal.
+func remove_tile(row: int, col: int) -> Tile:
+	var tile := GrowthRules.remove(board, row, col)
+	if tile == null:
+		return null
+	scoring.forget(row, col)
+	bag.give_to_hand(turns.current_player_id(), tile)
+	return tile
+
+
+# Relocates the word at (from_row, from_col) so its first letter lands at
+# (to_row, to_col) — see word_move.gd. Any player may move any word; its
+# earned score and ownership travel with it. Returns false and does
+# nothing if the move isn't legal.
+func move_word(from_row: int, from_col: int, to_row: int, to_col: int) -> bool:
+	return WordMove.move(board, scoring, from_row, from_col, to_row, to_col)
 
 
 # Whether the current player may end their turn right now (see

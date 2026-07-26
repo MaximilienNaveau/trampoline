@@ -25,6 +25,8 @@ func _initialize() -> void:
 	_test_end_turn_scores_and_advances()
 	_test_game_over_via_exhaustion()
 	_test_game_over_via_board_completion()
+	_test_remove_tile()
+	_test_move_word()
 
 	if _failures == 0:
 		print("\nAll checks passed.")
@@ -134,3 +136,42 @@ func _test_game_over_via_board_completion() -> void:
 		session.is_game_over(),
 		"the game is over once the board fills up, even with nobody marked exhausted"
 	)
+
+
+func _test_remove_tile() -> void:
+	var session := GameSession.new(1, _dictionary)
+	var real_tile := Tile.new("S", "Z", true)
+	_give_hand_tile(session, 0, real_tile)
+	session.place_tile(5, 0, real_tile)
+
+	var shorten_tile := Tile.new("E", "", true)
+	_give_hand_tile(session, 0, shorten_tile)
+	session.place_tile(5, 1, shorten_tile)
+	shorten_tile.flip()
+	_check(not session.bag.hand(0).has(shorten_tile), "sanity: the tile left the hand when placed")
+
+	_check(session.remove_tile(5, 0) == null, "removing a real-letter tile is refused")
+
+	var removed := session.remove_tile(5, 1)
+	_check(removed == shorten_tile, "remove_tile returns the tile that was picked up")
+	_check(session.board.is_empty(5, 1), "the cell is empty again")
+	_check(
+		session.bag.hand(0).has(shorten_tile),
+		"the picked-up tile goes to the current player's hand"
+	)
+
+
+func _test_move_word() -> void:
+	var session := GameSession.new(1, _dictionary)
+	var tiles: Array[Tile] = []
+	for letter in ["C", "A", "T"]:
+		var tile := Tile.new(letter, "Z", true)
+		_give_hand_tile(session, 0, tile)
+		tiles.append(tile)
+	session.place_tile(6, 2, tiles[0])
+	session.place_tile(6, 3, tiles[1])
+	session.place_tile(6, 4, tiles[2])
+
+	_check(session.move_word(6, 2, 6, 0), "relocating the word succeeds")
+	_check(session.board.word_at(6, 0) == "CAT", "the word reads correctly at its new position")
+	_check(session.board.is_empty(6, 3) and session.board.is_empty(6, 4), "the old cells are empty")
