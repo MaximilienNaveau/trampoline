@@ -145,9 +145,19 @@ real constraint to respect, not just a suggestion).
 
 Any word in a standard dictionary is legal, including proper nouns,
 compound words, and all grammatical forms (plural, gender, conjugations).
-A misspelled word can be challenged immediately by another player; if
+
+The original design is a reactive **challenge**: a turn can end with a bad
+word on the board, and another player can challenge it afterward; if
 proven wrong, it's removed from the board and the offending player loses
-their turn.
+their turn. **Simplified for the current implementation** (confirmed by
+Maximilien): rather than building the full challenge/penalty flow now, a
+player simply cannot end their turn while any word on the board is
+invalid (`WordChallenge.can_end_turn`, in `trampoline-godot/scripts/`) —
+every turn must leave only valid words behind, no challenging needed. The
+fuller challenge/penalty mechanic — including several open questions
+(where removed tiles go, what the penalty actually is, who can challenge
+and until when, whether a failed challenge penalizes the challenger) — is
+documented in that same file for whenever it's worth revisiting.
 
 ## Single-player modes
 
