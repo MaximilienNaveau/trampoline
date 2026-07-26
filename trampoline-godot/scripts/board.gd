@@ -160,3 +160,15 @@ func is_row_finished(row: int) -> bool:
 		return false
 	var tile: Tile = _cells[row][col_after_word]
 	return tile != null and tile.is_blank()
+
+
+# Whether every row on the board is finished (see `is_row_finished`) —
+# the "we filled the whole board" way a game can end (see doc/RULES.md).
+# The other way — every player running out of tiles before that happens —
+# has nothing to do with the board, so it isn't checked here; see
+# turn_manager.gd's header comment for that half of the story.
+func is_complete() -> bool:
+	for row in range(ROWS):
+		if not is_row_finished(row):
+			return false
+	return true

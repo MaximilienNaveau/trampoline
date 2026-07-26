@@ -7,6 +7,24 @@
 # Deliberately left out: PlayerManager.cs's per-player display colors —
 # that's rendering, not game state, and belongs in a future view layer
 # instead (see the project's "separate logic from graphics" rule).
+#
+# "Finished" means something different here than in the Unity source.
+# There, each player owned their own rows and finished by personally
+# completing 13 words. This board is fully collaborative instead — any
+# player can extend any row, so there's no per-player completion goal to
+# track. Here, "finished" means EXHAUSTED: this player has no tiles left
+# in hand and no more scheduled draws (see draw_plan.gd), so they should
+# be skipped in the turn rotation. This class doesn't detect that itself —
+# it has no knowledge of TileBag/DrawPlan — the caller (the future game
+# session/orchestrator) decides when to call `set_player_finished` based
+# on hand + draw state.
+#
+# Consequently, `is_game_complete()` only covers ONE of the two ways this
+# game actually ends: everyone being simultaneously exhausted (a forced
+# stalemate, board possibly still incomplete). The other way — the board
+# itself becoming fully settled (see `Board.is_complete`) — has nothing to
+# do with players and isn't tracked here at all. A real game-over check
+# needs to OR both conditions together.
 class_name TurnManager
 extends RefCounted
 

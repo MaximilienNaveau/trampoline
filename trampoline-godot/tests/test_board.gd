@@ -25,6 +25,7 @@ func _initialize() -> void:
 	_test_rows_are_independent()
 	_test_is_row_finished()
 	_test_multiple_segments_per_row()
+	_test_is_complete()
 
 	if _failures == 0:
 		print("\nAll checks passed.")
@@ -141,3 +142,19 @@ func _test_multiple_segments_per_row() -> void:
 		not board.is_row_finished(3),
 		"a row split across two separate words isn't finished, even if neither is growable further"
 	)
+
+
+func _test_is_complete() -> void:
+	var board := Board.new()
+	_check(not board.is_complete(), "a fresh board is not complete")
+
+	for row in range(12):
+		board.place(row, 0, Tile.new("X", "Z", true))
+		var shorten_tile := Tile.new("Y", "", true)
+		board.place(row, 1, shorten_tile)
+		shorten_tile.flip()
+	_check(not board.is_complete(), "not complete until every one of the 13 rows is finished")
+
+	for col in range(Board.COLUMNS):
+		board.place(12, col, Tile.new("Z", "Z", true))
+	_check(board.is_complete(), "complete once the last row is finished too")

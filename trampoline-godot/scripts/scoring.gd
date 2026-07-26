@@ -123,16 +123,13 @@ func claim_line_bonus(board: Board, dictionary: FrenchDictionary, row: int) -> i
 
 
 # Whether to award the whole-board completion bonus right now: only once,
-# ever, and only once every row is finished (see `Board.is_row_finished` —
-# a row counts even if it was deliberately shortened, not just at 9
+# ever, and only once every row is finished (see `Board.is_complete` — a
+# row counts even if it was deliberately shortened, not just at 9
 # letters). Returns the bonus amount, or 0 if not earned yet (or already
 # claimed).
 func claim_board_bonus(board: Board) -> int:
-	if _board_bonus_claimed:
+	if _board_bonus_claimed or not board.is_complete():
 		return 0
-	for row in range(Board.ROWS):
-		if not board.is_row_finished(row):
-			return 0
 	_board_bonus_claimed = true
 	return BOARD_COMPLETION_BONUS
 
