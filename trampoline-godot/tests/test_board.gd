@@ -21,9 +21,10 @@ func _check(condition: bool, message: String) -> void:
 func _initialize() -> void:
 	_test_empty_board()
 	_test_place_and_remove()
-	_test_word_in_row()
+	_test_word_at()
 	_test_rows_are_independent()
 	_test_is_row_finished()
+	_test_multiple_segments_per_row()
 
 	if _failures == 0:
 		print("\nAll checks passed.")
@@ -36,8 +37,9 @@ func _test_empty_board() -> void:
 	var board := Board.new()
 	_check(board.leftmost_filled(0) == -1, "empty row has no leftmost filled cell")
 	_check(board.rightmost_filled(0) == -1, "empty row has no rightmost filled cell")
-	_check(board.word_in_row(0) == "", "empty row spells the empty string")
+	_check(board.word_at(0, 0) == "", "empty row spells the empty string")
 	_check(board.is_empty(0, 4), "an untouched cell is empty")
+	_check(board.segments_in_row(0) == [], "an empty row has no segments")
 
 
 func _test_place_and_remove() -> void:
@@ -65,27 +67,31 @@ func _test_place_and_remove() -> void:
 	_check(real_letter_removable, "a real-letter tile can be removed from the raw board")
 
 
-func _test_word_in_row() -> void:
+func _test_word_at() -> void:
 	var board := Board.new()
 	board.place(2, 2, Tile.new("C", "Z", true))
 	board.place(2, 3, Tile.new("A", "Z", true))
 	board.place(2, 4, Tile.new("T", "Z", true))
-	_check(board.word_in_row(2) == "CAT", "word reads correctly from a mid-row start")
+	_check(board.word_at(2, 2) == "CAT", "word reads correctly, anchored at its first column")
+	_check(board.word_at(2, 3) == "CAT", "...or anchored anywhere inside it")
 
 	# Flipping is the Tile's own job (see tile.gd), not the board's — call
 	# it directly on the tile, not through Board.
 	var shorten_tile := Tile.new("E", "", true)
 	board.place(2, 5, shorten_tile)
 	shorten_tile.flip()  # show the blank back face
-	_check(board.word_in_row(2) == "CAT", "a blank-showing tile truncates the word, not included")
+	_check(board.word_at(2, 2) == "CAT", "a blank-showing tile truncates the word, not included")
 	_check(board.rightmost_filled(2) == 5, "but the blank tile's cell still counts as occupied")
-	_check(board.word_columns(2) == [2, 3, 4], "word_columns lists exactly the word's own columns")
+	_check(
+		board.word_columns_at(2, 2) == [2, 3, 4],
+		"word_columns_at lists exactly the word's own columns"
+	)
 
 
 func _test_rows_are_independent() -> void:
 	var board := Board.new()
 	board.place(4, 0, Tile.new("X", "Z", true))
-	_check(board.word_in_row(5) == "", "placing in one row leaves another row untouched")
+	_check(board.word_at(5, 0) == "", "placing in one row leaves another row untouched")
 	_check(board.leftmost_filled(5) == -1, "an untouched row still reports no filled cells")
 
 
@@ -115,4 +121,23 @@ func _test_is_row_finished() -> void:
 	_check(
 		not board.is_row_finished(2),
 		"jammed against the edge without reaching 9 or a blank cap: not finished"
+	)
+
+
+func _test_multiple_segments_per_row() -> void:
+	var board := Board.new()
+	for i in range(3):
+		board.place(3, i, Tile.new("CAT"[i], "Z", true))
+	for i in range(3):
+		board.place(3, 5 + i, Tile.new("DOG"[i], "Z", true))
+
+	_check(
+		board.segments_in_row(3) == [[0, 2], [5, 7]], "two separate words show up as two segments"
+	)
+	_check(board.word_at(3, 0) == "CAT", "the first word reads correctly")
+	_check(board.word_at(3, 6) == "DOG", "...and the second, independently")
+	_check(board.word_at(3, 3) == "", "the gap between them isn't part of either word")
+	_check(
+		not board.is_row_finished(3),
+		"a row split across two separate words isn't finished, even if neither is growable further"
 	)

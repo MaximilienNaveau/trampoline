@@ -17,6 +17,7 @@ func _initialize() -> void:
 	_test_placement_adjacency()
 	_test_blank_removal_exception()
 	_test_stranded_blank_cannot_be_removed()
+	_test_multi_segment_adjacency_and_removal()
 
 	if _failures == 0:
 		print("\nAll checks passed.")
@@ -45,7 +46,7 @@ func _test_placement_adjacency() -> void:
 	_check(
 		GrowthRules.place(board, 0, 3, Tile.new("S", "Z", true)), "extending as a prefix succeeds"
 	)
-	_check(board.word_in_row(0) == "SCA", "word reads left-to-right after prefix+suffix growth")
+	_check(board.word_at(0, 4) == "SCA", "word reads left-to-right after prefix+suffix growth")
 
 	var refused := GrowthRules.place(board, 0, 7, Tile.new("Z", "Z", true))
 	_check(not refused, "a non-adjacent placement is refused")
@@ -92,3 +93,32 @@ func _test_stranded_blank_cannot_be_removed() -> void:
 		not GrowthRules.can_remove(board, 2, 4), "a blank stranded in the middle cannot be removed"
 	)
 	_check(GrowthRules.remove(board, 2, 4) == null, "...and remove() refuses it too")
+
+
+func _test_multi_segment_adjacency_and_removal() -> void:
+	var board := Board.new()
+	# Build "CAT" (cols 0-2) and "DOG" (cols 6-8) directly via the raw
+	# board, leaving a 3-cell gap (cols 3-5) that touches neither word.
+	for i in range(3):
+		board.place(4, i, Tile.new("CAT"[i], "Z", true))
+	for i in range(3):
+		board.place(4, 6 + i, Tile.new("DOG"[i], "Z", true))
+
+	_check(GrowthRules.can_place(board, 4, 3), "growing CAT's segment as a suffix is legal")
+	_check(GrowthRules.can_place(board, 4, 5), "growing DOG's segment as a prefix is legal")
+	_check(
+		not GrowthRules.can_place(board, 4, 4),
+		"the middle of the gap is adjacent to neither word, so it's not placeable"
+	)
+
+	# A blank tile capping the SECOND segment's own edge (not the row's
+	# overall rightmost cell, which belongs to DOG) should still be
+	# removable — proving can_remove is evaluated against its own
+	# segment, not the whole row.
+	var shorten_tile := Tile.new("E", "", true)
+	GrowthRules.place(board, 4, 5, shorten_tile)  # prepend to DOG's segment
+	shorten_tile.flip()
+	_check(
+		GrowthRules.can_remove(board, 4, 5),
+		"a blank capping one segment's own edge can be removed, even with another word in the row"
+	)

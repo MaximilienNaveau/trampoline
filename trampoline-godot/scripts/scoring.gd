@@ -9,6 +9,13 @@
 # who contributed to it (see `claim_line_bonus`/`claim_board_bonus`) — so
 # unlike position scores, this class doesn't need to know which player is
 # claiming a bonus, only the caller does.
+#
+# A row can hold more than one separate word at once (see board.gd) —
+# `player_word_score` is anchored at a specific column so it always scores
+# ONE particular word, never accidentally blending two unrelated ones.
+# `claim_line_bonus` doesn't need that anchor: reaching 9 letters fills an
+# entire row, so at most one word per row can ever be a bonus candidate at
+# a time.
 class_name Scoring
 extends RefCounted
 
@@ -25,9 +32,10 @@ var _row_scores: Array[RowScore] = []
 var _line_bonus_claimed: Array[bool] = []
 var _board_bonus_claimed := false
 
-# Snapshot of each row's word length, taken by `begin_turn`, so
-# `claim_line_bonus` can tell apart the two different ways a row can reach
-# 9 letters (confirmed by Maximilien — these are NOT the same bonus):
+# Snapshot of how many cells were filled in each row, taken by
+# `begin_turn`, so `claim_line_bonus` can tell apart the two different
+# ways a row can reach 9 letters (confirmed by Maximilien — these are NOT
+# the same bonus):
 #   - Completing a word that already had letters on the board before the
 #     current turn began: worth +10, regardless of color.
 #   - Writing an entire 9-letter word within a single turn, starting from
@@ -36,23 +44,27 @@ var _board_bonus_claimed := false
 # Defaults to all zeros, so code that never calls `begin_turn` (tests,
 # tools) treats every row as if it started the (single, implicit) turn
 # empty — i.e. eligible for the bigger bonus.
-var _word_length_at_turn_start: Array[int] = []
+var _filled_count_at_turn_start: Array[int] = []
 
 
 func _init() -> void:
 	for row in range(Board.ROWS):
 		_row_scores.append(RowScore.new())
 		_line_bonus_claimed.append(false)
-		_word_length_at_turn_start.append(0)
+		_filled_count_at_turn_start.append(0)
 
 
-# Snapshots every row's current word length. Call this once, at the start
-# of each player's turn, before they place or remove anything, so
-# `claim_line_bonus` can later tell a from-scratch "scrabble" apart from
-# completing a word that already existed.
+# Snapshots how many cells are currently filled in every row. Call this
+# once, at the start of each player's turn, before they place or remove
+# anything, so `claim_line_bonus` can later tell a from-scratch "scrabble"
+# apart from completing a word that already existed.
 func begin_turn(board: Board) -> void:
 	for row in range(Board.ROWS):
-		_word_length_at_turn_start[row] = board.word_columns(row).size()
+		var filled := 0
+		for col in range(Board.COLUMNS):
+			if not board.is_empty(row, col):
+				filled += 1
+		_filled_count_at_turn_start[row] = filled
 
 
 # Records that `player_id` just placed a tile at `(row, col)` — see
@@ -62,39 +74,49 @@ func record_placement(row: int, col: int, player_id: int) -> int:
 	return _row_scores[row].record_placement(col, player_id)
 
 
-# `player_id`'s share of a row's current word score: the sum of THEIR
-# letters' position scores, minus 5 points per green letter THEY placed.
-# Scores 0 for an in-progress or wrong word — only a valid dictionary word
-# contributes anything — and 0 for a player who contributed nothing to it.
-func player_word_score(board: Board, dictionary: FrenchDictionary, row: int, player_id: int) -> int:
-	if not dictionary.is_word_valid(board.word_in_row(row)):
+# `player_id`'s share of the score of the word at `(row, col)`: the sum of
+# THEIR letters' position scores, minus 5 points per green letter THEY
+# placed. Scores 0 for an in-progress or wrong word — only a valid
+# dictionary word contributes anything — and 0 for a player who
+# contributed nothing to it.
+func player_word_score(
+	board: Board, dictionary: FrenchDictionary, row: int, col: int, player_id: int
+) -> int:
+	if not dictionary.is_word_valid(board.word_at(row, col)):
 		return 0
-	var columns := board.word_columns(row)
+	var columns := board.word_columns_at(row, col)
 	var total := _row_scores[row].total_score_for_player(columns, player_id)
 	total -= GREEN_LETTER_PENALTY * _player_green_letter_count(board, row, columns, player_id)
 	return total
 
 
 # Whether to award a line-completion bonus for `row` right now: only once
-# per row, ever, and only once its word is a dictionary-valid 9 letters.
-# Returns the bonus amount, or 0 if it isn't earned yet (or was already
-# claimed). See `_word_length_at_turn_start` above for which of the two
-# distinct bonuses this pays out. Unlike `player_word_score`, this isn't
-# split per player — it's a lump sum for whoever completes the row; the
-# caller (not this class) knows who that is.
+# per row, ever, and only once it holds exactly one word (not zero, not
+# two — see board.gd) that's a dictionary-valid 9 letters. Returns the
+# bonus amount, or 0 if it isn't earned yet (or was already claimed). See
+# `_filled_count_at_turn_start` above for which of the two distinct
+# bonuses this pays out. Unlike `player_word_score`, this isn't split per
+# player — it's a lump sum for whoever completes the row; the caller (not
+# this class) knows who that is.
 func claim_line_bonus(board: Board, dictionary: FrenchDictionary, row: int) -> int:
 	if _line_bonus_claimed[row]:
 		return 0
-	var columns := board.word_columns(row)
-	if columns.size() != Board.COLUMNS:
+
+	var segments := board.segments_in_row(row)
+	if segments.size() != 1:
 		return 0
-	if not dictionary.is_word_valid(board.word_in_row(row)):
+
+	var col: int = segments[0][0]
+	var columns := board.word_columns_at(row, col)
+	var is_finished_valid_word := (
+		columns.size() == Board.COLUMNS and dictionary.is_word_valid(board.word_at(row, col))
+	)
+	if not is_finished_valid_word:
 		return 0
+
 	_line_bonus_claimed[row] = true
-
-	if _word_length_at_turn_start[row] > 0:
+	if _filled_count_at_turn_start[row] > 0:
 		return LINE_COMPLETION_BONUS
-
 	if _all_green_letter_count(board, row, columns) == 0:
 		return SINGLE_COLOR_WORD_BONUS
 	return MIXED_COLOR_WORD_BONUS
@@ -113,6 +135,35 @@ func claim_board_bonus(board: Board) -> int:
 			return 0
 	_board_bonus_claimed = true
 	return BOARD_COMPLETION_BONUS
+
+
+# The position score/owner recorded for `(row, col)` — exposed so
+# word_move.gd can carry a tile's earned score along when relocating it.
+# Prefer `player_word_score`/`claim_line_bonus` for anything else; these
+# two (plus `forget`/`restore_placement` below) exist purely to support
+# moving a tile without it losing or regaining credit.
+func score_at(row: int, col: int) -> int:
+	return _row_scores[row].score_at(col)
+
+
+func owner_at(row: int, col: int) -> int:
+	return _row_scores[row].owner_at(col)
+
+
+# Clears the score/owner recorded at `(row, col)` — call this on a tile's
+# OLD position when relocating it (see word_move.gd), right before
+# `restore_placement` on its new one.
+func forget(row: int, col: int) -> void:
+	_row_scores[row].forget(col)
+
+
+# Restores a previously-recorded score/owner at `(row, col)` — call this
+# on a tile's NEW position when relocating it (see word_move.gd), with the
+# values read via `score_at`/`owner_at` before it was moved. Unlike
+# `record_placement`, this does NOT draw a fresh score from the row's
+# counter — the tile keeps whatever it already earned.
+func restore_placement(row: int, col: int, score: int, player_id: int) -> void:
+	_row_scores[row].restore(col, score, player_id)
 
 
 # How many letters in `columns` are green, regardless of who placed them —

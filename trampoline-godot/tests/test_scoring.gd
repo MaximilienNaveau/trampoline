@@ -43,7 +43,7 @@ func _test_word_score() -> void:
 
 	_place_word(board, scoring, 0, "QSXWZY", 0)
 	_check(
-		scoring.player_word_score(board, _dictionary, 0, 0) == 0,
+		scoring.player_word_score(board, _dictionary, 0, 0, 0) == 0,
 		"gibberish scores 0, even with position scores recorded"
 	)
 
@@ -64,11 +64,11 @@ func _test_word_score() -> void:
 		board.place(1, col, tile)
 		scoring.record_placement(1, col, 0)
 	_check(
-		board.word_in_row(1) == "maison",
+		board.word_at(1, 0) == "maison",
 		"sanity: the word still reads correctly with a green letter"
 	)
 	_check(
-		scoring.player_word_score(board, _dictionary, 1, 0) == 16,
+		scoring.player_word_score(board, _dictionary, 1, 0, 0) == 16,
 		"position sum minus the green-letter penalty"
 	)
 
@@ -127,7 +127,7 @@ func _test_line_bonus() -> void:
 	for col in range(5, 9):
 		board.place(6, col, Tile.new(word9[col], "Z", true))
 		scoring.record_placement(6, col, 0)
-	_check(board.word_in_row(6) == word9, "sanity: the word completed correctly")
+	_check(board.word_at(6, 0) == word9, "sanity: the word completed correctly")
 	_check(
 		scoring.claim_line_bonus(board, _dictionary, 6) == 10,
 		"completing a word that already existed before this turn: +10 only"
@@ -176,7 +176,7 @@ func _test_per_player_attribution() -> void:
 		board.place(7, col, Tile.new(word9[col], "Z", true))
 		scoring.record_placement(7, col, 0)
 	_check(
-		scoring.player_word_score(board, _dictionary, 7, 0) == 0,
+		scoring.player_word_score(board, _dictionary, 7, 0, 0) == 0,
 		"sanity: an incomplete word (not yet 9 letters) scores 0 even for its author"
 	)
 
@@ -184,14 +184,14 @@ func _test_per_player_attribution() -> void:
 	for col in range(6, 9):
 		board.place(7, col, Tile.new(word9[col], "Z", true))
 		scoring.record_placement(7, col, 1)
-	_check(board.word_in_row(7) == word9, "sanity: the word completed correctly")
+	_check(board.word_at(7, 0) == word9, "sanity: the word completed correctly")
 
 	_check(
-		scoring.player_word_score(board, _dictionary, 7, 0) == 21,
+		scoring.player_word_score(board, _dictionary, 7, 0, 0) == 21,
 		"player 0 is credited only for their own 6 letters: 1+2+3+4+5+6"
 	)
 	_check(
-		scoring.player_word_score(board, _dictionary, 7, 1) == 24,
+		scoring.player_word_score(board, _dictionary, 7, 0, 1) == 24,
 		"player 1 is credited only for their own 3 letters: 7+8+9"
 	)
 	_check(

@@ -57,3 +57,22 @@ func total_score_for_player(columns: Array, player_id: int) -> int:
 		if owner_at(col) == player_id:
 			total += score_at(col)
 	return total
+
+
+# Clears whatever score/owner is recorded for `col`, without touching the
+# running counter. Used when a whole word is relocated (see
+# word_move.gd): the tile's score travels WITH it to its new cell (see
+# `restore` below) rather than being earned again, so the old cell just
+# needs to forget it ever held anything.
+func forget(col: int) -> void:
+	_scores.erase(col)
+	_owners.erase(col)
+
+
+# Directly sets `col`'s score and owner to specific values, bypassing the
+# usual "next sequential score" auto-increment — used only when relocating
+# an already-scored tile (see word_move.gd), never for an actual new
+# placement (use `record_placement` for that).
+func restore(col: int, score: int, player_id: int) -> void:
+	_scores[col] = score
+	_owners[col] = player_id
