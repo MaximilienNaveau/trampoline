@@ -1,6 +1,14 @@
 # Combines position scores (row_score.gd), the green-letter penalty, and
 # the completion bonuses into the actual points a row/board is worth (see
 # doc/RULES.md). Only dictionary-valid words score anything at all.
+#
+# Position scores and the green-letter penalty are attributed PER PLAYER —
+# whoever placed a letter gets that letter's score, and pays for it if
+# it's green (see `player_word_score`). Bonuses are different: they're a
+# lump sum paid to whoever completes the row, not split between everyone
+# who contributed to it (see `claim_line_bonus`/`claim_board_bonus`) — so
+# unlike position scores, this class doesn't need to know which player is
+# claiming a bonus, only the caller does.
 class_name Scoring
 extends RefCounted
 
@@ -10,8 +18,9 @@ const MIXED_COLOR_WORD_BONUS := 30
 const BOARD_COMPLETION_BONUS := 30
 const GREEN_LETTER_PENALTY := 5
 
-# One placement-order tracker per row, plus one "already paid?" flag per
-# row for the line bonus, and a single flag for the whole-board bonus.
+# One placement-order/ownership tracker per row, plus one "already paid?"
+# flag per row for the line bonus, and a single flag for the whole-board
+# bonus.
 var _row_scores: Array[RowScore] = []
 var _line_bonus_claimed: Array[bool] = []
 var _board_bonus_claimed := false
@@ -46,22 +55,23 @@ func begin_turn(board: Board) -> void:
 		_word_length_at_turn_start[row] = board.word_columns(row).size()
 
 
-# Records that a tile was just placed at `(row, col)` — see
+# Records that `player_id` just placed a tile at `(row, col)` — see
 # `RowScore.record_placement`. Call this once per successful placement,
 # alongside `GrowthRules.place`.
-func record_placement(row: int, col: int) -> int:
-	return _row_scores[row].record_placement(col)
+func record_placement(row: int, col: int, player_id: int) -> int:
+	return _row_scores[row].record_placement(col, player_id)
 
 
-# The current score for a row's word: the sum of its letters' position
-# scores, minus 5 points per green letter used. Scores 0 for an in-progress
-# or wrong word — only a valid dictionary word contributes anything.
-func word_score(board: Board, dictionary: FrenchDictionary, row: int) -> int:
+# `player_id`'s share of a row's current word score: the sum of THEIR
+# letters' position scores, minus 5 points per green letter THEY placed.
+# Scores 0 for an in-progress or wrong word — only a valid dictionary word
+# contributes anything — and 0 for a player who contributed nothing to it.
+func player_word_score(board: Board, dictionary: FrenchDictionary, row: int, player_id: int) -> int:
 	if not dictionary.is_word_valid(board.word_in_row(row)):
 		return 0
 	var columns := board.word_columns(row)
-	var total := _row_scores[row].total_score(columns)
-	total -= GREEN_LETTER_PENALTY * _green_letter_count(board, row, columns)
+	var total := _row_scores[row].total_score_for_player(columns, player_id)
+	total -= GREEN_LETTER_PENALTY * _player_green_letter_count(board, row, columns, player_id)
 	return total
 
 
@@ -69,7 +79,9 @@ func word_score(board: Board, dictionary: FrenchDictionary, row: int) -> int:
 # per row, ever, and only once its word is a dictionary-valid 9 letters.
 # Returns the bonus amount, or 0 if it isn't earned yet (or was already
 # claimed). See `_word_length_at_turn_start` above for which of the two
-# distinct bonuses this pays out.
+# distinct bonuses this pays out. Unlike `player_word_score`, this isn't
+# split per player — it's a lump sum for whoever completes the row; the
+# caller (not this class) knows who that is.
 func claim_line_bonus(board: Board, dictionary: FrenchDictionary, row: int) -> int:
 	if _line_bonus_claimed[row]:
 		return 0
@@ -83,7 +95,7 @@ func claim_line_bonus(board: Board, dictionary: FrenchDictionary, row: int) -> i
 	if _word_length_at_turn_start[row] > 0:
 		return LINE_COMPLETION_BONUS
 
-	if _green_letter_count(board, row, columns) == 0:
+	if _all_green_letter_count(board, row, columns) == 0:
 		return SINGLE_COLOR_WORD_BONUS
 	return MIXED_COLOR_WORD_BONUS
 
@@ -103,9 +115,23 @@ func claim_board_bonus(board: Board) -> int:
 	return BOARD_COMPLETION_BONUS
 
 
-func _green_letter_count(board: Board, row: int, columns: Array) -> int:
+# How many letters in `columns` are green, regardless of who placed them —
+# used for the bonus, which cares about the whole word's color mix.
+func _all_green_letter_count(board: Board, row: int, columns: Array) -> int:
 	var count := 0
 	for col in columns:
 		if board.tile_at(row, col).current_is_green():
+			count += 1
+	return count
+
+
+# How many of `player_id`'s own letters in `columns` are green — used for
+# their personal green-letter penalty, which only charges you for your
+# own risky letters, not your row-mates'.
+func _player_green_letter_count(board: Board, row: int, columns: Array, player_id: int) -> int:
+	var count := 0
+	for col in columns:
+		var owned_by_player := _row_scores[row].owner_at(col) == player_id
+		if owned_by_player and board.tile_at(row, col).current_is_green():
 			count += 1
 	return count
