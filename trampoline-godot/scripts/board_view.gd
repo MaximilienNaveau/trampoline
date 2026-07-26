@@ -1,16 +1,26 @@
-# Visualizes a Board's current state as a 13x9 grid of colored cells —
-# read-only for now, no clicking/dragging yet, just a way to actually SEE
-# what's on the board. No custom art yet either, just enough color to
-# tell yellow letters, green letters, and empty cells apart at a glance.
+# Visualizes a Board's current state as a 13x9 grid of colored cells, and
+# accepts tiles dropped onto it from a HandView (see board_cell.gd/
+# tile_panel.gd for the actual drag-and-drop mechanics). No custom art yet,
+# just enough color to tell yellow letters, green letters, and empty cells
+# apart at a glance.
 #
 # Deliberately knows nothing about GameSession, TurnManager, scoring, or
-# any other game rule: it only ever reads a `Board` (see board.gd) and
-# draws whatever's there, per this project's "separate logic from
-# graphics" rule (see CLAUDE.md). It also never watches for changes on
-# its own — whoever owns this node calls `refresh(board)` after the
-# board changes (placing/removing/flipping/moving a tile).
+# any other game rule: it only ever reads a `Board` (see board.gd), draws
+# whatever's there, and asks GrowthRules (a stateless rule-checker, not a
+# mutator) whether a drop would be legal. It never places a tile itself —
+# that's main.gd's job, listening for the `tile_dropped` signal below. It
+# also never watches the board for changes on its own — whoever owns this
+# node calls `refresh(board)` after the board changes (placing/removing/
+# flipping/moving a tile).
 class_name BoardView
 extends Control
+
+# Re-broadcasts whichever cell just received a dropped tile — see
+# board_cell.gd's own `tile_dropped` signal for what a "signal" is. Having
+# ONE signal here, instead of main.gd connecting to all 117 cells
+# individually, keeps BoardView's grid an implementation detail its owner
+# doesn't need to know about.
+signal tile_dropped(row: int, col: int, tile: Tile)
 
 # One Panel + Label per board cell, indexed [row][col] — built once in
 # _ready() and reused by refresh(), rather than destroying and recreating
@@ -39,9 +49,16 @@ func _build_grid() -> void:
 		var panel_row: Array = []
 		var label_row: Array = []
 		for col in range(Board.COLUMNS):
-			var panel := Panel.new()
+			var panel := BoardCell.new()
+			panel.row = row
+			panel.col = col
 			panel.custom_minimum_size = Vector2(32, 32)
 			panel.add_theme_stylebox_override("panel", TileView.empty_style())
+			# Connects this cell's own signal to a method on BoardView (see
+			# `_on_cell_tile_dropped` below) — the standard Godot way of
+			# reacting to a signal, same idea as a Qt slot or a C callback
+			# registered against a function pointer.
+			panel.tile_dropped.connect(_on_cell_tile_dropped)
 
 			var label := Label.new()
 			# PRESET_FULL_RECT stretches the label to fill its parent
@@ -64,10 +81,19 @@ func refresh(board: Board) -> void:
 		for col in range(Board.COLUMNS):
 			var tile := board.tile_at(row, col)
 			var label: Label = _cell_labels[row][col]
-			var panel: Panel = _cell_panels[row][col]
+			var panel: BoardCell = _cell_panels[row][col]
+			# Kept current every refresh, not just at creation, in case a
+			# future save/load ever swaps in a whole new Board instance.
+			panel.board = board
 			if tile == null:
 				label.text = ""
 				panel.add_theme_stylebox_override("panel", TileView.empty_style())
 			else:
 				label.text = tile.current_letter()
 				panel.add_theme_stylebox_override("panel", TileView.style_for_tile(tile))
+
+
+# Forwards one cell's drop straight to this view's own single signal (see
+# the header comment above `tile_dropped`'s declaration).
+func _on_cell_tile_dropped(row: int, col: int, tile: Tile) -> void:
+	tile_dropped.emit(row, col, tile)

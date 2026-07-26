@@ -1,6 +1,7 @@
 # Visualizes one player's hand as a row of colored tiles, using the same
-# yellow/green/blank coloring as BoardView (via TileView) — read-only for
-# now, no clicking/dragging yet, same as board_view.gd.
+# yellow/green/blank coloring as BoardView (via TileView). Each tile is a
+# TilePanel (see tile_panel.gd), draggable onto a BoardView cell — this
+# view itself doesn't need to know that's possible, it just builds them.
 #
 # Unlike BoardView's grid (13x9, always the same 117 cells), a hand's size
 # actually changes turn to turn — tiles leave when placed, more arrive on a
@@ -27,7 +28,8 @@ func refresh(hand: Array[Tile]) -> void:
 		child.queue_free()
 
 	for tile in hand:
-		var panel := Panel.new()
+		var panel := TilePanel.new()
+		panel.tile = tile
 		panel.custom_minimum_size = Vector2(32, 32)
 		panel.add_theme_stylebox_override("panel", TileView.style_for_tile(tile))
 
