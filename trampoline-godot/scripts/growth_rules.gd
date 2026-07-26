@@ -35,11 +35,18 @@ static func place(board: Board, row: int, col: int, tile: Tile) -> bool:
 	return board.place(row, col, tile)
 
 # Whether the tile at `(row, col)` in `board` can be taken back: only true
-# if a tile is there AND it's currently showing its blank face. A real
-# letter can never be removed this way — only flipped, or grown around.
+# if a tile is there, it's currently showing its blank face (a real letter
+# can never be removed this way — only flipped, or grown around), AND it
+# sits at one end of the row's contiguous run rather than in the middle.
+# That last condition matters even though a blank can only ever be PLACED
+# at an edge (see `can_place`): further growth can happen on the other
+# side afterward, leaving an edge blank stranded in the middle — removing
+# it from there would tear a hole in an otherwise-contiguous word.
 static func can_remove(board: Board, row: int, col: int) -> bool:
 	var tile := board.tile_at(row, col)
-	return tile != null and tile.is_blank()
+	if tile == null or not tile.is_blank():
+		return false
+	return col == board.leftmost_filled(row) or col == board.rightmost_filled(row)
 
 # Removes the tile at `(row, col)` in `board` if `can_remove` allows it.
 # Returns the removed tile, or `null` if the removal isn't legal.
