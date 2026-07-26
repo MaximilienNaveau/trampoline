@@ -12,22 +12,11 @@
 class_name BoardView
 extends Control
 
-const _YELLOW_COLOR := Color(0.96, 0.87, 0.4)
-const _GREEN_COLOR := Color(0.6, 0.85, 0.55)
-const _EMPTY_COLOR := Color(0.88, 0.88, 0.88)
-
 # One Panel + Label per board cell, indexed [row][col] — built once in
 # _ready() and reused by refresh(), rather than destroying and recreating
 # 117 nodes every time the board changes.
 var _cell_panels: Array = []
 var _cell_labels: Array = []
-
-# One reusable "flat color box" style per cell state — a StyleBoxFlat is
-# Godot's simplest drawable, a solid-colored (optionally rounded/bordered)
-# rectangle. Built once here rather than once per cell per refresh.
-var _yellow_style: StyleBoxFlat
-var _green_style: StyleBoxFlat
-var _empty_style: StyleBoxFlat
 
 # `@onready` runs this line once this node's children actually exist
 # (right before `_ready()` — a plain `var _grid := $Grid` at the top of
@@ -38,9 +27,6 @@ var _empty_style: StyleBoxFlat
 
 
 func _ready() -> void:
-	_yellow_style = _make_style(_YELLOW_COLOR)
-	_green_style = _make_style(_GREEN_COLOR)
-	_empty_style = _make_style(_EMPTY_COLOR)
 	_build_grid()
 
 
@@ -55,7 +41,7 @@ func _build_grid() -> void:
 		for col in range(Board.COLUMNS):
 			var panel := Panel.new()
 			panel.custom_minimum_size = Vector2(32, 32)
-			panel.add_theme_stylebox_override("panel", _empty_style)
+			panel.add_theme_stylebox_override("panel", TileView.empty_style())
 
 			var label := Label.new()
 			# PRESET_FULL_RECT stretches the label to fill its parent
@@ -81,14 +67,7 @@ func refresh(board: Board) -> void:
 			var panel: Panel = _cell_panels[row][col]
 			if tile == null:
 				label.text = ""
-				panel.add_theme_stylebox_override("panel", _empty_style)
+				panel.add_theme_stylebox_override("panel", TileView.empty_style())
 			else:
 				label.text = tile.current_letter()
-				var style := _green_style if tile.current_is_green() else _yellow_style
-				panel.add_theme_stylebox_override("panel", style)
-
-
-static func _make_style(color: Color) -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = color
-	return style
+				panel.add_theme_stylebox_override("panel", TileView.style_for_tile(tile))
