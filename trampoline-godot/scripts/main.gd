@@ -6,11 +6,12 @@
 # screen for the first time.
 extends Control
 
-# `$BoardView` looks up the child node named "BoardView" declared in
-# scenes/main.tscn — the same shorthand board_view.gd itself uses for its
-# own "Grid" child. `@onready` runs this once that child actually exists,
-# rather than too early (see board_view.gd for the same pattern).
+# `$BoardView`/`$HandView` look up the child nodes of those names declared
+# in scenes/main.tscn — the same shorthand board_view.gd itself uses for its
+# own "Grid" child. `@onready` runs this once those children actually
+# exist, rather than too early (see board_view.gd for the same pattern).
 @onready var _board_view: BoardView = $BoardView
+@onready var _hand_view: HandView = $HandView
 
 
 func _ready() -> void:
@@ -21,3 +22,4 @@ func _ready() -> void:
 	# through for no current benefit.
 	var session := GameSession.new(2)
 	_board_view.refresh(session.board)
+	_hand_view.refresh(session.bag.hand(session.turns.current_player_id()))
