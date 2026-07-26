@@ -1,0 +1,209 @@
+# Trampoline — Game Rules Reference
+
+"Un jeu pour faire rebondir les mots" ("a game that makes words bounce"),
+designed by Michel Cheenne (1999, revised 2015). This document is the
+settled, cross-validated reference for anyone (human or agent) implementing
+or porting the game — it supersedes the raw legacy files below as the
+source to read first.
+
+**Provenance**: extracted from the legacy design documents in this folder
+(`Trampoline.doc`, `" Trampoline Version 2015.doc"`, `Compter les points
+.ods`, the `GRILLE *.xls` puzzle booklet, `Une lettre.xls`, `testtonio.xls`)
+and cross-validated against the existing Unity/C# implementation in
+`../trampoline/Assets/Scripts/` (`TokenPool.cs`, `BasicToken.cs`,
+`TokenDistributor.cs`, `RowLetterHistory.cs`, `TurnManager.cs`), plus
+clarifications from Maximilien Naveau (current implementer) where the
+sources disagreed or were ambiguous. Where this document and the legacy
+files disagree, this document wins.
+
+## Overview
+
+- **Board**: one fixed 13-row x 9-column grid (117 cells). No bonus or
+  multiplier squares of any kind.
+- **Goal**: fill the whole board by composing 13 horizontal words, one per
+  row, normally 9 letters each (see "Shortened words" below for the
+  exception). The game ends the instant the 117th cell is filled (or, in
+  practice, once every row is either a completed 9-letter word or a
+  deliberately shortened word — see below).
+- **Players**: 1 to 4, sharing one board and one shared pool of tiles.
+  There is no separate "single-player ruleset" — solo play is just the
+  1-player case of the same turn-based system (see "Single-player modes"
+  below for the three distinct ways solo play can be offered).
+- **Tiles**: 117 double-sided tokens. Every tile has a letter on its yellow
+  face and (almost always) a different letter on its green face. Flipping a
+  tile changes which letter it currently shows.
+
+## The "Trampoline" mechanic
+
+The name refers to two related things:
+
+1. **Words only ever grow.** Once a cell has been filled by any player, it
+   must never end up empty again after a subsequent move. Words extend
+   (prefix or suffix), get letters swapped out for other letters, or get
+   completed by another player — but a filled cell is never vacated.
+2. **Tiles physically flip between two faces.** A tile already on the board
+   can be flipped in place to reveal its other letter, changing the word
+   without removing the tile — this is still "growing," never "emptying."
+
+## Scoring
+
+Formula: **(sum of position scores) − 5 x (number of green letters used in
+valid words)**, plus bonuses:
+
+| Bonus | Condition |
+|---|---|
+| +50 | Complete a 9-letter word in a single move, entirely yellow |
+| +30 | Complete a 9-letter word in a single move, mixed yellow/green |
+| +10 | Complete any line (reach 9 filled cells in a row), any timing |
+| +30 | Complete the entire 117-cell board |
+
+**"Position score" is placement ORDER within a row, not column index.**
+This is the single most important and most easily-misimplemented rule:
+each row has one running counter starting at 1. Whichever letter is
+physically placed *next* in that row — regardless of which column it lands
+in, and regardless of whether it's added as a prefix or a suffix — gets the
+next counter value.
+
+Worked example: Player 1 places a 6-letter word, scoring 1+2+3+4+5+6 = 21.
+Player 2 later completes it to 9 letters by adding a 3-letter prefix *or*
+suffix (either side scores the same) and scores 7+8+9 = 24 for those 3
+letters. This is deliberate: it rewards *completing* a risky short word
+more than starting it, which is a core part of the game's tension — do you
+lay down a short word now (cheap points, but you're handing the bigger
+payoff to whoever finishes it), or hold back for a full 9-letter word
+yourself?
+
+Only dictionary-valid words count toward score (see "Word validation"
+below). Green letters cost 5 points each regardless of position.
+
+The Unity implementation (`RowLetterHistory.cs`) already implements this
+correctly — reuse the same logic, don't reintroduce column-based scoring.
+
+## Letters and tiles
+
+117 tiles, each with a yellow-face letter and (almost always) a green-face
+letter. Distribution, fully cross-validated between the docs' annex table
+and the existing Unity `TokenPool.cs` (they match exactly):
+
+| Letter | Yellow | Green | | Letter | Yellow | Green |
+|---|---|---|---|---|---|---|
+| A | 8 | 7 | | N | 8 | 7 |
+| B | 3 | 3 | | O | 6 | 6 |
+| C | 4 | 4 | | P | 3 | 3 |
+| D | 3 | 3 | | Q | 2 | 2 |
+| E | 18 | 12 | | R | 9 | 8 |
+| F | 3 | 3 | | S | 9 | 7 |
+| G | 2 | 2 | | T | 8 | 7 |
+| H | 2 | 2 | | U | 7 | 6 |
+| I | 9 | 8 | | V | 2 | 2 |
+| J | 1 | 1 | | W | 1 | 0 |
+| K | 1 | 0 | | X | 1 | 1 |
+| L | 4 | 4 | | Y | 1 | 1 |
+| M | 3 | 3 | | Z | 1 | 1 |
+
+Yellow total = 119, Green total = 103 assigned + 12 "shorten" blanks (see
+below) = 115. 119 + 115 = 234 = 117 tiles x 2 faces.
+
+Note K and W have zero green letters — those two tiles are yellow on
+**both** faces (K/U and W/S respectively), so K and W never incur the
+green penalty by design.
+
+The exact front/back pairing for all 117 tiles (which specific yellow
+letter is paired with which specific green letter) is not separately
+documented here — it's canonically defined in
+`../trampoline/Assets/Scripts/TokenPool.cs` (`InitializeTokens()`, all 117
+`SetParameters(...)` calls). Treat that file as the source of truth for
+pairing; reuse it directly when porting rather than re-deriving a new one.
+
+### Shortened words ("-" tiles)
+
+12 of the 117 tiles have a green face marked "-" (no letter) instead of a
+second letter. Flipping a tile to show "-" lets that row's word end early
+— shorter than 9 letters — instead of forcing a full 9. This is an
+intentional difficulty-easing option, not missing data. A shortened row
+simply forfeits the higher-value late position-scores and the 9-letter/
+line-completion bonuses for that row.
+
+The 12 are unevenly distributed and look deliberately tuned: 7 in row 2
+alone (all `E`-fronted tiles), 1 each in rows 6/7/9/10, none in rows
+0/1/3/4/5/8/11/12 — row 2 reads as the designed "easy" row.
+
+## Turns and draws
+
+Draw counts are tuned per player count so the 117 tiles divide evenly:
+
+| Players | Initial draw | Then | Total per player |
+|---|---|---|---|
+| 2 | 13 | 5 draws of 9 | 58 each (116 total; 117th tile to whoever starts) |
+| 3 | 12 | 3 draws of 9 | 39 each (117 total, exact) |
+| 4 | 11 | 2 draws of 9 | 29 each (116 total; 117th tile to whoever starts) |
+
+Each turn has a 3-minute soft/hard time limit to place a word (treat as a
+real constraint to respect, not just a suggestion).
+
+## Word validation
+
+Any word in a standard dictionary is legal, including proper nouns,
+compound words, and all grammatical forms (plural, gender, conjugations).
+A misspelled word can be challenged immediately by another player; if
+proven wrong, it's removed from the board and the offending player loses
+their turn.
+
+## Single-player modes
+
+Solo play (1 player) can be offered three distinct ways, all sharing the
+same core board/tile-pool/word-validation primitives but differing in
+their turn/scoring layer:
+
+1. **Turn-based** — identical ruleset to multiplayer (draws, turn timer,
+   scoring, bonuses), just with 1 player. This is the N=1 case of the same
+   turn engine used for multiplayer — no separate implementation needed.
+2. **Free play** — access to all 117 tokens at once, no turns, no draw
+   restrictions, build the board freely. No competitive scoring pressure;
+   more of a sandbox/practice/creative mode.
+3. **Crossword reconstruction** — load one of the pre-authored example
+   grids (the `GRILLE *.xls` puzzle booklet — see below) as a target, show
+   its clues, and challenge the player to use the 117 tokens to recreate
+   the exact target grid.
+
+**Current Unity implementation status** (as of 2026-07-25, for anyone
+porting/continuing this work): what's live today under "solo mode" is
+actually mode 2 (free play) — `GameController` + `Board` + `Store`, no
+turns, all tokens visible at once. The full turn-based engine for mode 1
+(`GameControllerMultiplayer`, `BoardMultiplayer`, `TurnManager`,
+`TokenDistributor`, `StoreMultiplayer`, `PlayerManager`) already exists and
+looks complete, but `GameSceneController.LoadScene()` doesn't route to it
+yet — the multiplayer scene-load branch is a `/// @todo` with the actual
+`SceneManager.LoadScene` call commented out, so neither true turn-based
+solo nor real multiplayer is reachable from the game's menu today, only
+free play is. Mode 3 doesn't exist in any form yet; it needs the puzzle
+content below plus new goal-checking logic.
+
+Mode 3 could plausibly be extended to multiplayer later (e.g. a race to
+solve the same target grid), but that needs real design work on
+synchronization and is explicitly deferred — a "race on separate boards,
+compare results at the end" version would be far simpler than a shared
+live board, if/when this gets revisited.
+
+## The example puzzles ("GRILLE" files)
+
+The 11 `GRILLE nn&mmr.xls` files in this folder are **not board variants**
+— all 11 use the identical 13x9 board and letter set. They're a
+crossword-style example-puzzle booklet: each sheet has 13 clues (one per
+row) for puzzle N with no letters given, plus the answer key (13 clues +
+their 9-letter solutions) for the *previous* puzzle N-1, printed on the
+same sheet as a practical print convention. Grid 11 has no answer key (a
+hypothetical "file 12" was never produced). These are good source content
+for the "crossword reconstruction" single-player mode above, and/or as
+built-in tutorial content.
+
+## Deferred / out of scope for now
+
+- **"Trampoline Version jaune plus.ods"** — best-evidenced reading is a
+  doubled-size variant (26 word-lines / 234 cells instead of 13/117, i.e.
+  literally double the base game). Confirmed out of scope for the initial
+  rewrite.
+- **Networked multiplayer** — the turn-based engine described above is
+  designed be inherently multi-player (shared board/tile-pool/turn model),
+  but only *local* multi-player (same device, players taking turns) is in
+  scope right now. Remote/networked play is a later concern.
