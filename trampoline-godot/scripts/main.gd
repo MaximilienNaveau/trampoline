@@ -25,6 +25,15 @@ var _session: GameSession
 
 
 func _ready() -> void:
+	# Godot batches mouse-motion events into one per rendered frame by
+	# default (meant to save work for games that don't need per-event
+	# precision). For a dragged tile that means it visibly lags behind the
+	# real cursor whenever the frame rate dips below the mouse's own
+	# polling rate. Turning accumulation off delivers every motion event
+	# immediately instead, which is the standard fix for sluggish-feeling
+	# drags in Godot.
+	Input.set_use_accumulated_input(false)
+
 	# GameSession would build its own French dictionary if not given one,
 	# but loading those ~79000 words is the slowest part of starting a
 	# session — there's nothing else here yet that needs a shared
