@@ -7,20 +7,22 @@
 # Deliberately knows nothing about GameSession, TurnManager, scoring, or
 # any other game rule: it only ever reads a `Board` (see board.gd), draws
 # whatever's there, and asks GrowthRules (a stateless rule-checker, not a
-# mutator) whether a drop would be legal. It never places a tile itself —
-# that's main.gd's job, listening for the `tile_dropped` signal below. It
-# also never watches the board for changes on its own — whoever owns this
-# node calls `refresh(board)` after the board changes (placing/removing/
-# flipping/moving a tile).
+# mutator) whether a drop would be legal. It never places/moves a tile
+# itself — that's main.gd's job, listening for the signals below. It also
+# never watches the board for changes on its own — whoever owns this node
+# calls `refresh(board, is_takeable)` after the board changes (placing/
+# removing/flipping/moving a tile).
 class_name BoardView
 extends Control
 
-# Re-broadcasts whichever cell just received a dropped tile — see
-# board_cell.gd's own `tile_dropped` signal for what a "signal" is. Having
-# ONE signal here, instead of main.gd connecting to all 117 cells
-# individually, keeps BoardView's grid an implementation detail its owner
-# doesn't need to know about.
+# Re-broadcasts whichever cell just received a dropped/moved tile — see
+# board_cell.gd's own same-named signals for what a "signal" is, and for
+# why one carries "from"/"to" positions while the other doesn't. Having
+# these here, instead of main.gd connecting to all 117 cells individually,
+# keeps BoardView's grid an implementation detail its owner doesn't need to
+# know about.
 signal tile_dropped(row: int, col: int, tile: Tile)
+signal tile_moved(from_row: int, from_col: int, to_row: int, to_col: int)
 
 # One Panel + Label per board cell, indexed [row][col] — built once in
 # _ready() and reused by refresh(), rather than destroying and recreating
@@ -54,11 +56,12 @@ func _build_grid() -> void:
 			panel.col = col
 			panel.custom_minimum_size = Vector2(32, 32)
 			panel.add_theme_stylebox_override("panel", TileView.empty_style())
-			# Connects this cell's own signal to a method on BoardView (see
-			# `_on_cell_tile_dropped` below) — the standard Godot way of
-			# reacting to a signal, same idea as a Qt slot or a C callback
-			# registered against a function pointer.
+			# Connects this cell's own signals to methods on BoardView (see
+			# `_on_cell_tile_dropped`/`_on_cell_tile_moved` below) — the
+			# standard Godot way of reacting to a signal, same idea as a Qt
+			# slot or a C callback registered against a function pointer.
 			panel.tile_dropped.connect(_on_cell_tile_dropped)
+			panel.tile_moved.connect(_on_cell_tile_moved)
 
 			var label := Label.new()
 			# PRESET_FULL_RECT stretches the label to fill its parent
@@ -75,8 +78,14 @@ func _build_grid() -> void:
 		_cell_labels.append(label_row)
 
 
-# Redraws every cell from `board`'s current state.
-func refresh(board: Board) -> void:
+# Redraws every cell from `board`'s current state. `is_takeable` is a
+# Callable — GDScript's way of passing a function itself around as a value
+# (like a C++ std::function or a Python function reference), taking
+# `(row, col)` and answering whether that cell's tile can currently be
+# picked back up. BoardView calls it once per cell instead of knowing the
+# actual rule itself (see this file's header comment) — main.gd passes
+# `GameSession.can_take_back` here.
+func refresh(board: Board, is_takeable: Callable) -> void:
 	for row in range(Board.ROWS):
 		for col in range(Board.COLUMNS):
 			var tile := board.tile_at(row, col)
@@ -85,6 +94,7 @@ func refresh(board: Board) -> void:
 			# Kept current every refresh, not just at creation, in case a
 			# future save/load ever swaps in a whole new Board instance.
 			panel.board = board
+			panel.draggable = is_takeable.call(row, col)
 			if tile == null:
 				label.text = ""
 				panel.add_theme_stylebox_override("panel", TileView.empty_style())
@@ -97,3 +107,8 @@ func refresh(board: Board) -> void:
 # the header comment above `tile_dropped`'s declaration).
 func _on_cell_tile_dropped(row: int, col: int, tile: Tile) -> void:
 	tile_dropped.emit(row, col, tile)
+
+
+# Same idea, for a tile moved from one board cell to another.
+func _on_cell_tile_moved(from_row: int, from_col: int, to_row: int, to_col: int) -> void:
+	tile_moved.emit(from_row, from_col, to_row, to_col)
