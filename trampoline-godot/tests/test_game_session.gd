@@ -26,6 +26,10 @@ func _initialize() -> void:
 	_test_game_over_via_exhaustion()
 	_test_game_over_via_board_completion()
 	_test_remove_tile()
+	_test_remove_tile_frozen_after_turn_ends()
+	_test_remove_tile_allows_middle_of_this_turns_word()
+	_test_move_own_tile()
+	_test_move_own_tile_refuses_frozen_tile()
 	_test_move_word()
 
 	if _failures == 0:
@@ -150,7 +154,12 @@ func _test_remove_tile() -> void:
 	shorten_tile.flip()
 	_check(not session.bag.hand(0).has(shorten_tile), "sanity: the tile left the hand when placed")
 
-	_check(session.remove_tile(5, 0) == null, "removing a real-letter tile is refused")
+	_check(
+		session.remove_tile(5, 0) == real_tile,
+		"a real-letter tile placed THIS turn can be taken back"
+	)
+	_check(session.board.is_empty(5, 0), "its cell is empty again")
+	_check(session.bag.hand(0).has(real_tile), "...and it went back to the current player's hand")
 
 	var removed := session.remove_tile(5, 1)
 	_check(removed == shorten_tile, "remove_tile returns the tile that was picked up")
@@ -159,6 +168,77 @@ func _test_remove_tile() -> void:
 		session.bag.hand(0).has(shorten_tile),
 		"the picked-up tile goes to the current player's hand"
 	)
+
+
+# Once a turn ends, whatever it placed is frozen — a real letter can no
+# longer be taken back at all, even from its own word's edge, unlike a
+# still-in-progress turn's own tiles (see _test_remove_tile above).
+func _test_remove_tile_frozen_after_turn_ends() -> void:
+	var session := GameSession.new(2, _dictionary)
+	var word := "MAISON"
+	for i in range(word.length()):
+		var tile := Tile.new(word[i], "Z", true)
+		_give_hand_tile(session, 0, tile)
+		session.place_tile(6, i, tile)
+	session.end_turn()  # player 0's turn is over; player 1 is now current
+
+	_check(
+		session.remove_tile(6, 0) == null,
+		"a real-letter tile from an ALREADY-ENDED turn is frozen, even at its word's edge"
+	)
+	_check(session.board.word_at(6, 0) == "MAISON", "the word is untouched")
+
+
+# Unlike the always-available blank "shorten" mechanic (edge-only, see
+# growth_rules.gd), nothing about a still-in-progress turn is committed
+# yet — so even the MIDDLE tile of a word the current player is still
+# building can be taken back, letting them freely rearrange/rebuild it
+# before ending their turn.
+func _test_remove_tile_allows_middle_of_this_turns_word() -> void:
+	var session := GameSession.new(1, _dictionary)
+	var tiles: Array[Tile] = []
+	for letter in ["C", "A", "T"]:
+		var tile := Tile.new(letter, "Z", true)
+		_give_hand_tile(session, 0, tile)
+		tiles.append(tile)
+	session.place_tile(7, 2, tiles[0])
+	session.place_tile(7, 3, tiles[1])
+	session.place_tile(7, 4, tiles[2])
+
+	_check(
+		session.remove_tile(7, 3) == tiles[1],
+		"the middle tile of this turn's own word can be taken back too"
+	)
+	_check(session.board.is_empty(7, 3), "its cell is empty again")
+	_check(session.bag.hand(0).has(tiles[1]), "...and it's back in the current player's hand")
+
+
+func _test_move_own_tile() -> void:
+	var session := GameSession.new(1, _dictionary)
+	var tile := Tile.new("S", "Z", true)
+	_give_hand_tile(session, 0, tile)
+	session.place_tile(8, 4, tile)
+
+	_check(session.move_own_tile(8, 4, 8, 0), "relocating this turn's own tile succeeds")
+	_check(session.board.tile_at(8, 0) == tile, "the tile is now at its new position")
+	_check(session.board.is_empty(8, 4), "the old cell is empty")
+
+
+func _test_move_own_tile_refuses_frozen_tile() -> void:
+	var session := GameSession.new(2, _dictionary)
+	var word := "MAISON"  # must be dictionary-valid, or end_turn() below would refuse
+	for i in range(word.length()):
+		var tile := Tile.new(word[i], "Z", true)
+		_give_hand_tile(session, 0, tile)
+		session.place_tile(9, i, tile)
+	var tile: Tile = session.board.tile_at(9, 0)
+	session.end_turn()
+
+	_check(
+		not session.move_own_tile(9, 0, 9, 8),
+		"a tile from an already-ended turn can't be relocated this way"
+	)
+	_check(session.board.tile_at(9, 0) == tile, "it stays exactly where it was")
 
 
 func _test_move_word() -> void:

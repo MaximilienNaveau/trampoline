@@ -13,6 +13,13 @@ var turns: TurnManager
 var scoring: Scoring
 var dictionary: FrenchDictionary
 
+# Tiles the current player has placed since their turn began — these are
+# still "in progress" and can be freely taken back or relocated (see
+# `_can_take_back`/`move_own_tile` below), unlike a tile placed in an
+# earlier, already-ended turn, which is frozen in place (only a whole word
+# can be relocated afterward, via `move_word`). Reset every `_start_turn()`.
+var _placed_this_turn: Array[Tile] = []
+
 
 # `dictionary` can be injected (e.g. a test reusing one already-loaded
 # instance across several sessions, since loading it re-reads and
@@ -72,25 +79,67 @@ func place_tile(row: int, col: int, tile: Tile) -> bool:
 		return false
 	bag.consume(player_id, tile)
 	scoring.record_placement(row, col, player_id)
+	_placed_this_turn.append(tile)
 	return true
 
 
-# Picks a currently-blank-showing tile at (row, col) back up (see
-# growth_rules.gd's `can_remove` — a real letter can never be removed this
-# way, only a blank one, and only from its own word's edge). The tile goes
-# into the CURRENT player's hand — whoever performs the removal receives
-# it, regardless of who originally placed it (assumption worth flagging:
-# doc/RULES.md doesn't say where a picked-up tile should go; giving it to
-# the remover, rather than back into the shared bag, was the simplest
-# reasonable default). Returns null and does nothing if the removal isn't
-# legal.
+# Whether the tile at (row, col) can currently be picked back up — either
+# because it's a blank sitting at its word's edge (the always-available
+# "shorten" mechanic, see growth_rules.gd's `can_remove`), or because the
+# CURRENT player placed it earlier in this very turn. Nothing is committed
+# until the turn actually ends (see `_start_turn`), so a this-turn tile can
+# be taken back from anywhere in its word, edge or middle — freely
+# rearranging/rebuilding a word while it's still being composed is exactly
+# what lets a player be more inventive, and `can_end_turn` is what actually
+# guards the board once they're done. A real letter placed in an EARLIER
+# turn matches neither case: it's frozen in place.
+func _can_take_back(row: int, col: int, tile: Tile) -> bool:
+	return GrowthRules.can_remove(board, row, col) or _placed_this_turn.has(tile)
+
+
+# Whether the tile currently at (row, col) can be picked back up right now
+# (see `_can_take_back` above) — false if the cell is empty.
+func can_take_back(row: int, col: int) -> bool:
+	var tile := board.tile_at(row, col)
+	return tile != null and _can_take_back(row, col, tile)
+
+
+# Picks the tile at (row, col) back up, if `can_take_back` allows it. The
+# tile goes into the CURRENT player's hand — whoever performs the removal
+# receives it, regardless of who originally placed it (assumption worth
+# flagging: doc/RULES.md doesn't say where a picked-up tile should go;
+# giving it to the remover, rather than back into the shared bag, was the
+# simplest reasonable default). Returns null and does nothing if the
+# removal isn't legal.
 func remove_tile(row: int, col: int) -> Tile:
-	var tile := GrowthRules.remove(board, row, col)
-	if tile == null:
+	var tile := board.tile_at(row, col)
+	if tile == null or not _can_take_back(row, col, tile):
 		return null
+	board.remove(row, col)
 	scoring.forget(row, col)
 	bag.give_to_hand(turns.current_player_id(), tile)
+	_placed_this_turn.erase(tile)
 	return tile
+
+
+# Relocates a single tile the current player placed earlier this same turn
+# from (from_row, from_col) to (to_row, to_col) — see `_can_take_back`
+# above for why an older, frozen tile can't move this way (use `move_word`
+# for those instead). Returns false and does nothing if picking the tile up
+# isn't legal, or if GrowthRules refuses the destination.
+func move_own_tile(from_row: int, from_col: int, to_row: int, to_col: int) -> bool:
+	var tile := board.tile_at(from_row, from_col)
+	if tile == null or not _can_take_back(from_row, from_col, tile):
+		return false
+
+	board.remove(from_row, from_col)
+	if not GrowthRules.place(board, to_row, to_col, tile):
+		board.place(from_row, from_col, tile)  # rollback: destination refused
+		return false
+
+	scoring.forget(from_row, from_col)
+	scoring.record_placement(to_row, to_col, turns.current_player_id())
+	return true
 
 
 # Relocates the word at (from_row, from_col) so its first letter lands at
@@ -134,6 +183,10 @@ func end_turn() -> bool:
 func _start_turn() -> void:
 	turns.draw_for_player(bag, turns.current_player_id())
 	scoring.begin_turn(board)
+	# Whatever the PREVIOUS player placed is now a done deal — frozen in
+	# place for anyone else, movable only as a whole word (see
+	# `_can_take_back`). The new current player starts with a clean slate.
+	_placed_this_turn.clear()
 
 
 # Recomputes every player's score from scratch — the sum of their own
