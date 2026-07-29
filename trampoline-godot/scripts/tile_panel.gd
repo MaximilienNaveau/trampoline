@@ -18,16 +18,10 @@ var tile: Tile
 func _get_drag_data(_at_position: Vector2) -> Variant:
 	# Shows a copy of this tile following the cursor while it's dragged, so
 	# the player can see what they're holding. Godot destroys this preview
-	# automatically once the drag ends — we never free it ourselves.
-	var preview := Panel.new()
-	preview.custom_minimum_size = size
-	preview.add_theme_stylebox_override("panel", TileView.style_for_tile(tile))
-	var label := Label.new()
-	label.set_anchors_preset(Control.PRESET_FULL_RECT)
-	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	label.text = tile.current_letter()
-	preview.add_child(label)
-	set_drag_preview(preview)
+	# automatically once the drag ends — we never free it ourselves. See
+	# TileView.build_drag_preview for why it needs its own wrapper Control
+	# to stay centered on the cursor (BoardCell's own drag source, for
+	# moving a tile already on the board, reuses the exact same helper).
+	set_drag_preview(TileView.build_drag_preview(tile, size))
 
 	return {"tile": tile}

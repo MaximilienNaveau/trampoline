@@ -25,6 +25,37 @@ static func empty_style() -> StyleBoxFlat:
 	return _make_style(EMPTY_COLOR)
 
 
+# Builds a floating preview of `tile` for Control.set_drag_preview(),
+# shared by every draggable tile view (TilePanel, BoardCell) — already
+# centered on the cursor. Godot forcibly re-centers whatever ROOT control
+# it's given on the mouse position every frame, overwriting any position we
+# set on it ourselves, but it never touches a CHILD's position — so this
+# returns an otherwise-empty root Control with the actual visible tile as
+# an offset child, which is what keeps the tile looking centered no matter
+# where Godot moves the root.
+static func build_drag_preview(tile: Tile, tile_size: Vector2) -> Control:
+	var root := Control.new()
+
+	var visual := Panel.new()
+	# This visual is never added to the real scene tree, so nothing ever
+	# runs a layout pass on it — setting only `custom_minimum_size` (a mere
+	# size *request* for a parent container to honor) would leave its
+	# actual `size` at (0, 0). Setting `size` directly gives it real,
+	# immediate dimensions to render and to center against below.
+	visual.size = tile_size
+	visual.position = -tile_size / 2
+	visual.add_theme_stylebox_override("panel", style_for_tile(tile))
+	var label := Label.new()
+	label.set_anchors_preset(Control.PRESET_FULL_RECT)
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	label.text = tile.current_letter()
+	visual.add_child(label)
+
+	root.add_child(visual)
+	return root
+
+
 # A StyleBoxFlat is Godot's simplest drawable: a solid-colored (optionally
 # rounded/bordered) rectangle.
 static func _make_style(color: Color) -> StyleBoxFlat:
