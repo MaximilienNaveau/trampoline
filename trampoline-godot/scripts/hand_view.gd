@@ -30,6 +30,13 @@ func refresh(hand: Array[Tile]) -> void:
 	for tile in hand:
 		var panel := TilePanel.new()
 		panel.tile = tile
+		# Every Control can pick its own mouse cursor shape for whenever the
+		# pointer is hovering over it — a hint that this tile can be picked
+		# up, shown before the player even starts dragging. CURSOR_DRAG
+		# would be the conceptually closest match, but on this system (X11)
+		# Godot maps it to the 4-way "move" cross, not a hand; the actual
+		# hand-shaped cursor Godot ships is CURSOR_POINTING_HAND.
+		panel.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 		panel.custom_minimum_size = Vector2(32, 32)
 		panel.add_theme_stylebox_override("panel", TileView.style_for_tile(tile))
 
