@@ -31,10 +31,12 @@ func _ready() -> void:
 	# instance, so this just keeps things simple rather than plumbing one
 	# through for no current benefit.
 	_session = GameSession.new(2)
-	# Connects BoardView's signal, and the button's built-in `pressed`
-	# signal (every Button has one), to the methods below — see
+	# Connects BoardView's/HandView's signals, and the button's built-in
+	# `pressed` signal (every Button has one), to the methods below — see
 	# board_cell.gd's header comment for what a signal/connection is.
 	_board_view.tile_dropped.connect(_on_board_tile_dropped)
+	_board_view.tile_moved.connect(_on_board_tile_moved)
+	_hand_view.tile_returned.connect(_on_hand_tile_returned)
 	_end_turn_button.pressed.connect(_on_end_turn_pressed)
 	_refresh_views()
 
@@ -50,6 +52,23 @@ func _on_board_tile_dropped(row: int, col: int, tile: Tile) -> void:
 	_refresh_views()
 
 
+# Called whenever a BoardCell gets dragged onto another BoardCell (see
+# board_cell.gd) — relocating a tile the current player placed earlier this
+# same turn. `move_own_tile` re-checks eligibility itself (the view layer
+# only used it to decide whether to even start the drag), so an already-
+# frozen tile that somehow got dragged anyway simply won't move.
+func _on_board_tile_moved(from_row: int, from_col: int, to_row: int, to_col: int) -> void:
+	_session.move_own_tile(from_row, from_col, to_row, to_col)
+	_refresh_views()
+
+
+# Called whenever a BoardCell gets dragged onto the hand row (see
+# hand_row.gd) — giving a tile back to the current player's storage.
+func _on_hand_tile_returned(from_row: int, from_col: int) -> void:
+	_session.remove_tile(from_row, from_col)
+	_refresh_views()
+
+
 # Called when the End Turn button is pressed. `end_turn()` itself refuses
 # and returns false if an invalid word is currently on the board (see
 # word_challenge.gd) — printing to the console is a placeholder for real
@@ -61,7 +80,9 @@ func _on_end_turn_pressed() -> void:
 
 
 # Redraws both views from the session's current state — the board, and
-# whichever player's turn it currently is.
+# whichever player's turn it currently is. `_session.can_take_back` is
+# passed straight through as a Callable (see board_view.gd's `refresh` for
+# what that means) rather than BoardView asking GameSession itself.
 func _refresh_views() -> void:
-	_board_view.refresh(_session.board)
+	_board_view.refresh(_session.board, _session.can_take_back)
 	_hand_view.refresh(_session.bag.hand(_session.turns.current_player_id()))
