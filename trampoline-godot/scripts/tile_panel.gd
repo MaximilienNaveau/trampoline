@@ -24,4 +24,22 @@ func _get_drag_data(_at_position: Vector2) -> Variant:
 	# moving a tile already on the board, reuses the exact same helper).
 	set_drag_preview(TileView.build_drag_preview(tile, size))
 
+	# Fades this panel out while it's being dragged, so it doesn't look
+	# like there are two of this tile at once (one here, one following the
+	# cursor). `modulate` tints/fades a Control without resizing it (unlike
+	# `visible = false`, which would also pull it out of HBoxContainer's
+	# layout and make the rest of the hand jump sideways to fill the gap).
+	# `_notification` below fades it back in once the drag ends — if it
+	# actually got placed, HandView.refresh() will have already queued this
+	# whole panel for deletion anyway, making this a harmless no-op.
+	modulate = Color(1, 1, 1, 0)
+
 	return {"tile": tile}
+
+
+# See board_cell.gd's own `_notification` for what NOTIFICATION_DRAG_END
+# means and why every Control receives it once a drag ends, successful or
+# not.
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_DRAG_END:
+		modulate = Color(1, 1, 1, 1)

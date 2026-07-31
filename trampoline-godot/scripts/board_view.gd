@@ -23,12 +23,12 @@ extends Control
 # know about.
 signal tile_dropped(row: int, col: int, tile: Tile)
 signal tile_moved(from_row: int, from_col: int, to_row: int, to_col: int)
+signal word_moved(from_row: int, from_col: int, to_row: int, to_col: int)
 
-# One Panel + Label per board cell, indexed [row][col] — built once in
-# _ready() and reused by refresh(), rather than destroying and recreating
-# 117 nodes every time the board changes.
+# One cell per board square, indexed [row][col] — built once in _ready()
+# and reused by refresh(), rather than destroying and recreating 117 nodes
+# every time the board changes.
 var _cell_panels: Array = []
-var _cell_labels: Array = []
 
 # `@onready` runs this line once this node's children actually exist
 # (right before `_ready()` — a plain `var _grid := $Grid` at the top of
@@ -49,11 +49,11 @@ func _ready() -> void:
 func _build_grid() -> void:
 	for row in range(Board.ROWS):
 		var panel_row: Array = []
-		var label_row: Array = []
 		for col in range(Board.COLUMNS):
 			var panel := BoardCell.new()
 			panel.row = row
 			panel.col = col
+			panel.board_view = self
 			panel.custom_minimum_size = Vector2(32, 32)
 			panel.add_theme_stylebox_override("panel", TileView.empty_style())
 			# Connects this cell's own signals to methods on BoardView (see
@@ -62,6 +62,7 @@ func _build_grid() -> void:
 			# slot or a C callback registered against a function pointer.
 			panel.tile_dropped.connect(_on_cell_tile_dropped)
 			panel.tile_moved.connect(_on_cell_tile_moved)
+			panel.word_moved.connect(_on_cell_word_moved)
 
 			var label := Label.new()
 			# PRESET_FULL_RECT stretches the label to fill its parent
@@ -70,12 +71,15 @@ func _build_grid() -> void:
 			label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 			label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 			panel.add_child(label)
+			# Handed to the cell itself (not just kept here) so it can
+			# redraw its own text/color — needed both by `refresh()` below
+			# and by the cell itself once a drag that started there ends
+			# (see board_cell.gd's `refresh()`/`_notification`).
+			panel.label = label
 
 			_grid.add_child(panel)
 			panel_row.append(panel)
-			label_row.append(label)
 		_cell_panels.append(panel_row)
-		_cell_labels.append(label_row)
 
 
 # Redraws every cell from `board`'s current state. `is_takeable` is a
@@ -88,19 +92,19 @@ func _build_grid() -> void:
 func refresh(board: Board, is_takeable: Callable) -> void:
 	for row in range(Board.ROWS):
 		for col in range(Board.COLUMNS):
-			var tile := board.tile_at(row, col)
-			var label: Label = _cell_labels[row][col]
 			var panel: BoardCell = _cell_panels[row][col]
 			# Kept current every refresh, not just at creation, in case a
 			# future save/load ever swaps in a whole new Board instance.
 			panel.board = board
 			panel.draggable = is_takeable.call(row, col)
-			if tile == null:
-				label.text = ""
-				panel.add_theme_stylebox_override("panel", TileView.empty_style())
-			else:
-				label.text = tile.current_letter()
-				panel.add_theme_stylebox_override("panel", TileView.style_for_tile(tile))
+			panel.refresh()
+
+
+# Looks up the single cell at (row, col) — used by BoardCell itself (see
+# board_cell.gd's `_get_drag_data`) to reach and hide sibling cells that
+# belong to the same word being dragged, not just the one actually grabbed.
+func get_cell(row: int, col: int) -> BoardCell:
+	return _cell_panels[row][col]
 
 
 # Forwards one cell's drop straight to this view's own single signal (see
@@ -112,3 +116,8 @@ func _on_cell_tile_dropped(row: int, col: int, tile: Tile) -> void:
 # Same idea, for a tile moved from one board cell to another.
 func _on_cell_tile_moved(from_row: int, from_col: int, to_row: int, to_col: int) -> void:
 	tile_moved.emit(from_row, from_col, to_row, to_col)
+
+
+# Same idea, for a whole word dragged by one of its (frozen) tiles.
+func _on_cell_word_moved(from_row: int, from_col: int, to_row: int, to_col: int) -> void:
+	word_moved.emit(from_row, from_col, to_row, to_col)

@@ -35,15 +35,38 @@ static func empty_style() -> StyleBoxFlat:
 # where Godot moves the root.
 static func build_drag_preview(tile: Tile, tile_size: Vector2) -> Control:
 	var root := Control.new()
-
-	var visual := Panel.new()
-	# This visual is never added to the real scene tree, so nothing ever
-	# runs a layout pass on it — setting only `custom_minimum_size` (a mere
-	# size *request* for a parent container to honor) would leave its
-	# actual `size` at (0, 0). Setting `size` directly gives it real,
-	# immediate dimensions to render and to center against below.
-	visual.size = tile_size
+	var visual := _build_tile_visual(tile, tile_size)
 	visual.position = -tile_size / 2
+	root.add_child(visual)
+	return root
+
+
+# Same idea, but for a whole word (see BoardCell's word-drag) — draws every
+# tile in `tiles` left to right, positioned so the one at `grabbed_index`
+# (the tile actually under the cursor) is centered on it, with the rest of
+# the word following at its sides, same as it would look on the board.
+static func build_word_drag_preview(
+	tiles: Array[Tile], grabbed_index: int, tile_size: Vector2
+) -> Control:
+	var root := Control.new()
+	for i in range(tiles.size()):
+		var visual := _build_tile_visual(tiles[i], tile_size)
+		# How many tile-widths this tile sits from the grabbed one, plus
+		# the same "center on the cursor" offset build_drag_preview uses.
+		visual.position = Vector2((i - grabbed_index) * tile_size.x, 0) - tile_size / 2
+		root.add_child(visual)
+	return root
+
+
+# The actual colored, lettered rectangle both preview builders above
+# position — never added to the real scene tree, so nothing ever runs a
+# layout pass on it: setting only `custom_minimum_size` (a mere size
+# *request* for a parent container to honor) would leave its actual `size`
+# at (0, 0). Setting `size` directly gives it real, immediate dimensions to
+# render and to position against.
+static func _build_tile_visual(tile: Tile, tile_size: Vector2) -> Control:
+	var visual := Panel.new()
+	visual.size = tile_size
 	visual.add_theme_stylebox_override("panel", style_for_tile(tile))
 	var label := Label.new()
 	label.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -51,9 +74,7 @@ static func build_drag_preview(tile: Tile, tile_size: Vector2) -> Control:
 	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	label.text = tile.current_letter()
 	visual.add_child(label)
-
-	root.add_child(visual)
-	return root
+	return visual
 
 
 # A StyleBoxFlat is Godot's simplest drawable: a solid-colored (optionally

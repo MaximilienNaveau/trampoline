@@ -45,6 +45,7 @@ func _ready() -> void:
 	# board_cell.gd's header comment for what a signal/connection is.
 	_board_view.tile_dropped.connect(_on_board_tile_dropped)
 	_board_view.tile_moved.connect(_on_board_tile_moved)
+	_board_view.word_moved.connect(_on_board_word_moved)
 	_hand_view.tile_returned.connect(_on_hand_tile_returned)
 	_end_turn_button.pressed.connect(_on_end_turn_pressed)
 	_refresh_views()
@@ -68,6 +69,15 @@ func _on_board_tile_dropped(row: int, col: int, tile: Tile) -> void:
 # frozen tile that somehow got dragged anyway simply won't move.
 func _on_board_tile_moved(from_row: int, from_col: int, to_row: int, to_col: int) -> void:
 	_session.move_own_tile(from_row, from_col, to_row, to_col)
+	_refresh_views()
+
+
+# Called whenever a BoardCell is dragged onto another BoardCell while
+# carrying a whole WORD instead of a single tile (see board_cell.gd) —
+# relocating an already-played word from an earlier turn. Any player may
+# do this, not just whoever originally placed it (see word_move.gd).
+func _on_board_word_moved(from_row: int, from_col: int, to_row: int, to_col: int) -> void:
+	_session.move_word_by_grabbed_tile(from_row, from_col, to_row, to_col)
 	_refresh_views()
 
 
