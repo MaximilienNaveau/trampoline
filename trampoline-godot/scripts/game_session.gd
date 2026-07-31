@@ -150,6 +150,21 @@ func move_word(from_row: int, from_col: int, to_row: int, to_col: int) -> bool:
 	return WordMove.move(board, scoring, from_row, from_col, to_row, to_col)
 
 
+# Same as `move_word`, but for dragging a word by whichever one of its
+# tiles the player actually grabbed, at (from_row, from_col) — (to_row,
+# to_col) is where THAT tile should land, not necessarily the word's first
+# letter. Without this adjustment, dragging the middle of a word would
+# yank its first letter to the drop point instead of following the
+# cursor. Returns false and does nothing if the source isn't part of a
+# word, or if the resulting move isn't legal.
+func move_word_by_grabbed_tile(from_row: int, from_col: int, to_row: int, to_col: int) -> bool:
+	var source_columns := board.word_columns_at(from_row, from_col)
+	if source_columns.is_empty():
+		return false
+	var grabbed_offset: int = source_columns.find(from_col)
+	return move_word(from_row, from_col, to_row, to_col - grabbed_offset)
+
+
 # Whether the current player may end their turn right now (see
 # word_challenge.gd — blocked while any word on the board is invalid).
 func can_end_turn() -> bool:

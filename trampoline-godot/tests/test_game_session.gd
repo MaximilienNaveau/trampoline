@@ -31,6 +31,9 @@ func _initialize() -> void:
 	_test_move_own_tile()
 	_test_move_own_tile_refuses_frozen_tile()
 	_test_move_word()
+	_test_move_word_by_grabbed_tile_from_the_start()
+	_test_move_word_by_grabbed_tile_from_the_middle()
+	_test_move_word_by_grabbed_tile_refuses_illegal_destination()
 
 	if _failures == 0:
 		print("\nAll checks passed.")
@@ -255,3 +258,70 @@ func _test_move_word() -> void:
 	_check(session.move_word(6, 2, 6, 0), "relocating the word succeeds")
 	_check(session.board.word_at(6, 0) == "CAT", "the word reads correctly at its new position")
 	_check(session.board.is_empty(6, 3) and session.board.is_empty(6, 4), "the old cells are empty")
+
+
+# Dragging by the word's OWN first letter should behave exactly like
+# move_word — no offset to correct for.
+func _test_move_word_by_grabbed_tile_from_the_start() -> void:
+	var session := GameSession.new(1, _dictionary)
+	var tiles: Array[Tile] = []
+	for letter in ["C", "A", "T"]:
+		var tile := Tile.new(letter, "Z", true)
+		_give_hand_tile(session, 0, tile)
+		tiles.append(tile)
+	session.place_tile(10, 2, tiles[0])
+	session.place_tile(10, 3, tiles[1])
+	session.place_tile(10, 4, tiles[2])
+
+	_check(
+		session.move_word_by_grabbed_tile(10, 2, 10, 0),
+		"relocating by the word's first letter succeeds"
+	)
+	_check(session.board.word_at(10, 0) == "CAT", "the word reads correctly at its new position")
+
+
+# Dragging by a MIDDLE letter should carry the whole word so THAT letter
+# (not the word's first letter) ends up at the drop point — otherwise the
+# word would visibly jump instead of following the cursor.
+func _test_move_word_by_grabbed_tile_from_the_middle() -> void:
+	var session := GameSession.new(1, _dictionary)
+	var tiles: Array[Tile] = []
+	for letter in ["C", "A", "T"]:
+		var tile := Tile.new(letter, "Z", true)
+		_give_hand_tile(session, 0, tile)
+		tiles.append(tile)
+	session.place_tile(11, 2, tiles[0])
+	session.place_tile(11, 3, tiles[1])  # the "A" — grabbed from here
+	session.place_tile(11, 4, tiles[2])
+
+	# Drop the grabbed "A" at column 6: the word's first letter ("C") must
+	# then land one column earlier, at column 5.
+	_check(
+		session.move_word_by_grabbed_tile(11, 3, 11, 6), "relocating by a middle letter succeeds"
+	)
+	_check(session.board.word_at(11, 5) == "CAT", "the word lands offset by the grab point")
+	_check(session.board.tile_at(11, 6) == tiles[1], "the grabbed A ends up exactly where dropped")
+
+
+func _test_move_word_by_grabbed_tile_refuses_illegal_destination() -> void:
+	var session := GameSession.new(1, _dictionary)
+	var tiles: Array[Tile] = []
+	for letter in ["C", "A", "T"]:
+		var tile := Tile.new(letter, "Z", true)
+		_give_hand_tile(session, 0, tile)
+		tiles.append(tile)
+	session.place_tile(12, 2, tiles[0])
+	session.place_tile(12, 3, tiles[1])
+	session.place_tile(12, 4, tiles[2])
+
+	# Placed directly on the board (bypassing GrowthRules, same as
+	# _test_game_over_via_board_completion) since a disconnected tile at
+	# col 7 wouldn't be adjacent to anything and GrowthRules would refuse
+	# it — this test is about WordMove's destination check, not placement.
+	session.board.place(12, 7, Tile.new("X", "Z", true))  # occupies where "T" would land
+
+	_check(
+		not session.move_word_by_grabbed_tile(12, 2, 12, 5),
+		"refused because the destination overlaps an unrelated tile"
+	)
+	_check(session.board.word_at(12, 2) == "CAT", "the word stays exactly where it was")
