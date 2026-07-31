@@ -5,8 +5,7 @@
 # about both the game rules (GameSession) and the views — BoardView/
 # HandView never talk to GameSession directly, per this project's
 # "separate logic from graphics" rule. Currently just a fixed 2-player game
-# started fresh every time the app runs — no menu, no save/load wiring, no
-# turn/score display yet.
+# started fresh every time the app runs — no menu, no save/load wiring yet.
 extends Control
 
 # Kept as a field (not a local var in _ready()) now that other methods
@@ -14,14 +13,15 @@ extends Control
 # it too.
 var _session: GameSession
 
-# `$BoardView`/`$HandView`/`$EndTurnButton` look up the child nodes of
-# those names declared in scenes/main.tscn — the same shorthand
+# `$BoardView`/`$HandView`/`$EndTurnButton`/`$Scoreboard` look up the child
+# nodes of those names declared in scenes/main.tscn — the same shorthand
 # board_view.gd itself uses for its own "Grid" child. `@onready` runs this
 # once those children actually exist, rather than too early (see
 # board_view.gd for the same pattern).
 @onready var _board_view: BoardView = $BoardView
 @onready var _hand_view: HandView = $HandView
 @onready var _end_turn_button: Button = $EndTurnButton
+@onready var _scoreboard: Label = $Scoreboard
 
 
 func _ready() -> void:
@@ -95,3 +95,23 @@ func _on_end_turn_pressed() -> void:
 func _refresh_views() -> void:
 	_board_view.refresh(_session.board, _session.can_take_back)
 	_hand_view.refresh(_session.bag.hand(_session.turns.current_player_id()))
+	_scoreboard.text = _format_scoreboard()
+
+
+# Builds a one-line summary like "Joueur 1 : 12 pts   Joueur 2 : 5 pts (à
+# vous de jouer)" — plain string formatting, not worth its own view class
+# the way BoardView/HandView are (those turn game state into colors,
+# positions, and drag-and-drop; this just turns numbers into text).
+func _format_scoreboard() -> String:
+	var scores := _session.turns.all_player_scores()
+	var current_player_id := _session.turns.current_player_id()
+	var text := ""
+	for player_id in range(scores.size()):
+		if player_id > 0:
+			text += "   "
+		# `%d` inside a string, followed by `% [...]`, is GDScript's
+		# printf-style formatting — like Python's `"%d" % value`.
+		text += "Joueur %d : %d pts" % [player_id + 1, scores[player_id]]
+		if player_id == current_player_id:
+			text += " (à vous de jouer)"
+	return text
