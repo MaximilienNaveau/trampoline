@@ -16,6 +16,7 @@ extends Panel
 signal tile_dropped(row: int, col: int, tile: Tile)
 signal tile_moved(from_row: int, from_col: int, to_row: int, to_col: int)
 signal word_moved(from_row: int, from_col: int, to_row: int, to_col: int)
+signal tile_flipped(row: int, col: int)
 
 # This cell's position in the board grid — set once by BoardView right
 # after creating this node.
@@ -39,11 +40,21 @@ var draggable: bool = false
 # below).
 var label: Label
 
+# The small top-right badge showing what this tile's OTHER face is (see
+# tile_view.gd's `build_corner_badge`/`update_corner_badge`) — also handed
+# over by BoardView at creation time, same reasoning as `label` above.
+var corner_badge: Panel
+
 # The BoardView that owns this cell, also handed over at creation time —
 # needed so a word-drag (see `_get_drag_data` below) can reach and hide
 # every OTHER cell in the same word, not just this one (see board_view.gd's
 # `get_cell`).
 var board_view: BoardView
+
+# Remembers where a left-click started, so `_gui_input` below can tell a
+# plain click (releasing close to where it was pressed) from a drag that
+# happened to end and release back over this same cell.
+var _press_position: Vector2 = Vector2.ZERO
 
 
 # A "virtual" function: Godot calls this itself (we never call it
@@ -124,6 +135,7 @@ func _get_drag_data(_at_position: Vector2) -> Variant:
 # redraw the tile right back.
 func hide_tile() -> void:
 	label.text = ""
+	TileView.hide_corner_badge(corner_badge)
 	add_theme_stylebox_override("panel", TileView.empty_style())
 
 
@@ -135,10 +147,12 @@ func refresh() -> void:
 	var tile := board.tile_at(row, col)
 	if tile == null:
 		label.text = ""
+		TileView.hide_corner_badge(corner_badge)
 		add_theme_stylebox_override("panel", TileView.empty_style())
 	else:
 		label.text = tile.current_letter()
 		add_theme_stylebox_override("panel", TileView.style_for_tile(tile))
+		TileView.update_corner_badge(corner_badge, tile)
 
 
 # Virtual function: Godot calls this on EVERY Control (not just the one
@@ -151,3 +165,18 @@ func refresh() -> void:
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_DRAG_END:
 		refresh()
+
+
+# Virtual function: Godot calls this for mouse/keyboard events over this
+# Control that the drag-and-drop system above doesn't already claim. Used
+# here to detect a plain click — releasing the mouse close to where it was
+# pressed — and treat it as "flip this tile in place": doc/RULES.md's
+# "trampoline" mechanic says flipping never empties a cell, so (unlike
+# dragging) any occupied cell may always be flipped, no `draggable` check
+# needed.
+func _gui_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
+		if event.pressed:
+			_press_position = event.position
+		elif board.tile_at(row, col) != null and event.position.distance_to(_press_position) < 6:
+			tile_flipped.emit(row, col)

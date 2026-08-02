@@ -46,6 +46,7 @@ func _ready() -> void:
 	_board_view.tile_dropped.connect(_on_board_tile_dropped)
 	_board_view.tile_moved.connect(_on_board_tile_moved)
 	_board_view.word_moved.connect(_on_board_word_moved)
+	_board_view.tile_flipped.connect(_on_board_tile_flipped)
 	_hand_view.tile_returned.connect(_on_hand_tile_returned)
 	_end_turn_button.pressed.connect(_on_end_turn_pressed)
 	_refresh_views()
@@ -78,6 +79,15 @@ func _on_board_tile_moved(from_row: int, from_col: int, to_row: int, to_col: int
 # do this, not just whoever originally placed it (see word_move.gd).
 func _on_board_word_moved(from_row: int, from_col: int, to_row: int, to_col: int) -> void:
 	_session.move_word_by_grabbed_tile(from_row, from_col, to_row, to_col)
+	_refresh_views()
+
+
+# Called whenever a BoardCell is clicked (not dragged) — flipping that
+# tile in place (see game_session.gd's `flip_tile`). Any board tile may be
+# flipped, any time, by any player (see doc/RULES.md's "trampoline"
+# mechanic), so there's no eligibility check to make here first.
+func _on_board_tile_flipped(row: int, col: int) -> void:
+	_session.flip_tile(row, col)
 	_refresh_views()
 
 

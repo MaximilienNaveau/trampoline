@@ -24,6 +24,7 @@ extends Control
 signal tile_dropped(row: int, col: int, tile: Tile)
 signal tile_moved(from_row: int, from_col: int, to_row: int, to_col: int)
 signal word_moved(from_row: int, from_col: int, to_row: int, to_col: int)
+signal tile_flipped(row: int, col: int)
 
 # One cell per board square, indexed [row][col] — built once in _ready()
 # and reused by refresh(), rather than destroying and recreating 117 nodes
@@ -63,6 +64,7 @@ func _build_grid() -> void:
 			panel.tile_dropped.connect(_on_cell_tile_dropped)
 			panel.tile_moved.connect(_on_cell_tile_moved)
 			panel.word_moved.connect(_on_cell_word_moved)
+			panel.tile_flipped.connect(_on_cell_tile_flipped)
 
 			var label := Label.new()
 			# PRESET_FULL_RECT stretches the label to fill its parent
@@ -76,6 +78,12 @@ func _build_grid() -> void:
 			# and by the cell itself once a drag that started there ends
 			# (see board_cell.gd's `refresh()`/`_notification`).
 			panel.label = label
+
+			# Same idea for the small "other face" hint badge (see
+			# tile_view.gd's build_corner_badge/update_corner_badge).
+			var corner_badge := TileView.build_corner_badge()
+			panel.add_child(corner_badge)
+			panel.corner_badge = corner_badge
 
 			_grid.add_child(panel)
 			panel_row.append(panel)
@@ -121,3 +129,8 @@ func _on_cell_tile_moved(from_row: int, from_col: int, to_row: int, to_col: int)
 # Same idea, for a whole word dragged by one of its (frozen) tiles.
 func _on_cell_word_moved(from_row: int, from_col: int, to_row: int, to_col: int) -> void:
 	word_moved.emit(from_row, from_col, to_row, to_col)
+
+
+# Same idea, for a cell clicked (not dragged) to flip its tile in place.
+func _on_cell_tile_flipped(row: int, col: int) -> void:
+	tile_flipped.emit(row, col)
