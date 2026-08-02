@@ -13,15 +13,16 @@ extends Control
 # it too.
 var _session: GameSession
 
-# `$BoardView`/`$HandView`/`$EndTurnButton`/`$Scoreboard` look up the child
-# nodes of those names declared in scenes/main.tscn — the same shorthand
-# board_view.gd itself uses for its own "Grid" child. `@onready` runs this
-# once those children actually exist, rather than too early (see
-# board_view.gd for the same pattern).
+# `$BoardView`/`$HandView`/`$EndTurnButton`/`$Scoreboard`/`$GameOverBanner`
+# look up the child nodes of those names declared in scenes/main.tscn — the
+# same shorthand board_view.gd itself uses for its own "Grid" child.
+# `@onready` runs this once those children actually exist, rather than too
+# early (see board_view.gd for the same pattern).
 @onready var _board_view: BoardView = $BoardView
 @onready var _hand_view: HandView = $HandView
 @onready var _end_turn_button: Button = $EndTurnButton
 @onready var _scoreboard: Label = $Scoreboard
+@onready var _game_over_banner: Label = $GameOverBanner
 
 
 func _ready() -> void:
@@ -111,20 +112,26 @@ func _on_end_turn_pressed() -> void:
 # Redraws both views from the session's current state — the board, and
 # whichever player's turn it currently is. `_session.can_take_back` is
 # passed straight through as a Callable (see board_view.gd's `refresh` for
-# what that means) rather than BoardView asking GameSession itself.
+# what that means) rather than BoardView asking GameSession itself. Also
+# checks whether the game has just ended (see `_update_game_over_banner`).
 func _refresh_views() -> void:
 	_board_view.refresh(_session.board, _session.can_take_back)
 	_hand_view.refresh(_session.bag.hand(_session.turns.current_player_id()))
 	_scoreboard.text = _format_scoreboard()
+	_update_game_over_banner()
 
 
 # Builds a one-line summary like "Joueur 1 : 12 pts   Joueur 2 : 5 pts (à
 # vous de jouer)" — plain string formatting, not worth its own view class
 # the way BoardView/HandView are (those turn game state into colors,
-# positions, and drag-and-drop; this just turns numbers into text).
+# positions, and drag-and-drop; this just turns numbers into text). Once
+# the game is over, nobody's "up next" anymore, so that last bit is
+# dropped (see `_update_game_over_banner` for the actual game-over
+# announcement).
 func _format_scoreboard() -> String:
 	var scores := _session.turns.all_player_scores()
 	var current_player_id := _session.turns.current_player_id()
+	var is_over := _session.is_game_over()
 	var text := ""
 	for player_id in range(scores.size()):
 		if player_id > 0:
@@ -132,6 +139,23 @@ func _format_scoreboard() -> String:
 		# `%d` inside a string, followed by `% [...]`, is GDScript's
 		# printf-style formatting — like Python's `"%d" % value`.
 		text += "Joueur %d : %d pts" % [player_id + 1, scores[player_id]]
-		if player_id == current_player_id:
+		if not is_over and player_id == current_player_id:
 			text += " (à vous de jouer)"
 	return text
+
+
+# Shows a winner announcement once the game is over (see
+# game_session.gd's `is_game_over`/`winner_id` — either every player is
+# exhausted, or the board itself filled up), and disables the End Turn
+# button since there's no longer a turn to end. Blank/enabled otherwise.
+func _update_game_over_banner() -> void:
+	if not _session.is_game_over():
+		_game_over_banner.text = ""
+		_end_turn_button.disabled = false
+		return
+	var winner_id := _session.winner_id()
+	var winner_score := _session.turns.player_score(winner_id)
+	_game_over_banner.text = (
+		"Partie terminée ! Joueur %d gagne avec %d points." % [winner_id + 1, winner_score]
+	)
+	_end_turn_button.disabled = true
