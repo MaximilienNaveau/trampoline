@@ -90,6 +90,42 @@ offset_bottom=350.0
 grow_horizontal=2
 grow_vertical=2
 
+[node name="SaveButton" type="Button" parent="."]
+layout_mode=1
+anchors_preset=0
+offset_left=20.0
+offset_top=15.0
+offset_right=150.0
+offset_bottom=45.0
+text="Sauvegarder"
+
+[node name="LoadButton" type="Button" parent="."]
+layout_mode=1
+anchors_preset=0
+offset_left=160.0
+offset_top=15.0
+offset_right=270.0
+offset_bottom=45.0
+text="Charger"
+
+[node name="SaveFileDialog" type="FileDialog" parent="."]
+title="Sauvegarder la partie"
+initial_position=2
+size=Vector2i(400, 300)
+ok_button_text="Sauvegarder"
+file_mode=4
+access=1
+filters=PackedStringArray("*.json ; Fichier de sauvegarde")
+
+[node name="LoadFileDialog" type="FileDialog" parent="."]
+title="Charger une partie"
+initial_position=2
+size=Vector2i(400, 300)
+ok_button_text="Charger"
+file_mode=0
+access=1
+filters=PackedStringArray("*.json ; Fichier de sauvegarde")
+
 [node name="EndTurnButton" type="Button" parent="."]
 layout_mode=1
 anchors_preset=1

@@ -5,7 +5,8 @@
 # about both the game rules (GameSession) and the views — BoardView/
 # HandView never talk to GameSession directly, per this project's
 # "separate logic from graphics" rule. Currently just a fixed 2-player game
-# started fresh every time the app runs — no menu, no save/load wiring yet.
+# started fresh every time the app runs — no menu yet, but the player can
+# save/load progress via SaveButton/LoadButton (see SaveGame).
 extends Control
 
 # Kept as a field (not a local var in _ready()) now that other methods
@@ -14,7 +15,8 @@ extends Control
 var _session: GameSession
 
 # `$BoardView`/`$HandView`/`$EndTurnButton`/`$Scoreboard`/`$GameOverBanner`/
-# `$EndTurnMessage` look up the child nodes of those names declared in
+# `$EndTurnMessage`/`$SaveButton`/`$LoadButton`/`$SaveFileDialog`/
+# `$LoadFileDialog` look up the child nodes of those names declared in
 # scenes/main.tscn — the same shorthand board_view.gd itself uses for its
 # own "Grid" child. `@onready` runs this once those children actually
 # exist, rather than too early (see board_view.gd for the same pattern).
@@ -24,6 +26,10 @@ var _session: GameSession
 @onready var _scoreboard: Label = $Scoreboard
 @onready var _game_over_banner: Label = $GameOverBanner
 @onready var _end_turn_message: Label = $EndTurnMessage
+@onready var _save_button: Button = $SaveButton
+@onready var _load_button: Button = $LoadButton
+@onready var _save_file_dialog: FileDialog = $SaveFileDialog
+@onready var _load_file_dialog: FileDialog = $LoadFileDialog
 
 
 func _ready() -> void:
@@ -51,6 +57,10 @@ func _ready() -> void:
 	_board_view.tile_flipped.connect(_on_board_tile_flipped)
 	_hand_view.tile_returned.connect(_on_hand_tile_returned)
 	_end_turn_button.pressed.connect(_on_end_turn_pressed)
+	_save_button.pressed.connect(_on_save_pressed)
+	_load_button.pressed.connect(_on_load_pressed)
+	_save_file_dialog.file_selected.connect(_on_save_file_selected)
+	_load_file_dialog.file_selected.connect(_on_load_file_selected)
 	_refresh_views()
 
 
@@ -98,6 +108,37 @@ func _on_board_tile_flipped(row: int, col: int) -> void:
 func _on_hand_tile_returned(from_row: int, from_col: int) -> void:
 	_session.remove_tile(from_row, from_col)
 	_refresh_views()
+
+
+# Called when the Save button is pressed — opens the save FileDialog (see
+# scenes/main.tscn) rather than saving straight away, so the player picks
+# where. The actual write happens in `_on_save_file_selected` once they
+# confirm a path.
+func _on_save_pressed() -> void:
+	_save_file_dialog.popup_centered()
+
+
+# Called when the Load button is pressed — same idea as `_on_save_pressed`,
+# for the load FileDialog.
+func _on_load_pressed() -> void:
+	_load_file_dialog.popup_centered()
+
+
+# Called once the player confirms a path in the save FileDialog.
+func _on_save_file_selected(path: String) -> void:
+	SaveGame.save(_session, path)
+
+
+# Called once the player confirms a path in the load FileDialog.
+# `SaveGame.load` reuses `_session`'s already-loaded dictionary (see
+# save_game.gd) rather than paying to reload the ~79000-word list again.
+# Does nothing if the file turns out missing or unreadable.
+func _on_load_file_selected(path: String) -> void:
+	var loaded := SaveGame.load(path, _session.dictionary)
+	if loaded != null:
+		_session = loaded
+		_end_turn_message.text = ""
+		_refresh_views()
 
 
 # Called when the End Turn button is pressed. `end_turn()` itself refuses
