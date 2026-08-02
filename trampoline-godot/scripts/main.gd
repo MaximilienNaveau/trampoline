@@ -13,16 +13,17 @@ extends Control
 # it too.
 var _session: GameSession
 
-# `$BoardView`/`$HandView`/`$EndTurnButton`/`$Scoreboard`/`$GameOverBanner`
-# look up the child nodes of those names declared in scenes/main.tscn — the
-# same shorthand board_view.gd itself uses for its own "Grid" child.
-# `@onready` runs this once those children actually exist, rather than too
-# early (see board_view.gd for the same pattern).
+# `$BoardView`/`$HandView`/`$EndTurnButton`/`$Scoreboard`/`$GameOverBanner`/
+# `$EndTurnMessage` look up the child nodes of those names declared in
+# scenes/main.tscn — the same shorthand board_view.gd itself uses for its
+# own "Grid" child. `@onready` runs this once those children actually
+# exist, rather than too early (see board_view.gd for the same pattern).
 @onready var _board_view: BoardView = $BoardView
 @onready var _hand_view: HandView = $HandView
 @onready var _end_turn_button: Button = $EndTurnButton
 @onready var _scoreboard: Label = $Scoreboard
 @onready var _game_over_banner: Label = $GameOverBanner
+@onready var _end_turn_message: Label = $EndTurnMessage
 
 
 func _ready() -> void:
@@ -101,11 +102,14 @@ func _on_hand_tile_returned(from_row: int, from_col: int) -> void:
 
 # Called when the End Turn button is pressed. `end_turn()` itself refuses
 # and returns false if an invalid word is currently on the board (see
-# word_challenge.gd) — printing to the console is a placeholder for real
-# on-screen feedback, not built yet.
+# word_challenge.gd) — in which case `_end_turn_message` explains why,
+# listing the offending word(s) (see `_format_end_turn_error` below).
+# Cleared on success, since the turn actually ended.
 func _on_end_turn_pressed() -> void:
-	if not _session.end_turn():
-		print("Cannot end turn: an invalid word is on the board.")
+	if _session.end_turn():
+		_end_turn_message.text = ""
+	else:
+		_end_turn_message.text = _format_end_turn_error()
 	_refresh_views()
 
 
@@ -142,6 +146,18 @@ func _format_scoreboard() -> String:
 		if not is_over and player_id == current_player_id:
 			text += " (à vous de jouer)"
 	return text
+
+
+# Builds the message shown by `_end_turn_message` after a refused
+# `end_turn()` — names the actual invalid word(s) (see
+# game_session.gd's `invalid_words`) rather than just saying "no".
+func _format_end_turn_error() -> String:
+	var words: Array[String] = []
+	for entry in _session.invalid_words():
+		words.append(entry["word"])
+	if words.size() == 1:
+		return "Mot invalide : %s" % words[0]
+	return "Mots invalides : %s" % ", ".join(words)
 
 
 # Shows a winner announcement once the game is over (see

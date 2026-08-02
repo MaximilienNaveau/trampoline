@@ -187,6 +187,14 @@ func can_end_turn() -> bool:
 	return WordChallenge.can_end_turn(board, dictionary)
 
 
+# The word(s) currently blocking `can_end_turn()` above, as a list of
+# `{row, col, word}` dictionaries (see word_challenge.gd's
+# `find_invalid_words`) — lets the UI explain WHY `end_turn()` just
+# refused, rather than only reporting that it did.
+func invalid_words() -> Array:
+	return WordChallenge.find_invalid_words(board, dictionary)
+
+
 # Ends the current player's turn: tallies every player's current score,
 # pays out any bonuses just earned, marks the player finished if they're
 # out of tiles for good, and starts the next turn if the game isn't over.
