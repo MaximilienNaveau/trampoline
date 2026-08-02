@@ -25,6 +25,83 @@ static func empty_style() -> StyleBoxFlat:
 	return _make_style(EMPTY_COLOR)
 
 
+# The letter a tile would show if flipped right now — whichever face ISN'T
+# currently showing. Lets a player see what's "behind" a tile before
+# committing to flip it (see doc/RULES.md's "trampoline" mechanic). A
+# blank back face (the "shorten" mechanic) reads as "-", matching the
+# physical tile's own printed face.
+static func other_face_letter(tile: Tile) -> String:
+	if tile.is_showing_front():
+		return tile.back_letter() if tile.back_letter() != "" else "-"
+	return tile.front_letter()
+
+
+# The color other_face_letter() above would be shown in — the front face
+# is always yellow (see tile.gd); the back is green unless it's one of the
+# two special all-yellow tiles.
+static func other_face_color(tile: Tile) -> Color:
+	if tile.is_showing_front():
+		return GREEN_COLOR if tile.back_is_green() else YELLOW_COLOR
+	return YELLOW_COLOR
+
+
+# Creates the small top-right badge every tile view (BoardCell, TilePanel,
+# and this file's own drag-preview builder below) uses to show
+# other_face_letter/other_face_color — matching the physical tiles, which
+# print this hint on its own small colored patch rather than as plain
+# colored text (which would be unreadable whenever it happened to match
+# the tile's own CURRENT color, e.g. a tile whose two faces are both
+# yellow). Starts empty/invisible; call update_corner_badge() once there's
+# an actual tile to describe.
+static func build_corner_badge() -> Panel:
+	var badge := Panel.new()
+	badge.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	# A control anchored to a corner still needs to know which way to grow
+	# from that zero-size point to fit its actual size — left/down here, so
+	# the badge stays inside ITS OWN tile instead of spilling into the next
+	# one. Setting this explicitly rather than trusting the preset's own
+	# default avoids exactly that overflow.
+	badge.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	badge.grow_vertical = Control.GROW_DIRECTION_END
+	# `custom_minimum_size` (a genuine, persistent size *request*), not a
+	# one-time `size` assignment — a plain Panel has no content of its own
+	# to otherwise justify a non-zero size, so an anchored-but-content-less
+	# Panel like this one would just get resolved back down to 0x0 the next
+	# time anything re-runs layout on it (unlike a Label, whose own text
+	# already gives it a real size to grow from).
+	badge.custom_minimum_size = Vector2(14, 12)
+	badge.visible = false
+
+	var label := Label.new()
+	# A node's `name` lets a later lookup find it again via get_node() (see
+	# update_corner_badge below) — like a dictionary key, except it's how
+	# Godot's scene tree itself is addressed.
+	label.name = "Label"
+	label.set_anchors_preset(Control.PRESET_FULL_RECT)
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	label.add_theme_font_size_override("font_size", 8)
+	badge.add_child(label)
+
+	return badge
+
+
+# Refreshes a badge built by build_corner_badge() above to match `tile`'s
+# current state — needed after a flip, since which face counts as "the
+# other one" swaps too.
+static func update_corner_badge(badge: Panel, tile: Tile) -> void:
+	badge.visible = true
+	badge.add_theme_stylebox_override("panel", _make_style(other_face_color(tile)))
+	var label: Label = badge.get_node("Label")
+	label.text = other_face_letter(tile)
+
+
+# Hides a badge built by build_corner_badge() above — used wherever a cell
+# has no tile at all (nothing to hint at).
+static func hide_corner_badge(badge: Panel) -> void:
+	badge.visible = false
+
+
 # Builds a floating preview of `tile` for Control.set_drag_preview(),
 # shared by every draggable tile view (TilePanel, BoardCell) — already
 # centered on the cursor. Godot forcibly re-centers whatever ROOT control
@@ -74,6 +151,9 @@ static func _build_tile_visual(tile: Tile, tile_size: Vector2) -> Control:
 	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	label.text = tile.current_letter()
 	visual.add_child(label)
+	var corner := build_corner_badge()
+	update_corner_badge(corner, tile)
+	visual.add_child(corner)
 	return visual
 
 
