@@ -165,6 +165,22 @@ func move_word_by_grabbed_tile(from_row: int, from_col: int, to_row: int, to_col
 	return move_word(from_row, from_col, to_row, to_col - grabbed_offset)
 
 
+# Flips the tile at (row, col) in place, revealing its other face — see
+# doc/RULES.md's "trampoline" mechanic: a cell is never emptied by this,
+# only changed, so (unlike `_can_take_back`) any player may flip any tile
+# on the board at any time, regardless of whose turn it is or who placed
+# it. Scoring doesn't need telling about this separately: `Scoring` always
+# reads a tile's CURRENT face live (see scoring.gd), so a flipped tile's
+# new letter/color is simply picked up the next time scores are
+# recomputed. Returns false and does nothing if the cell is empty.
+func flip_tile(row: int, col: int) -> bool:
+	var tile := board.tile_at(row, col)
+	if tile == null:
+		return false
+	tile.flip()
+	return true
+
+
 # Whether the current player may end their turn right now (see
 # word_challenge.gd — blocked while any word on the board is invalid).
 func can_end_turn() -> bool:

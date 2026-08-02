@@ -34,6 +34,9 @@ func _initialize() -> void:
 	_test_move_word_by_grabbed_tile_from_the_start()
 	_test_move_word_by_grabbed_tile_from_the_middle()
 	_test_move_word_by_grabbed_tile_refuses_illegal_destination()
+	_test_flip_tile()
+	_test_flip_tile_frozen_tile_still_flips()
+	_test_flip_tile_refuses_empty_cell()
 
 	if _failures == 0:
 		print("\nAll checks passed.")
@@ -325,3 +328,47 @@ func _test_move_word_by_grabbed_tile_refuses_illegal_destination() -> void:
 		"refused because the destination overlaps an unrelated tile"
 	)
 	_check(session.board.word_at(12, 2) == "CAT", "the word stays exactly where it was")
+
+
+func _test_flip_tile() -> void:
+	var session := GameSession.new(1, _dictionary)
+	var tile := Tile.new("E", "P", true)
+	_give_hand_tile(session, 0, tile)
+	session.place_tile(0, 0, tile)
+	_check(
+		session.board.tile_at(0, 0).current_letter() == "E",
+		"sanity: showing its front face at first"
+	)
+
+	_check(session.flip_tile(0, 0), "flip_tile succeeds on an occupied cell")
+	_check(
+		session.board.tile_at(0, 0).current_letter() == "P", "the tile now shows its back letter"
+	)
+	_check(session.board.tile_at(0, 0).current_is_green(), "...and counts as green now")
+
+	_check(session.flip_tile(0, 0), "flipping back succeeds too")
+	_check(
+		session.board.tile_at(0, 0).current_letter() == "E", "the tile is back to showing its front"
+	)
+
+
+# Flipping never empties a cell (see doc/RULES.md's "trampoline"
+# mechanic), so — unlike remove_tile/move_own_tile — it isn't restricted to
+# the current turn's own tiles; a tile from an already-ended turn flips
+# just as freely.
+func _test_flip_tile_frozen_tile_still_flips() -> void:
+	var session := GameSession.new(2, _dictionary)
+	var word := "MAISON"
+	for i in range(word.length()):
+		var tile := Tile.new(word[i], "Z", true)
+		_give_hand_tile(session, 0, tile)
+		session.place_tile(1, i, tile)
+	session.end_turn()  # player 0's turn is over; player 1 is now current
+
+	_check(session.flip_tile(1, 0), "a tile from an already-ended turn can still be flipped")
+	_check(session.board.tile_at(1, 0).current_letter() == "Z", "it now shows its back letter")
+
+
+func _test_flip_tile_refuses_empty_cell() -> void:
+	var session := GameSession.new(1, _dictionary)
+	_check(not session.flip_tile(5, 5), "flipping an empty cell is refused")
