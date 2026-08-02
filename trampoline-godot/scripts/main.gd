@@ -14,6 +14,12 @@ extends Control
 # it too.
 var _session: GameSession
 
+# Whether the turn timer (see doc/RULES.md's "3-minute soft/hard time
+# limit") is switched on right now — a player preference toggled via
+# OptionsPanel's `_timer_toggle`, independent of any particular
+# GameSession (it survives a New Game).
+var _timer_enabled: bool = false
+
 # `$BoardView`/`$HandView`/`$EndTurnButton`/`$Scoreboard`/`$GameOverBanner`/
 # `$EndTurnMessage`/`$SaveButton`/`$LoadButton`/`$NewGameButton`/
 # `$SaveFileDialog`/`$LoadFileDialog` look up the child nodes of those
@@ -30,6 +36,11 @@ var _session: GameSession
 @onready var _save_button: Button = $SaveButton
 @onready var _load_button: Button = $LoadButton
 @onready var _new_game_button: Button = $NewGameButton
+@onready var _options_button: Button = $OptionsButton
+@onready var _options_panel: Panel = $OptionsPanel
+@onready var _timer_toggle: CheckButton = $OptionsPanel/TimerToggle
+@onready var _turn_timer_label: Label = $TurnTimerLabel
+@onready var _turn_timer: Timer = $TurnTimer
 @onready var _save_file_dialog: FileDialog = $SaveFileDialog
 @onready var _load_file_dialog: FileDialog = $LoadFileDialog
 @onready var _start_menu: Control = $StartMenu
@@ -61,6 +72,8 @@ func _ready() -> void:
 	_save_button.pressed.connect(_on_save_pressed)
 	_load_button.pressed.connect(_on_load_pressed)
 	_new_game_button.pressed.connect(_on_new_game_pressed)
+	_options_button.pressed.connect(_on_options_pressed)
+	_timer_toggle.toggled.connect(_on_timer_toggle_toggled)
 	_save_file_dialog.file_selected.connect(_on_save_file_selected)
 	_load_file_dialog.file_selected.connect(_on_load_file_selected)
 	# `Callable.bind(n)` hands the same method one extra fixed argument
@@ -135,6 +148,7 @@ func _on_player_count_chosen(count: int) -> void:
 	_load_button.visible = true
 	_new_game_button.visible = true
 	_refresh_views()
+	_restart_turn_timer()
 
 
 # Called when the New Game button is pressed — abandons the current
@@ -144,6 +158,57 @@ func _on_player_count_chosen(count: int) -> void:
 func _on_new_game_pressed() -> void:
 	_session = null
 	_return_to_start_menu()
+
+
+# Called when the options button ("☰") is pressed — just shows/hides
+# OptionsPanel; nothing in it needs `_session` to exist, unlike
+# Save/Load/New Game, so this is available even from the start menu.
+func _on_options_pressed() -> void:
+	_options_panel.visible = not _options_panel.visible
+
+
+# Called when OptionsPanel's timer CheckButton is switched. Turning it on
+# starts counting down immediately for whichever turn is already under
+# way (see `_restart_turn_timer`); turning it off just hides the
+# countdown rather than leaving a stale number on screen.
+func _on_timer_toggle_toggled(enabled: bool) -> void:
+	_timer_enabled = enabled
+	if enabled:
+		_restart_turn_timer()
+	else:
+		_turn_timer.stop()
+		_turn_timer_label.visible = false
+
+
+# Restarts the 3-minute countdown from the top — called whenever a new
+# turn actually begins (a fresh session, a successful End Turn, or a
+# loaded save) — but only if the timer is switched on AND a game is
+# actually in progress; a no-op otherwise (e.g. toggled on while still
+# at the start menu, with no `_session` yet to time).
+func _restart_turn_timer() -> void:
+	if not _timer_enabled or _session == null:
+		return
+	_turn_timer_label.visible = true
+	_turn_timer.start()
+
+
+# Runs every frame (defining `_process` is all a Node needs to opt in —
+# see board_cell.gd's `_gui_input` comment for the same idea applied to
+# input instead of per-frame updates) to keep the countdown label
+# showing the actual time left on `_turn_timer`. Once it reaches zero,
+# `time_left` just reads 0 from then on (Godot stops a one-shot Timer
+# there on its own) — this is the RULES.md "soft" limit: a reminder,
+# nothing is forced.
+func _process(_delta: float) -> void:
+	if not _timer_enabled or _session == null:
+		return
+	var seconds_left := int(ceil(_turn_timer.time_left))
+	if seconds_left > 0:
+		_turn_timer_label.remove_theme_color_override("font_color")
+		_turn_timer_label.text = "%d:%02d" % [seconds_left / 60, seconds_left % 60]
+	else:
+		_turn_timer_label.add_theme_color_override("font_color", Color(0.96, 0.4, 0.4, 1))
+		_turn_timer_label.text = "Temps écoulé !"
 
 
 # Called when the Save button is pressed — opens the save FileDialog (see
@@ -175,6 +240,7 @@ func _on_load_file_selected(path: String) -> void:
 		_session = loaded
 		_end_turn_message.text = ""
 		_refresh_views()
+		_restart_turn_timer()
 
 
 # Called when the End Turn button is pressed. `end_turn()` itself refuses
@@ -185,6 +251,7 @@ func _on_load_file_selected(path: String) -> void:
 func _on_end_turn_pressed() -> void:
 	if _session.end_turn():
 		_end_turn_message.text = ""
+		_restart_turn_timer()
 	else:
 		_end_turn_message.text = _format_end_turn_error()
 	_refresh_views()
@@ -251,6 +318,8 @@ func _return_to_start_menu() -> void:
 	_end_turn_message.text = ""
 	_game_over_banner.text = ""
 	_scoreboard.text = ""
+	_turn_timer.stop()
+	_turn_timer_label.visible = false
 
 
 # Shows a winner announcement once the game is over (see

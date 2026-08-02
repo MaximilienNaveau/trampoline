@@ -1,8 +1,11 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://scripts/main.gd" id="1"]
 [ext_resource type="PackedScene" path="res://scenes/board_view.tscn" id="2"]
 [ext_resource type="PackedScene" path="res://scenes/hand_view.tscn" id="3"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_1"]
+bg_color=Color(0.15, 0.15, 0.15, 1)
 
 [node name="Main" type="Control"]
 layout_mode=3
@@ -170,6 +173,33 @@ offset_right=410.0
 offset_bottom=45.0
 text="Nouvelle partie"
 
+[node name="OptionsButton" type="Button" parent="."]
+layout_mode=1
+anchors_preset=0
+offset_left=420.0
+offset_top=15.0
+offset_right=460.0
+offset_bottom=45.0
+text="☰"
+
+[node name="OptionsPanel" type="Panel" parent="."]
+layout_mode=1
+anchors_preset=0
+offset_left=420.0
+offset_top=50.0
+offset_right=650.0
+offset_bottom=90.0
+theme_override_styles/panel=SubResource("StyleBoxFlat_1")
+visible=false
+
+[node name="TimerToggle" type="CheckButton" parent="OptionsPanel"]
+layout_mode=1
+offset_left=10.0
+offset_top=5.0
+offset_right=220.0
+offset_bottom=35.0
+text="Minuteur (3 min)"
+
 [node name="SaveFileDialog" type="FileDialog" parent="."]
 title="Sauvegarder la partie"
 initial_position=2
@@ -187,6 +217,23 @@ ok_button_text="Charger"
 file_mode=0
 access=1
 filters=PackedStringArray("*.json ; Fichier de sauvegarde")
+
+[node name="TurnTimerLabel" type="Label" parent="."]
+layout_mode=1
+anchors_preset=1
+anchor_left=1.0
+anchor_right=1.0
+offset_left=-270.0
+offset_top=15.0
+offset_right=-170.0
+offset_bottom=45.0
+grow_horizontal=0
+horizontal_alignment=1
+visible=false
+
+[node name="TurnTimer" type="Timer" parent="."]
+wait_time=180.0
+one_shot=true
 
 [node name="EndTurnButton" type="Button" parent="."]
 layout_mode=1
