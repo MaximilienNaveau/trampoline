@@ -4,9 +4,9 @@
 # the current turn on a button press. This is the one place allowed to know
 # about both the game rules (GameSession) and the views — BoardView/
 # HandView never talk to GameSession directly, per this project's
-# "separate logic from graphics" rule. Currently just a fixed 2-player game
-# started fresh every time the app runs — no menu yet, but the player can
-# save/load progress via SaveButton/LoadButton (see SaveGame).
+# "separate logic from graphics" rule. `StartMenu` lets the player pick how
+# many people are playing before `_session` even exists; everything else
+# stays hidden until then (see `_on_player_count_chosen`).
 extends Control
 
 # Kept as a field (not a local var in _ready()) now that other methods
@@ -30,6 +30,11 @@ var _session: GameSession
 @onready var _load_button: Button = $LoadButton
 @onready var _save_file_dialog: FileDialog = $SaveFileDialog
 @onready var _load_file_dialog: FileDialog = $LoadFileDialog
+@onready var _start_menu: Control = $StartMenu
+@onready var _one_player_button: Button = $StartMenu/OnePlayerButton
+@onready var _two_players_button: Button = $StartMenu/TwoPlayersButton
+@onready var _three_players_button: Button = $StartMenu/ThreePlayersButton
+@onready var _four_players_button: Button = $StartMenu/FourPlayersButton
 
 
 func _ready() -> void:
@@ -42,13 +47,7 @@ func _ready() -> void:
 	# drags in Godot.
 	Input.set_use_accumulated_input(false)
 
-	# GameSession would build its own French dictionary if not given one,
-	# but loading those ~79000 words is the slowest part of starting a
-	# session — there's nothing else here yet that needs a shared
-	# instance, so this just keeps things simple rather than plumbing one
-	# through for no current benefit.
-	_session = GameSession.new(2)
-	# Connects BoardView's/HandView's signals, and the button's built-in
+	# Connects BoardView's/HandView's signals, and every button's built-in
 	# `pressed` signal (every Button has one), to the methods below — see
 	# board_cell.gd's header comment for what a signal/connection is.
 	_board_view.tile_dropped.connect(_on_board_tile_dropped)
@@ -61,7 +60,22 @@ func _ready() -> void:
 	_load_button.pressed.connect(_on_load_pressed)
 	_save_file_dialog.file_selected.connect(_on_save_file_selected)
 	_load_file_dialog.file_selected.connect(_on_load_file_selected)
-	_refresh_views()
+	# `Callable.bind(n)` hands the same method one extra fixed argument
+	# per button (n itself), rather than writing four near-identical
+	# handler functions that only differ by which number they pass on.
+	_one_player_button.pressed.connect(_on_player_count_chosen.bind(1))
+	_two_players_button.pressed.connect(_on_player_count_chosen.bind(2))
+	_three_players_button.pressed.connect(_on_player_count_chosen.bind(3))
+	_four_players_button.pressed.connect(_on_player_count_chosen.bind(4))
+
+	# No GameSession exists yet until a player count is chosen (see
+	# `_on_player_count_chosen`) — everything that needs one stays hidden
+	# until then, rather than crashing on a null `_session`.
+	_board_view.visible = false
+	_hand_view.visible = false
+	_end_turn_button.visible = false
+	_save_button.visible = false
+	_load_button.visible = false
 
 
 # Called whenever a TilePanel gets dropped onto a BoardCell (see
@@ -107,6 +121,22 @@ func _on_board_tile_flipped(row: int, col: int) -> void:
 # hand_row.gd) — giving a tile back to the current player's storage.
 func _on_hand_tile_returned(from_row: int, from_col: int) -> void:
 	_session.remove_tile(from_row, from_col)
+	_refresh_views()
+
+
+# Called when one of StartMenu's player-count buttons is pressed (see
+# `Callable.bind` above for how each one reports its own number).
+# Creates the actual GameSession — nothing before this point could show
+# real game state, since GameSession would build its own French
+# dictionary and starting hands, so there was nothing to refresh yet.
+func _on_player_count_chosen(count: int) -> void:
+	_session = GameSession.new(count)
+	_start_menu.visible = false
+	_board_view.visible = true
+	_hand_view.visible = true
+	_end_turn_button.visible = true
+	_save_button.visible = true
+	_load_button.visible = true
 	_refresh_views()
 
 
