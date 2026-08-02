@@ -9,6 +9,19 @@ extends Panel
 # after creating this node.
 var tile: Tile
 
+# This panel's own main Label and corner badge, set once by
+# HandView.refresh() right after creating them (see tile_view.gd's
+# `build_corner_badge`/`update_corner_badge`) — kept here so `refresh()`
+# below can redraw them in place after a flip, without HandView needing to
+# rebuild this whole panel from scratch.
+var label: Label
+var corner_badge: Panel
+
+# Remembers where a left-click started, so `_gui_input` below can tell a
+# plain click (releasing close to where it was pressed) from a drag that
+# happened to end and release back over this same tile.
+var _press_position: Vector2 = Vector2.ZERO
+
 
 # Virtual function: Godot calls this itself the moment the player starts
 # dragging this Control with the mouse (see board_cell.gd's header comment
@@ -43,3 +56,28 @@ func _get_drag_data(_at_position: Vector2) -> Variant:
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_DRAG_END:
 		modulate = Color(1, 1, 1, 1)
+
+
+# Redraws this tile's own text/color and other-face hint from `tile`'s
+# current state — needed after a flip (see `_gui_input` below). Unlike a
+# board tile, flipping a tile still in hand has no game-rule consequence
+# at all (see game_session.gd's `flip_tile`, which only ever touches board
+# tiles) — it's just choosing which face to place, so this panel handles
+# it entirely on its own, no signal to main.gd needed.
+func refresh() -> void:
+	label.text = tile.current_letter()
+	add_theme_stylebox_override("panel", TileView.style_for_tile(tile))
+	TileView.update_corner_badge(corner_badge, tile)
+
+
+# Virtual function: Godot calls this for mouse/keyboard events over this
+# Control that the drag-and-drop system above doesn't already claim (see
+# board_cell.gd's own version for the fuller explanation of the click-vs-
+# drag distinction this makes).
+func _gui_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
+		if event.pressed:
+			_press_position = event.position
+		elif event.position.distance_to(_press_position) < 6:
+			tile.flip()
+			refresh()

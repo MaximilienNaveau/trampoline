@@ -68,5 +68,14 @@ func refresh(hand: Array[Tile]) -> void:
 		label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		label.text = tile.current_letter()
 		panel.add_child(label)
+		panel.label = label
+
+		# The small "other face" hint badge (see tile_view.gd's
+		# build_corner_badge/update_corner_badge) — lets a player see what
+		# flipping this tile would reveal before they commit to it.
+		var corner_badge := TileView.build_corner_badge()
+		TileView.update_corner_badge(corner_badge, tile)
+		panel.add_child(corner_badge)
+		panel.corner_badge = corner_badge
 
 		_row.add_child(panel)
