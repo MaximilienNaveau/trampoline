@@ -15,11 +15,12 @@ extends Control
 var _session: GameSession
 
 # `$BoardView`/`$HandView`/`$EndTurnButton`/`$Scoreboard`/`$GameOverBanner`/
-# `$EndTurnMessage`/`$SaveButton`/`$LoadButton`/`$SaveFileDialog`/
-# `$LoadFileDialog` look up the child nodes of those names declared in
-# scenes/main.tscn — the same shorthand board_view.gd itself uses for its
-# own "Grid" child. `@onready` runs this once those children actually
-# exist, rather than too early (see board_view.gd for the same pattern).
+# `$EndTurnMessage`/`$SaveButton`/`$LoadButton`/`$NewGameButton`/
+# `$SaveFileDialog`/`$LoadFileDialog` look up the child nodes of those
+# names declared in scenes/main.tscn — the same shorthand board_view.gd
+# itself uses for its own "Grid" child. `@onready` runs this once those
+# children actually exist, rather than too early (see board_view.gd for
+# the same pattern).
 @onready var _board_view: BoardView = $BoardView
 @onready var _hand_view: HandView = $HandView
 @onready var _end_turn_button: Button = $EndTurnButton
@@ -28,6 +29,7 @@ var _session: GameSession
 @onready var _end_turn_message: Label = $EndTurnMessage
 @onready var _save_button: Button = $SaveButton
 @onready var _load_button: Button = $LoadButton
+@onready var _new_game_button: Button = $NewGameButton
 @onready var _save_file_dialog: FileDialog = $SaveFileDialog
 @onready var _load_file_dialog: FileDialog = $LoadFileDialog
 @onready var _start_menu: Control = $StartMenu
@@ -58,6 +60,7 @@ func _ready() -> void:
 	_end_turn_button.pressed.connect(_on_end_turn_pressed)
 	_save_button.pressed.connect(_on_save_pressed)
 	_load_button.pressed.connect(_on_load_pressed)
+	_new_game_button.pressed.connect(_on_new_game_pressed)
 	_save_file_dialog.file_selected.connect(_on_save_file_selected)
 	_load_file_dialog.file_selected.connect(_on_load_file_selected)
 	# `Callable.bind(n)` hands the same method one extra fixed argument
@@ -68,14 +71,7 @@ func _ready() -> void:
 	_three_players_button.pressed.connect(_on_player_count_chosen.bind(3))
 	_four_players_button.pressed.connect(_on_player_count_chosen.bind(4))
 
-	# No GameSession exists yet until a player count is chosen (see
-	# `_on_player_count_chosen`) — everything that needs one stays hidden
-	# until then, rather than crashing on a null `_session`.
-	_board_view.visible = false
-	_hand_view.visible = false
-	_end_turn_button.visible = false
-	_save_button.visible = false
-	_load_button.visible = false
+	_return_to_start_menu()
 
 
 # Called whenever a TilePanel gets dropped onto a BoardCell (see
@@ -137,7 +133,17 @@ func _on_player_count_chosen(count: int) -> void:
 	_end_turn_button.visible = true
 	_save_button.visible = true
 	_load_button.visible = true
+	_new_game_button.visible = true
 	_refresh_views()
+
+
+# Called when the New Game button is pressed — abandons the current
+# session (unsaved progress is simply lost, same as closing the app
+# without saving; see SaveButton if that matters) and goes back to
+# `StartMenu` to pick a fresh player count.
+func _on_new_game_pressed() -> void:
+	_session = null
+	_return_to_start_menu()
 
 
 # Called when the Save button is pressed — opens the save FileDialog (see
@@ -229,6 +235,22 @@ func _format_end_turn_error() -> String:
 	if words.size() == 1:
 		return "Mot invalide : %s" % words[0]
 	return "Mots invalides : %s" % ", ".join(words)
+
+
+# Hides everything that depends on `_session` and shows `StartMenu`
+# again — used both by `_ready()` (before any game has started yet) and
+# by `_on_new_game_pressed()` (after abandoning one).
+func _return_to_start_menu() -> void:
+	_start_menu.visible = true
+	_board_view.visible = false
+	_hand_view.visible = false
+	_end_turn_button.visible = false
+	_save_button.visible = false
+	_load_button.visible = false
+	_new_game_button.visible = false
+	_end_turn_message.text = ""
+	_game_over_banner.text = ""
+	_scoreboard.text = ""
 
 
 # Shows a winner announcement once the game is over (see
