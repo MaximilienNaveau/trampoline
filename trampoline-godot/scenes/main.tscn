@@ -346,6 +346,14 @@ file_mode=0
 access=1
 filters=PackedStringArray("*.json ; Fichier de sauvegarde")
 
+[node name="NewGameConfirmDialog" type="ConfirmationDialog" parent="."]
+title="Nouvelle partie"
+initial_position=2
+size=Vector2i(460, 150)
+ok_button_text="Recommencer sans sauvegarder"
+cancel_button_text="Annuler"
+dialog_text="Commencer une nouvelle partie ? La partie actuelle sera perdue si elle n'est pas sauvegardée."
+
 [node name="TurnTimerLabel" type="Label" parent="."]
 layout_mode=1
 anchors_preset=1
