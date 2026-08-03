@@ -1,17 +1,25 @@
-# Visualizes one player's hand as a row of colored tiles, using the same
-# yellow/green/blank coloring as BoardView (via TileView). Each tile is a
-# TilePanel (see tile_panel.gd), draggable onto a BoardView cell — this
-# view itself doesn't need to know that's possible, it just builds them.
-# The row itself (see hand_row.gd) accepts a tile dragged back FROM the
-# board, re-broadcast here as `tile_returned` the same way BoardView
-# re-broadcasts its own cells' signals.
+# Visualizes a collection of colored tiles, using the same yellow/green/
+# blank coloring as BoardView (via TileView). Each tile is a TilePanel (see
+# tile_panel.gd), draggable onto a BoardView cell — this view itself
+# doesn't need to know that's possible, it just builds them. The row
+# itself (see hand_row.gd) accepts a tile dragged back FROM the board,
+# re-broadcast here as `tile_returned` the same way BoardView re-broadcasts
+# its own cells' signals.
 #
-# Unlike BoardView's grid (13x9, always the same 117 cells), a hand's size
-# actually changes turn to turn — tiles leave when placed, more arrive on a
-# draw — so there's no fixed pool of nodes to reuse here. `refresh()` just
-# throws away last turn's tile nodes and builds fresh ones matching however
-# many tiles are in hand right now; hands are small (at most 13 tiles), so
-# rebuilding every refresh is simple and cheap enough to not need pooling.
+# Instanced twice: as one player's turn-based hand (hand_view.tscn, a
+# single-row HBoxContainer), and as the free-play palette of every
+# currently-unplaced tile (scenes/palette_view.tscn, a scrollable
+# multi-row GridContainer) — this script itself doesn't care which, since
+# `refresh()` only ever deals in a plain list of tiles (see hand_row.gd's
+# own comment for why the SAME `Row` script backs both container shapes).
+#
+# Unlike BoardView's grid (13x9, always the same 117 cells), the tiles
+# shown here change turn to turn — tiles leave when placed, more arrive on
+# a draw (or, in free play, whenever anything moves on/off the board) — so
+# there's no fixed pool of nodes to reuse here. `refresh()` just throws
+# away the previous tile nodes and builds fresh ones matching whatever's
+# passed in; even the free-play palette's worst case (117 tiles) is cheap
+# enough to rebuild from scratch every refresh, so this needs no pooling.
 class_name HandView
 extends Control
 
