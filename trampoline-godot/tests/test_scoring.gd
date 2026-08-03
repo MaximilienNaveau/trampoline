@@ -166,7 +166,10 @@ func _test_board_bonus() -> void:
 # completes it to 9 letters ("etudiante") with a 3-letter suffix ("nte"),
 # scoring 7+8+9=24 for their own 3 letters — each player only sees their
 # own contribution, and completing an already-started word earns the +10
-# bonus rather than the from-scratch scrabble bonus.
+# bonus rather than the from-scratch scrabble bonus. "etudia" happens to
+# ALSO be a genuinely valid word on its own (the passé simple of
+# "étudier" — "[il/elle] étudia", "he/she studied"), so player 0 already
+# scores for it before player 1 ever touches the row.
 func _test_per_player_attribution() -> void:
 	var board := Board.new()
 	var scoring := Scoring.new()
@@ -176,8 +179,8 @@ func _test_per_player_attribution() -> void:
 		board.place(7, col, Tile.new(word9[col], "Z", true))
 		scoring.record_placement(7, col, 0)
 	_check(
-		scoring.player_word_score(board, _dictionary, 7, 0, 0) == 0,
-		"sanity: an incomplete word (not yet 9 letters) scores 0 even for its author"
+		scoring.player_word_score(board, _dictionary, 7, 0, 0) == 21,
+		'sanity: "etudia" is already a valid 6-letter word, scoring for its author immediately'
 	)
 
 	scoring.begin_turn(board)  # row already has 6 letters when player 1's turn starts
