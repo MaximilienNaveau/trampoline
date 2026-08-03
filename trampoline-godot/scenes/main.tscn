@@ -220,6 +220,76 @@ offset_right=313.0
 offset_bottom=230.0
 text="10"
 
+[node name="NameEntryMenu" type="Control" parent="."]
+layout_mode=1
+anchors_preset=8
+anchor_left=0.5
+anchor_top=0.5
+anchor_right=0.5
+anchor_bottom=0.5
+offset_left=-160.0
+offset_top=-55.0
+offset_right=160.0
+offset_bottom=240.0
+grow_horizontal=2
+grow_vertical=2
+visible=false
+
+[node name="Prompt" type="Label" parent="NameEntryMenu"]
+layout_mode=1
+offset_right=320.0
+offset_bottom=30.0
+horizontal_alignment=1
+text="Noms des joueurs :"
+
+[node name="Name1Edit" type="LineEdit" parent="NameEntryMenu"]
+layout_mode=1
+offset_left=10.0
+offset_top=40.0
+offset_right=310.0
+offset_bottom=70.0
+placeholder_text="Joueur 1"
+
+[node name="Name2Edit" type="LineEdit" parent="NameEntryMenu"]
+layout_mode=1
+offset_left=10.0
+offset_top=80.0
+offset_right=310.0
+offset_bottom=110.0
+placeholder_text="Joueur 2"
+
+[node name="Name3Edit" type="LineEdit" parent="NameEntryMenu"]
+layout_mode=1
+offset_left=10.0
+offset_top=120.0
+offset_right=310.0
+offset_bottom=150.0
+placeholder_text="Joueur 3"
+
+[node name="Name4Edit" type="LineEdit" parent="NameEntryMenu"]
+layout_mode=1
+offset_left=10.0
+offset_top=160.0
+offset_right=310.0
+offset_bottom=190.0
+placeholder_text="Joueur 4"
+
+[node name="StartWithNamesButton" type="Button" parent="NameEntryMenu"]
+layout_mode=1
+offset_left=10.0
+offset_top=200.0
+offset_right=150.0
+offset_bottom=230.0
+text="Commencer"
+
+[node name="BackToStartMenuButton" type="Button" parent="NameEntryMenu"]
+layout_mode=1
+offset_left=170.0
+offset_top=200.0
+offset_right=310.0
+offset_bottom=230.0
+text="Retour"
+
 [node name="BoardView" parent="." instance=ExtResource("2")]
 layout_mode=1
 anchors_preset=8

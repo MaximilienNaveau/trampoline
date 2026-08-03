@@ -41,6 +41,18 @@ var _timer_enabled: bool = false
 # — but only THAT save, not an ordinary standalone one from SaveButton.
 var _pending_new_game_after_save: bool = false
 
+# How many players StartMenu's count buttons picked, remembered between
+# that click and `_on_names_confirmed` actually creating the session —
+# NameEntryMenu needs to know how many name fields to show in between.
+var _pending_player_count: int = 0
+
+# The names entered in NameEntryMenu for the CURRENT turn-based session,
+# index 0 = player 0, etc. — used by `_player_name` below instead of the
+# plain "Joueur N" fallback. Not saved/loaded (see save_game.gd — a
+# loaded session has no names of its own), and irrelevant to free
+# play/crossword mode, which never shows per-player names at all.
+var _player_names: Array[String] = []
+
 # `ConfirmationDialog` only comes with two buttons (OK/Cancel) built in —
 # this third one is added in code below (see `_ready()`), not declared in
 # the scene, so it needs a plain `var` here instead of `@onready`.
@@ -75,6 +87,18 @@ var _save_and_restart_button: Button
 @onready var _two_players_button: Button = $StartMenu/TwoPlayersButton
 @onready var _three_players_button: Button = $StartMenu/ThreePlayersButton
 @onready var _four_players_button: Button = $StartMenu/FourPlayersButton
+@onready var _name_entry_menu: Control = $NameEntryMenu
+# The 4 name fields, indexed 0..3 to match player_id — see
+# `_on_player_count_chosen` for how only the first `count` of them are
+# actually shown.
+@onready var _name_edits: Array[LineEdit] = [
+	$NameEntryMenu/Name1Edit,
+	$NameEntryMenu/Name2Edit,
+	$NameEntryMenu/Name3Edit,
+	$NameEntryMenu/Name4Edit,
+]
+@onready var _start_with_names_button: Button = $NameEntryMenu/StartWithNamesButton
+@onready var _back_to_start_menu_button: Button = $NameEntryMenu/BackToStartMenuButton
 @onready var _free_play_button: Button = $StartMenu/FreePlayButton
 @onready var _palette_view: HandView = $PaletteView
 # The 10 crossword puzzle-picker buttons, indexed 0..9 to match
@@ -144,6 +168,8 @@ func _ready() -> void:
 	_two_players_button.pressed.connect(_on_player_count_chosen.bind(2))
 	_three_players_button.pressed.connect(_on_player_count_chosen.bind(3))
 	_four_players_button.pressed.connect(_on_player_count_chosen.bind(4))
+	_start_with_names_button.pressed.connect(_on_names_confirmed)
+	_back_to_start_menu_button.pressed.connect(_on_back_to_start_menu_pressed)
 	_free_play_button.pressed.connect(_on_free_play_chosen)
 	# Same `Callable.bind` idea as the player-count buttons above, but
 	# looped since there are 10 of them — each button reports its own
@@ -218,13 +244,31 @@ func _on_hand_tile_returned(from_row: int, from_col: int) -> void:
 
 
 # Called when one of StartMenu's player-count buttons is pressed (see
-# `Callable.bind` above for how each one reports its own number).
-# Creates the actual GameSession — nothing before this point could show
-# real game state, since GameSession would build its own French
-# dictionary and starting hands, so there was nothing to refresh yet.
+# `Callable.bind` above for how each one reports its own number). Doesn't
+# create the GameSession yet — shows NameEntryMenu first (see
+# `_on_names_confirmed`, which actually creates it), with exactly `count`
+# of its 4 name fields visible.
 func _on_player_count_chosen(count: int) -> void:
-	_session = GameSession.new(count)
+	_pending_player_count = count
 	_start_menu.visible = false
+	_name_entry_menu.visible = true
+	for i in range(_name_edits.size()):
+		_name_edits[i].visible = i < count
+		_name_edits[i].text = ""
+
+
+# Called when NameEntryMenu's "Commencer" button is pressed. Only NOW
+# does the actual GameSession get created — nothing before this point
+# could show real game state anyway, since GameSession would build its
+# own French dictionary and starting hands. A blank name field falls
+# back to the plain "Joueur N" (see `_player_name`).
+func _on_names_confirmed() -> void:
+	_player_names = []
+	for i in range(_pending_player_count):
+		var entered := _name_edits[i].text.strip_edges()
+		_player_names.append(entered if entered != "" else "Joueur %d" % (i + 1))
+	_session = GameSession.new(_pending_player_count)
+	_name_entry_menu.visible = false
 	_board_view.visible = true
 	_hand_view.visible = true
 	_end_turn_button.visible = true
@@ -233,6 +277,14 @@ func _on_player_count_chosen(count: int) -> void:
 	_new_game_button.visible = true
 	_refresh_views()
 	_restart_turn_timer()
+
+
+# Called when NameEntryMenu's "Retour" button is pressed — no session
+# exists yet at this point, so there's nothing to tear down, just go
+# back to picking a player count.
+func _on_back_to_start_menu_pressed() -> void:
+	_name_entry_menu.visible = false
+	_start_menu.visible = true
 
 
 # Whether the free-play sandbox is the one currently active, rather than
@@ -424,6 +476,7 @@ func _on_load_file_selected(path: String) -> void:
 	var loaded_session := SaveGame.load(path, _session.dictionary)
 	if loaded_session != null:
 		_session = loaded_session
+		_player_names = []  # a loaded session has no names of its own
 		_end_turn_message.text = ""
 		_refresh_views()
 		_restart_turn_timer()
@@ -472,6 +525,15 @@ func _refresh_views() -> void:
 	_update_game_over_banner()
 
 
+# `_player_names[player_id]` if the player actually entered one (see
+# `_on_names_confirmed`), else the plain "Joueur N" default — also what
+# every player shows as once a LOADED session has no names of its own.
+func _player_name(player_id: int) -> String:
+	if player_id < _player_names.size():
+		return _player_names[player_id]
+	return "Joueur %d" % (player_id + 1)
+
+
 # Builds a one-line summary like "Joueur 1 : 12 pts   Joueur 2 : 5 pts (à
 # vous de jouer)" — plain string formatting, not worth its own view class
 # the way BoardView/HandView are (those turn game state into colors,
@@ -489,7 +551,7 @@ func _format_scoreboard() -> String:
 			text += "   "
 		# `%d` inside a string, followed by `% [...]`, is GDScript's
 		# printf-style formatting — like Python's `"%d" % value`.
-		text += "Joueur %d : %d pts" % [player_id + 1, scores[player_id]]
+		text += "%s : %d pts" % [_player_name(player_id), scores[player_id]]
 		if not is_over and player_id == current_player_id:
 			text += " (à vous de jouer)"
 	return text
@@ -520,6 +582,8 @@ func _return_to_start_menu() -> void:
 	_new_game_button.visible = false
 	_palette_view.visible = false
 	_clue_list_view.visible = false
+	_name_entry_menu.visible = false
+	_player_names = []
 	_end_turn_message.text = ""
 	_game_over_banner.text = ""
 	_scoreboard.text = ""
@@ -539,6 +603,6 @@ func _update_game_over_banner() -> void:
 	var winner_id := _session.winner_id()
 	var winner_score := _session.turns.player_score(winner_id)
 	_game_over_banner.text = (
-		"Partie terminée ! Joueur %d gagne avec %d points." % [winner_id + 1, winner_score]
+		"Partie terminée ! %s gagne avec %d points." % [_player_name(winner_id), winner_score]
 	)
 	_end_turn_button.disabled = true
