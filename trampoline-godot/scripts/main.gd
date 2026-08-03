@@ -5,14 +5,22 @@
 # about both the game rules (GameSession) and the views — BoardView/
 # HandView never talk to GameSession directly, per this project's
 # "separate logic from graphics" rule. `StartMenu` lets the player pick how
-# many people are playing before `_session` even exists; everything else
-# stays hidden until then (see `_on_player_count_chosen`).
+# many people are playing before `_session` even exists — or, instead,
+# start the free-play sandbox (see `_on_free_play_chosen`/
+# free_play_session.gd), which uses `_free_play_session` in `_session`'s
+# place. Everything that needs one or the other stays hidden until then
+# (see `_on_player_count_chosen`/`_return_to_start_menu`).
 extends Control
 
 # Kept as a field (not a local var in _ready()) now that other methods
 # below — `_on_board_tile_dropped`, `_on_end_turn_pressed` — need to reach
 # it too.
 var _session: GameSession
+
+# The free-play sandbox session (see free_play_session.gd), used INSTEAD
+# of `_session` when the player picks "Jeu libre" — at most one of the
+# two is ever non-null at a time (see `_is_free_play`).
+var _free_play_session: FreePlaySession
 
 # Whether the turn timer (see doc/RULES.md's "3-minute soft/hard time
 # limit") is switched on right now — a player preference toggled via
@@ -48,6 +56,8 @@ var _timer_enabled: bool = false
 @onready var _two_players_button: Button = $StartMenu/TwoPlayersButton
 @onready var _three_players_button: Button = $StartMenu/ThreePlayersButton
 @onready var _four_players_button: Button = $StartMenu/FourPlayersButton
+@onready var _free_play_button: Button = $StartMenu/FreePlayButton
+@onready var _palette_view: HandView = $PaletteView
 
 
 func _ready() -> void:
@@ -83,6 +93,10 @@ func _ready() -> void:
 	_two_players_button.pressed.connect(_on_player_count_chosen.bind(2))
 	_three_players_button.pressed.connect(_on_player_count_chosen.bind(3))
 	_four_players_button.pressed.connect(_on_player_count_chosen.bind(4))
+	_free_play_button.pressed.connect(_on_free_play_chosen)
+	# The palette (free play) and the hand (turn-based play) are never both
+	# visible at once, so both can safely feed the same handler.
+	_palette_view.tile_returned.connect(_on_hand_tile_returned)
 
 	_return_to_start_menu()
 
@@ -94,7 +108,10 @@ func _ready() -> void:
 # hand — belt and braces, and the only check that actually matters here
 # since the view layer already filtered out illegal board positions.
 func _on_board_tile_dropped(row: int, col: int, tile: Tile) -> void:
-	_session.place_tile(row, col, tile)
+	if _is_free_play():
+		_free_play_session.place_tile(row, col, tile)
+	else:
+		_session.place_tile(row, col, tile)
 	_refresh_views()
 
 
@@ -104,7 +121,10 @@ func _on_board_tile_dropped(row: int, col: int, tile: Tile) -> void:
 # only used it to decide whether to even start the drag), so an already-
 # frozen tile that somehow got dragged anyway simply won't move.
 func _on_board_tile_moved(from_row: int, from_col: int, to_row: int, to_col: int) -> void:
-	_session.move_own_tile(from_row, from_col, to_row, to_col)
+	if _is_free_play():
+		_free_play_session.move_tile(from_row, from_col, to_row, to_col)
+	else:
+		_session.move_own_tile(from_row, from_col, to_row, to_col)
 	_refresh_views()
 
 
@@ -122,14 +142,21 @@ func _on_board_word_moved(from_row: int, from_col: int, to_row: int, to_col: int
 # flipped, any time, by any player (see doc/RULES.md's "trampoline"
 # mechanic), so there's no eligibility check to make here first.
 func _on_board_tile_flipped(row: int, col: int) -> void:
-	_session.flip_tile(row, col)
+	if _is_free_play():
+		_free_play_session.flip_tile(row, col)
+	else:
+		_session.flip_tile(row, col)
 	_refresh_views()
 
 
-# Called whenever a BoardCell gets dragged onto the hand row (see
-# hand_row.gd) — giving a tile back to the current player's storage.
+# Called whenever a BoardCell gets dragged onto the hand row OR the
+# free-play palette (see hand_row.gd) — giving a tile back to the current
+# player's storage, or back to the free-play pool of available tiles.
 func _on_hand_tile_returned(from_row: int, from_col: int) -> void:
-	_session.remove_tile(from_row, from_col)
+	if _is_free_play():
+		_free_play_session.remove_tile(from_row, from_col)
+	else:
+		_session.remove_tile(from_row, from_col)
 	_refresh_views()
 
 
@@ -151,12 +178,32 @@ func _on_player_count_chosen(count: int) -> void:
 	_restart_turn_timer()
 
 
+# Whether the free-play sandbox is the one currently active, rather than
+# a turn-based `_session` (or nothing at all, at the start menu).
+func _is_free_play() -> bool:
+	return _free_play_session != null
+
+
+# Called when StartMenu's "Jeu libre" button is pressed. Unlike
+# `_on_player_count_chosen`, there's no turn/scoring/save state to show —
+# only the board and the palette of every currently-unplaced tile — so
+# EndTurnButton/SaveButton/LoadButton stay hidden and no turn timer starts.
+func _on_free_play_chosen() -> void:
+	_free_play_session = FreePlaySession.new()
+	_start_menu.visible = false
+	_board_view.visible = true
+	_palette_view.visible = true
+	_new_game_button.visible = true
+	_refresh_views()
+
+
 # Called when the New Game button is pressed — abandons the current
 # session (unsaved progress is simply lost, same as closing the app
 # without saving; see SaveButton if that matters) and goes back to
 # `StartMenu` to pick a fresh player count.
 func _on_new_game_pressed() -> void:
 	_session = null
+	_free_play_session = null
 	_return_to_start_menu()
 
 
@@ -263,7 +310,16 @@ func _on_end_turn_pressed() -> void:
 # what that means) rather than BoardView asking GameSession itself. Also
 # checks whether the game has just ended (see `_update_game_over_banner`).
 func _refresh_views() -> void:
-	_board_view.refresh(_session.board, _session.can_take_back)
+	if _is_free_play():
+		_board_view.refresh(
+			_free_play_session.board,
+			_free_play_session.can_take_back,
+			_free_play_session.can_place_here
+		)
+		_palette_view.refresh(_free_play_session.available_tiles())
+		_scoreboard.text = "Score : %d" % _free_play_session.current_score()
+		return
+	_board_view.refresh(_session.board, _session.can_take_back, _session.can_place_here)
 	_hand_view.refresh(_session.bag.hand(_session.turns.current_player_id()))
 	_scoreboard.text = _format_scoreboard()
 	_update_game_over_banner()
@@ -315,6 +371,7 @@ func _return_to_start_menu() -> void:
 	_save_button.visible = false
 	_load_button.visible = false
 	_new_game_button.visible = false
+	_palette_view.visible = false
 	_end_turn_message.text = ""
 	_game_over_banner.text = ""
 	_scoreboard.text = ""
