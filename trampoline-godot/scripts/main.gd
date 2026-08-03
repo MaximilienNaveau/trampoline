@@ -22,6 +22,12 @@ var _session: GameSession
 # two is ever non-null at a time (see `_is_free_play`).
 var _free_play_session: FreePlaySession
 
+# The active crossword puzzle (see crossword_puzzle.gd), used ALONGSIDE
+# `_free_play_session` when the player picks "Mots croisés" — crossword
+# mode is free play's exact same sandbox mechanics, plus this overlay
+# checking the board against a hidden target (see `_is_crossword`).
+var _crossword_puzzle: CrosswordPuzzle
+
 # Whether the turn timer (see doc/RULES.md's "3-minute soft/hard time
 # limit") is switched on right now — a player preference toggled via
 # OptionsPanel's `_timer_toggle`, independent of any particular
@@ -58,6 +64,8 @@ var _timer_enabled: bool = false
 @onready var _four_players_button: Button = $StartMenu/FourPlayersButton
 @onready var _free_play_button: Button = $StartMenu/FreePlayButton
 @onready var _palette_view: HandView = $PaletteView
+@onready var _crossword_button: Button = $StartMenu/CrosswordButton
+@onready var _clue_list_view: ClueListView = $ClueListView
 
 
 func _ready() -> void:
@@ -94,6 +102,7 @@ func _ready() -> void:
 	_three_players_button.pressed.connect(_on_player_count_chosen.bind(3))
 	_four_players_button.pressed.connect(_on_player_count_chosen.bind(4))
 	_free_play_button.pressed.connect(_on_free_play_chosen)
+	_crossword_button.pressed.connect(_on_crossword_chosen)
 	# The palette (free play) and the hand (turn-based play) are never both
 	# visible at once, so both can safely feed the same handler.
 	_palette_view.tile_returned.connect(_on_hand_tile_returned)
@@ -197,6 +206,29 @@ func _on_free_play_chosen() -> void:
 	_refresh_views()
 
 
+# Whether a crossword puzzle is the one currently active — always
+# alongside a `_free_play_session` (see `_on_crossword_chosen`), never on
+# its own.
+func _is_crossword() -> bool:
+	return _crossword_puzzle != null
+
+
+# Called when StartMenu's "Mots croisés" button is pressed. Reuses
+# free play's exact sandbox (all 117 tiles, unrestricted placement,
+# live scoring — see `_on_free_play_chosen` above) and adds the clue
+# list alongside it; `_refresh_views` is what actually checks progress
+# against the puzzle's hidden target each time something changes.
+func _on_crossword_chosen() -> void:
+	_free_play_session = FreePlaySession.new()
+	_crossword_puzzle = CrosswordPuzzle.new()
+	_start_menu.visible = false
+	_board_view.visible = true
+	_palette_view.visible = true
+	_clue_list_view.visible = true
+	_new_game_button.visible = true
+	_refresh_views()
+
+
 # Called when the New Game button is pressed — abandons the current
 # session (unsaved progress is simply lost, same as closing the app
 # without saving; see SaveButton if that matters) and goes back to
@@ -204,6 +236,7 @@ func _on_free_play_chosen() -> void:
 func _on_new_game_pressed() -> void:
 	_session = null
 	_free_play_session = null
+	_crossword_puzzle = null
 	_return_to_start_menu()
 
 
@@ -318,6 +351,14 @@ func _refresh_views() -> void:
 		)
 		_palette_view.refresh(_free_play_session.available_tiles())
 		_scoreboard.text = "Score : %d" % _free_play_session.current_score()
+		if _is_crossword():
+			_clue_list_view.refresh(
+				_crossword_puzzle.clues, _crossword_puzzle.solved_rows(_free_play_session.board)
+			)
+			if _crossword_puzzle.is_solved(_free_play_session.board):
+				_game_over_banner.text = "Mots croisés résolus !"
+			else:
+				_game_over_banner.text = ""
 		return
 	_board_view.refresh(_session.board, _session.can_take_back, _session.can_place_here)
 	_hand_view.refresh(_session.bag.hand(_session.turns.current_player_id()))
@@ -372,6 +413,7 @@ func _return_to_start_menu() -> void:
 	_load_button.visible = false
 	_new_game_button.visible = false
 	_palette_view.visible = false
+	_clue_list_view.visible = false
 	_end_turn_message.text = ""
 	_game_over_banner.text = ""
 	_scoreboard.text = ""
