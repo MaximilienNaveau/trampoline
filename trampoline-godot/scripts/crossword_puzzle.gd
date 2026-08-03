@@ -8,13 +8,19 @@
 class_name CrosswordPuzzle
 extends RefCounted
 
+# Which entry of CrosswordPuzzles.PUZZLES this is — kept, not just used
+# once in `_init`, so save_game.gd can record it and recreate the exact
+# same puzzle on load (see SaveGame.save_free_play/load_free_play).
+var puzzle_index: int
+
 var clues: Array[String] = []
 var target_words: Array[String] = []
 
 
 # `puzzle_index` picks which entry of CrosswordPuzzles.PUZZLES to load —
 # defaults to the first (and, for now, only) puzzle.
-func _init(puzzle_index: int = 0) -> void:
+func _init(a_puzzle_index: int = 0) -> void:
+	puzzle_index = a_puzzle_index
 	for pair in CrosswordPuzzles.PUZZLES[puzzle_index]:
 		clues.append(pair[0])
 		target_words.append(pair[1])

@@ -119,6 +119,77 @@ static func load(path: String, dictionary: FrenchDictionary = null) -> GameSessi
 	return session
 
 
+# Writes `session`'s entire state to `path`, for the free-play sandbox
+# (see free_play_session.gd) — including an in-progress crossword puzzle
+# built on top of it (see crossword_puzzle.gd), if any. Free play has no
+# bag/hands/turns to save at all (every tile not on the board is simply
+# "available" — see FreePlaySession.available_tiles), so this is a
+# smaller version of `save` above: just tile flip-state, the board, and
+# scoring. `puzzle_index` is CrosswordPuzzle.puzzle_index when saving
+# mid-puzzle, or -1 for plain free play (no puzzle active).
+static func save_free_play(session: FreePlaySession, path: String, puzzle_index: int = -1) -> bool:
+	var tile_index := _build_tile_index(session.pool)
+
+	var tile_states := []
+	for tile in session.pool.tiles:
+		tile_states.append(tile.is_showing_front())
+
+	var board_data := []
+	for row in range(Board.ROWS):
+		var row_data := []
+		for col in range(Board.COLUMNS):
+			var tile := session.board.tile_at(row, col)
+			row_data.append(tile_index[tile] if tile != null else -1)
+		board_data.append(row_data)
+
+	var data := {
+		"version": SAVE_VERSION,
+		"tile_states": tile_states,
+		"board": board_data,
+		"scoring": session.scoring.export_state(),
+		"puzzle_index": puzzle_index,
+	}
+
+	var file := FileAccess.open(path, FileAccess.WRITE)
+	if file == null:
+		return false
+	file.store_string(JSON.stringify(data))
+	return true
+
+
+# Reconstructs a free-play session from a file written by `save_free_play`
+# above — returns a Dictionary `{"session": FreePlaySession, "puzzle_index":
+# int}` (GDScript has no multi-return, so this is the plain way to hand
+# back two results at once), or null if the file is missing, isn't valid
+# JSON, or isn't actually a free-play save (checked via the `puzzle_index`
+# key below, which only ever appears in this format — see `save` above
+# for the turn-based format, which has no such key).
+static func load_free_play(path: String, dictionary: FrenchDictionary = null) -> Variant:
+	if not FileAccess.file_exists(path):
+		return null
+	var file := FileAccess.open(path, FileAccess.READ)
+	if file == null:
+		return null
+
+	var data = JSON.parse_string(file.get_as_text())
+	if data == null or not data.has("puzzle_index"):
+		return null
+
+	var session := FreePlaySession.new(dictionary)
+	for i in range(session.pool.tiles.size()):
+		session.pool.tiles[i].set_showing_front(data["tile_states"][i])
+
+	for row in range(Board.ROWS):
+		for col in range(Board.COLUMNS):
+			var index: int = int(data["board"][row][col])
+			if index != -1:
+				session.board.place(row, col, session.pool.tiles[index])
+
+	session.scoring.restore_state(data["scoring"])
+
+	return {"session": session, "puzzle_index": int(data["puzzle_index"])}
+
+
 # Maps each Tile object in `pool` to its fixed position in `pool.tiles` —
 # the shared "which physical tile is this" identity used throughout
 # `save` above.
