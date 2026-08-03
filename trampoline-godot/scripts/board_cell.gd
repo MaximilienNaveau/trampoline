@@ -34,6 +34,14 @@ var board: Board
 # itself: it has no notion of turns, only Board does.
 var draggable: bool = false
 
+# Whether a NEW tile could legally be dropped here right now — see
+# GameSession.can_place_here (turn-based play: must extend an existing
+# word) or FreePlaySession.can_place_here (free play: any empty cell).
+# Same reasoning as `draggable` above: BoardCell has no rules of its own,
+# it only asks whichever session is running through a Callable BoardView
+# hands it (see board_view.gd's `refresh`).
+var placeable: bool = false
+
 # This cell's own Label child, handed over once by BoardView right after
 # creating it (see board_view.gd's `_build_grid`) — kept here, not just
 # there, so this cell can redraw its own text/color itself (see `refresh`
@@ -79,7 +87,7 @@ func _can_drop_data(_at_position: Vector2, data: Variant) -> bool:
 		return WordMove.can_move(
 			board, data["word_from_row"], data["word_from_col"], row, col - grabbed_offset
 		)
-	return data.has("tile") and GrowthRules.can_place(board, row, col)
+	return data.has("tile") and placeable
 
 
 # Virtual function Godot calls once, only if `_can_drop_data` just returned

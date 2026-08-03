@@ -90,14 +90,16 @@ func _build_grid() -> void:
 		_cell_panels.append(panel_row)
 
 
-# Redraws every cell from `board`'s current state. `is_takeable` is a
-# Callable — GDScript's way of passing a function itself around as a value
-# (like a C++ std::function or a Python function reference), taking
-# `(row, col)` and answering whether that cell's tile can currently be
-# picked back up. BoardView calls it once per cell instead of knowing the
-# actual rule itself (see this file's header comment) — main.gd passes
-# `GameSession.can_take_back` here.
-func refresh(board: Board, is_takeable: Callable) -> void:
+# Redraws every cell from `board`'s current state. `is_takeable`/
+# `can_place_here` are Callables — GDScript's way of passing a function
+# itself around as a value (like a C++ std::function or a Python function
+# reference), each taking `(row, col)` and answering one question: whether
+# that cell's tile can currently be picked back up, and whether a NEW tile
+# could legally be dropped there. BoardView calls them once per cell
+# instead of knowing either rule itself (see this file's header comment)
+# — main.gd passes `GameSession.can_take_back`/`GameSession.can_place_here`
+# (or FreePlaySession's own versions) here.
+func refresh(board: Board, is_takeable: Callable, can_place_here: Callable) -> void:
 	for row in range(Board.ROWS):
 		for col in range(Board.COLUMNS):
 			var panel: BoardCell = _cell_panels[row][col]
@@ -105,6 +107,7 @@ func refresh(board: Board, is_takeable: Callable) -> void:
 			# future save/load ever swaps in a whole new Board instance.
 			panel.board = board
 			panel.draggable = is_takeable.call(row, col)
+			panel.placeable = can_place_here.call(row, col)
 			panel.refresh()
 
 

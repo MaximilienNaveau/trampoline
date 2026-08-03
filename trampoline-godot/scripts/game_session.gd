@@ -181,6 +181,14 @@ func flip_tile(row: int, col: int) -> bool:
 	return true
 
 
+# Whether (row, col) is currently a legal spot to drop a new tile (see
+# GrowthRules.can_place) — exposed so BoardView can ask through a Callable
+# (see board_view.gd's `refresh`) instead of BoardCell hardcoding
+# GrowthRules itself.
+func can_place_here(row: int, col: int) -> bool:
+	return GrowthRules.can_place(board, row, col)
+
+
 # Whether the current player may end their turn right now (see
 # word_challenge.gd — blocked while any word on the board is invalid).
 func can_end_turn() -> bool:
