@@ -32,11 +32,13 @@ signal tile_flipped(row: int, col: int)
 var _cell_panels: Array = []
 
 # `@onready` runs this line once this node's children actually exist
-# (right before `_ready()` — a plain `var _grid := $Grid` at the top of
-# the class would run too early, before the scene tree below this node
-# has been built). `$Grid` is shorthand for "find my child node named
-# Grid", declared in board_view.tscn.
-@onready var _grid: GridContainer = $Grid
+# (right before `_ready()` — a plain `var _grid := $Frame/Grid` at the top
+# of the class would run too early, before the scene tree below this node
+# has been built). `$Frame/Grid` is shorthand for "find my grandchild node
+# at path Frame/Grid" — Grid now sits inside a `PanelContainer` named
+# Frame, which draws the wood-textured board frame around it (see
+# board_view.tscn), rather than directly under BoardView.
+@onready var _grid: GridContainer = $Frame/Grid
 
 
 func _ready() -> void:
