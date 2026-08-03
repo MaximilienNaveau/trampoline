@@ -19,6 +19,7 @@ func _initialize() -> void:
 	_test_row_not_solved_when_partially_filled()
 	_test_row_not_solved_when_wrong_word()
 	_test_is_solved_only_true_when_every_row_matches()
+	_test_puzzle_index_selects_the_right_puzzle()
 
 	if _failures == 0:
 		print("\nAll checks passed.")
@@ -74,3 +75,17 @@ func _test_is_solved_only_true_when_every_row_matches() -> void:
 
 	_place_word(board, Board.ROWS - 1, puzzle.target_words[Board.ROWS - 1])
 	_check(puzzle.is_solved(board), "solved once every row matches its target")
+
+
+# Confirms CrosswordPuzzles.PUZZLES holds all 10 usable puzzles (see
+# crossword_puzzles.gd), and that `puzzle_index` actually picks between
+# them rather than always loading puzzle 1.
+func _test_puzzle_index_selects_the_right_puzzle() -> void:
+	_check(CrosswordPuzzles.PUZZLES.size() == 10, "all 10 usable puzzles are present")
+	var puzzle_1 := CrosswordPuzzle.new(0)
+	var puzzle_2 := CrosswordPuzzle.new(1)
+	_check(
+		puzzle_1.target_words[0] != puzzle_2.target_words[0],
+		"different puzzle indices load genuinely different data"
+	)
+	_check(puzzle_2.target_words[0] == "STABILITE", "puzzle_index 1 loads puzzle 2's own data")
