@@ -158,8 +158,19 @@ static func _build_tile_visual(tile: Tile, tile_size: Vector2) -> Control:
 
 
 # A StyleBoxFlat is Godot's simplest drawable: a solid-colored (optionally
-# rounded/bordered) rectangle.
+# rounded/bordered) rectangle. The border/corner/shadow here are meant to
+# echo the real tiles' look (see doc/real-game/): a small cork/wood cube
+# with a visibly darker edge, not a flat rectangle of pure color.
 static func _make_style(color: Color) -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
 	style.bg_color = color
+	# `darkened()` returns the same hue at a lower brightness — cheaper
+	# than a second color constant per caller, and always stays in sync
+	# with whichever color this style was actually built for.
+	style.border_color = color.darkened(0.35)
+	style.set_border_width_all(2)
+	style.set_corner_radius_all(4)
+	style.shadow_color = Color(0, 0, 0, 0.25)
+	style.shadow_size = 2
+	style.shadow_offset = Vector2(0, 1)
 	return style
