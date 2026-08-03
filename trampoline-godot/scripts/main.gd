@@ -64,7 +64,21 @@ var _timer_enabled: bool = false
 @onready var _four_players_button: Button = $StartMenu/FourPlayersButton
 @onready var _free_play_button: Button = $StartMenu/FreePlayButton
 @onready var _palette_view: HandView = $PaletteView
-@onready var _crossword_button: Button = $StartMenu/CrosswordButton
+# The 10 crossword puzzle-picker buttons, indexed 0..9 to match
+# CrosswordPuzzles.PUZZLES — see `_ready()`'s loop below for how each one
+# reports its own index, and crossword_puzzles.gd for the data itself.
+@onready var _crossword_puzzle_buttons: Array[Button] = [
+	$StartMenu/CrosswordPuzzle1Button,
+	$StartMenu/CrosswordPuzzle2Button,
+	$StartMenu/CrosswordPuzzle3Button,
+	$StartMenu/CrosswordPuzzle4Button,
+	$StartMenu/CrosswordPuzzle5Button,
+	$StartMenu/CrosswordPuzzle6Button,
+	$StartMenu/CrosswordPuzzle7Button,
+	$StartMenu/CrosswordPuzzle8Button,
+	$StartMenu/CrosswordPuzzle9Button,
+	$StartMenu/CrosswordPuzzle10Button,
+]
 @onready var _clue_list_view: ClueListView = $ClueListView
 
 
@@ -102,7 +116,12 @@ func _ready() -> void:
 	_three_players_button.pressed.connect(_on_player_count_chosen.bind(3))
 	_four_players_button.pressed.connect(_on_player_count_chosen.bind(4))
 	_free_play_button.pressed.connect(_on_free_play_chosen)
-	_crossword_button.pressed.connect(_on_crossword_chosen)
+	# Same `Callable.bind` idea as the player-count buttons above, but
+	# looped since there are 10 of them — each button reports its own
+	# index in `_crossword_puzzle_buttons` (and in CrosswordPuzzles.PUZZLES)
+	# instead of main.gd needing 10 near-identical connect lines.
+	for i in range(_crossword_puzzle_buttons.size()):
+		_crossword_puzzle_buttons[i].pressed.connect(_on_crossword_chosen.bind(i))
 	# The palette (free play) and the hand (turn-based play) are never both
 	# visible at once, so both can safely feed the same handler.
 	_palette_view.tile_returned.connect(_on_hand_tile_returned)
@@ -213,14 +232,16 @@ func _is_crossword() -> bool:
 	return _crossword_puzzle != null
 
 
-# Called when StartMenu's "Mots croisés" button is pressed. Reuses
-# free play's exact sandbox (all 117 tiles, unrestricted placement,
-# live scoring — see `_on_free_play_chosen` above) and adds the clue
-# list alongside it; `_refresh_views` is what actually checks progress
-# against the puzzle's hidden target each time something changes.
-func _on_crossword_chosen() -> void:
+# Called when one of StartMenu's crossword puzzle-number buttons is
+# pressed (see the `Callable.bind` loop in `_ready()` for how each one
+# reports its own index). Reuses free play's exact sandbox (all 117
+# tiles, unrestricted placement, live scoring — see `_on_free_play_chosen`
+# above) and adds the clue list alongside it; `_refresh_views` is what
+# actually checks progress against the puzzle's hidden target each time
+# something changes.
+func _on_crossword_chosen(puzzle_index: int) -> void:
 	_free_play_session = FreePlaySession.new()
-	_crossword_puzzle = CrosswordPuzzle.new()
+	_crossword_puzzle = CrosswordPuzzle.new(puzzle_index)
 	_start_menu.visible = false
 	_board_view.visible = true
 	_palette_view.visible = true
