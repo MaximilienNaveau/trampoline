@@ -1,8 +1,10 @@
 # Visualizes a Board's current state as a 13x9 grid of colored cells, and
 # accepts tiles dropped onto it from a HandView (see board_cell.gd/
-# tile_panel.gd for the actual drag-and-drop mechanics). No custom art yet,
-# just enough color to tell yellow letters, green letters, and empty cells
-# apart at a glance.
+# tile_panel.gd for the actual drag-and-drop mechanics). BoardView's own
+# root IS the wood-textured frame around the grid (see board_view.tscn's
+# `theme_override_styles/panel`) — a `PanelContainer` instead of a plain
+# `Control` so it reports the grid's real size to whatever contains it
+# (see main.tscn's container-based layout), not just a zero-size point.
 #
 # Deliberately knows nothing about GameSession, TurnManager, scoring, or
 # any other game rule: it only ever reads a `Board` (see board.gd), draws
@@ -13,7 +15,7 @@
 # calls `refresh(board, is_takeable)` after the board changes (placing/
 # removing/flipping/moving a tile).
 class_name BoardView
-extends Control
+extends PanelContainer
 
 # Re-broadcasts whichever cell just received a dropped/moved tile — see
 # board_cell.gd's own same-named signals for what a "signal" is, and for
@@ -32,23 +34,32 @@ signal tile_flipped(row: int, col: int)
 var _cell_panels: Array = []
 
 # `@onready` runs this line once this node's children actually exist
-# (right before `_ready()` — a plain `var _grid := $Frame/Grid` at the top
-# of the class would run too early, before the scene tree below this node
-# has been built). `$Frame/Grid` is shorthand for "find my grandchild node
-# at path Frame/Grid" — Grid now sits inside a `PanelContainer` named
-# Frame, which draws the wood-textured board frame around it (see
-# board_view.tscn), rather than directly under BoardView.
-@onready var _grid: GridContainer = $Frame/Grid
+# (right before `_ready()` — a plain `var _grid := $Grid` at the top of
+# the class would run too early, before the scene tree below this node
+# has been built). `$Grid` is shorthand for "find my child node named
+# Grid", declared in board_view.tscn.
+@onready var _grid: GridContainer = $Grid
 
 
 func _ready() -> void:
 	_build_grid()
+	# GridContainer's own `resized` signal fires whenever whatever contains
+	# BoardView (see main.tscn's portrait-first layout) hands it a
+	# different width — e.g. the player resizing the window, or an Android
+	# device simply having a different screen size than this one. Keeping
+	# cells sized off that, rather than a fixed 32px, is what makes the
+	# board fill the available width instead of always drawing the same
+	# small fixed-size grid regardless of screen size.
+	_grid.resized.connect(_update_cell_sizes)
+	_update_cell_sizes()
 
 
 # Creates all 117 cell nodes once, empty. GridContainer lays out its
 # children left-to-right then wraps after `columns` of them (set to 9 in
 # board_view.tscn), so simply adding them row by row, column by column,
-# naturally produces the right grid shape with no manual positioning.
+# naturally produces the right grid shape with no manual positioning. Each
+# cell's actual size is set separately, once real space is available (see
+# `_update_cell_sizes`) — not here, since nothing has been laid out yet.
 func _build_grid() -> void:
 	for row in range(Board.ROWS):
 		var panel_row: Array = []
@@ -57,7 +68,6 @@ func _build_grid() -> void:
 			panel.row = row
 			panel.col = col
 			panel.board_view = self
-			panel.custom_minimum_size = Vector2(32, 32)
 			panel.add_theme_stylebox_override("panel", TileView.empty_style())
 			# Connects this cell's own signals to methods on BoardView (see
 			# `_on_cell_tile_dropped`/`_on_cell_tile_moved` below) — the
@@ -90,6 +100,26 @@ func _build_grid() -> void:
 			_grid.add_child(panel)
 			panel_row.append(panel)
 		_cell_panels.append(panel_row)
+
+
+# Resizes every cell to be as big as it can while (a) staying square and
+# (b) fitting exactly `Board.COLUMNS` of them across whatever width
+# GridContainer currently has — instead of a fixed pixel size that would
+# leave empty space beside the board on a wide screen, or run off the edge
+# on a narrow one. `_grid.size.x` is GridContainer's OWN current width —
+# already whatever main.tscn's containers decided to give BoardView, minus
+# the wood frame's own margin (see board_view.tscn's PanelContainer style)
+# — so this only needs to subtract the gaps BETWEEN columns
+# (`h_separation`, a GridContainer theme constant) before dividing evenly.
+func _update_cell_sizes() -> void:
+	var separation: int = _grid.get_theme_constant("h_separation")
+	var available_width := _grid.size.x - separation * (Board.COLUMNS - 1)
+	if available_width <= 0:
+		return
+	var cell_side: float = floor(available_width / Board.COLUMNS)
+	for panel_row in _cell_panels:
+		for panel: BoardCell in panel_row:
+			panel.custom_minimum_size = Vector2(cell_side, cell_side)
 
 
 # Redraws every cell from `board`'s current state. `is_takeable`/

@@ -15,7 +15,20 @@ config/icon="res://assets/icon/app_icon.png"
 
 [display]
 
-window/size/viewport_height=700
+; A portrait base resolution (roughly a phone's own aspect ratio), since
+; the game is designed portrait-first (see main.tscn's vertical layout
+; stack). `stretch/mode="canvas_items"` scales this logical resolution up
+; to match a real screen's actual pixel density (so tiles/buttons stay a
+; sensible physical size on a high-DPI phone) while `stretch/aspect=
+; "expand"` — rather than "keep", which would letterbox with black bars —
+; hands the extra width/height on a differently-shaped screen (a wide PC
+; window, say) to the layout itself, so main.tscn's containers actually
+; reflow into that space instead of just being scaled uniformly.
+window/size/viewport_width=480
+window/size/viewport_height=854
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+window/handheld/orientation="portrait"
 
 [rendering]
 

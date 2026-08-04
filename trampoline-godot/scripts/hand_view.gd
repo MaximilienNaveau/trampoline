@@ -6,12 +6,13 @@
 # re-broadcast here as `tile_returned` the same way BoardView re-broadcasts
 # its own cells' signals.
 #
-# Instanced twice: as one player's turn-based hand (hand_view.tscn, a
-# single-row HBoxContainer), and as the free-play palette of every
-# currently-unplaced tile (scenes/palette_view.tscn, a scrollable
-# multi-row GridContainer) — this script itself doesn't care which, since
-# `refresh()` only ever deals in a plain list of tiles (see hand_row.gd's
-# own comment for why the SAME `Row` script backs both container shapes).
+# Instanced twice: as one player's turn-based hand (hand_view.tscn, an
+# HFlowContainer that wraps onto more rows rather than ever cropping a
+# full hand), and as the free-play palette of every currently-unplaced
+# tile (scenes/palette_view.tscn, a scrollable multi-row GridContainer) —
+# this script itself doesn't care which, since `refresh()` only ever deals
+# in a plain list of tiles (see hand_row.gd's own comment for why the SAME
+# `Row` script backs both container shapes).
 #
 # Unlike BoardView's grid (13x9, always the same 117 cells), the tiles
 # shown here change turn to turn — tiles leave when placed, more arrive on

@@ -10,8 +10,9 @@
 # `extends Container` rather than a specific box/grid layout: the drop
 # logic below cares nothing about HOW the tiles are arranged, only about
 # accepting a tile dragged off the board, so the identical script backs
-# both an HBoxContainer (a single-row hand) and a GridContainer (the
-# free-play palette, which needs to wrap 117 tiles across many rows).
+# both an HFlowContainer (the turn-based hand, wrapping onto more rows
+# rather than cropping a full hand) and a GridContainer (the free-play
+# palette, which needs to wrap 117 tiles across many rows).
 class_name HandRow
 extends Container
 

@@ -35,7 +35,7 @@ var _crossword_puzzle: CrosswordPuzzle
 var _timer_enabled: bool = false
 
 # Set while waiting for a save (triggered from the New Game confirmation
-# dialog's "Sauvegarder et recommencer" button, see
+# dialog's "Sauvegarder d'abord" button, see
 # `_on_save_and_restart_pressed`) to actually finish, so
 # `_on_save_file_selected` knows to follow it up with `_start_new_game`
 # — but only THAT save, not an ordinary standalone one from SaveButton.
@@ -58,65 +58,74 @@ var _player_names: Array[String] = []
 # the scene, so it needs a plain `var` here instead of `@onready`.
 var _save_and_restart_button: Button
 
-# `$BoardView`/`$HandView`/`$EndTurnButton`/`$Scoreboard`/`$GameOverBanner`/
-# `$EndTurnMessage`/`$SaveButton`/`$LoadButton`/`$NewGameButton`/
-# `$SaveFileDialog`/`$LoadFileDialog` look up the child nodes of those
-# names declared in scenes/main.tscn — the same shorthand board_view.gd
-# itself uses for its own "Grid" child. `@onready` runs this once those
-# children actually exist, rather than too early (see board_view.gd for
-# the same pattern).
-@onready var _board_view: BoardView = $BoardView
-@onready var _hand_view: HandView = $HandView
-@onready var _end_turn_button: Button = $EndTurnButton
-@onready var _scoreboard: Label = $Scoreboard
-@onready var _game_over_banner: Label = $GameOverBanner
-@onready var _end_turn_message: Label = $EndTurnMessage
-@onready var _save_button: Button = $SaveButton
-@onready var _load_button: Button = $LoadButton
-@onready var _new_game_button: Button = $NewGameButton
-@onready var _options_button: Button = $OptionsButton
-@onready var _options_panel: Panel = $OptionsPanel
-@onready var _timer_toggle: CheckButton = $OptionsPanel/TimerToggle
-@onready var _turn_timer_label: Label = $TurnTimerLabel
+# `$Layout/Content/...` look up the child nodes declared in scenes/main.tscn —
+# the same shorthand board_view.gd itself uses for its own "Grid" child.
+# `@onready` runs this once those children actually exist, rather than too
+# early (see board_view.gd for the same pattern). Everything visible lives
+# inside `Content`, a VBoxContainer that stacks top-to-bottom instead of
+# each node anchoring itself to a hand-picked pixel offset, so the whole
+# screen reflows on a narrower/taller window (a phone in portrait) instead
+# of clipping or running off-screen. `Layout`, the actual direct child of
+# Main, is a plain ScrollContainer wrapping `Content` — a safety net in
+# case some screen is too short to fit everything (the whole page scrolls
+# rather than cropping), not part of the reflow itself.
+@onready var _title: Label = $Layout/Content/Title
+@onready var _tagline: Label = $Layout/Content/Tagline
+@onready var _board_view: BoardView = $Layout/Content/PlayArea/BoardView
+@onready var _hand_view: HandView = $Layout/Content/PlayArea/HandView
+@onready var _end_turn_button: Button = $Layout/Content/TopBar/EndTurnButton
+@onready var _scoreboard: Label = $Layout/Content/Scoreboard
+@onready var _game_over_banner: Label = $Layout/Content/GameOverBanner
+@onready var _end_turn_message: Label = $Layout/Content/EndTurnMessage
+# Save/Load/New Game live inside the "☰" dropdown menu (OptionsPanel)
+# instead of a permanently-visible row, to leave more of a small phone
+# screen for the board itself — see `_on_options_pressed`.
+@onready var _save_button: Button = $Layout/Content/OptionsPanel/MenuItems/SaveButton
+@onready var _load_button: Button = $Layout/Content/OptionsPanel/MenuItems/LoadButton
+@onready var _new_game_button: Button = $Layout/Content/OptionsPanel/MenuItems/NewGameButton
+@onready var _options_button: Button = $Layout/Content/TopBar/OptionsButton
+@onready var _options_panel: PanelContainer = $Layout/Content/OptionsPanel
+@onready var _timer_toggle: CheckButton = $Layout/Content/OptionsPanel/MenuItems/TimerToggle
+@onready var _turn_timer_label: Label = $Layout/Content/TopBar/TurnTimerLabel
 @onready var _turn_timer: Timer = $TurnTimer
 @onready var _save_file_dialog: FileDialog = $SaveFileDialog
 @onready var _load_file_dialog: FileDialog = $LoadFileDialog
 @onready var _new_game_confirm_dialog: ConfirmationDialog = $NewGameConfirmDialog
-@onready var _start_menu: Control = $StartMenu
-@onready var _one_player_button: Button = $StartMenu/OnePlayerButton
-@onready var _two_players_button: Button = $StartMenu/TwoPlayersButton
-@onready var _three_players_button: Button = $StartMenu/ThreePlayersButton
-@onready var _four_players_button: Button = $StartMenu/FourPlayersButton
-@onready var _name_entry_menu: Control = $NameEntryMenu
+@onready var _start_menu: Control = $Layout/Content/StartMenu
+@onready var _one_player_button: Button = $Layout/Content/StartMenu/Players/OnePlayerButton
+@onready var _two_players_button: Button = $Layout/Content/StartMenu/Players/TwoPlayersButton
+@onready var _three_players_button: Button = $Layout/Content/StartMenu/Players/ThreePlayersButton
+@onready var _four_players_button: Button = $Layout/Content/StartMenu/Players/FourPlayersButton
+@onready var _name_entry_menu: Control = $Layout/Content/NameEntryMenu
 # The 4 name fields, indexed 0..3 to match player_id — see
 # `_on_player_count_chosen` for how only the first `count` of them are
 # actually shown.
 @onready var _name_edits: Array[LineEdit] = [
-	$NameEntryMenu/Name1Edit,
-	$NameEntryMenu/Name2Edit,
-	$NameEntryMenu/Name3Edit,
-	$NameEntryMenu/Name4Edit,
+	$Layout/Content/NameEntryMenu/Name1Edit,
+	$Layout/Content/NameEntryMenu/Name2Edit,
+	$Layout/Content/NameEntryMenu/Name3Edit,
+	$Layout/Content/NameEntryMenu/Name4Edit,
 ]
-@onready var _start_with_names_button: Button = $NameEntryMenu/StartWithNamesButton
-@onready var _back_to_start_menu_button: Button = $NameEntryMenu/BackToStartMenuButton
-@onready var _free_play_button: Button = $StartMenu/FreePlayButton
-@onready var _palette_view: HandView = $PaletteView
+@onready var _start_with_names_button: Button = $Layout/Content/NameEntryMenu/Buttons/StartButton
+@onready var _back_to_start_menu_button: Button = $Layout/Content/NameEntryMenu/Buttons/BackButton
+@onready var _free_play_button: Button = $Layout/Content/StartMenu/FreePlayButton
+@onready var _palette_view: HandView = $Layout/Content/PlayArea/PaletteView
 # The 10 crossword puzzle-picker buttons, indexed 0..9 to match
 # CrosswordPuzzles.PUZZLES — see `_ready()`'s loop below for how each one
 # reports its own index, and crossword_puzzles.gd for the data itself.
 @onready var _crossword_puzzle_buttons: Array[Button] = [
-	$StartMenu/CrosswordPuzzle1Button,
-	$StartMenu/CrosswordPuzzle2Button,
-	$StartMenu/CrosswordPuzzle3Button,
-	$StartMenu/CrosswordPuzzle4Button,
-	$StartMenu/CrosswordPuzzle5Button,
-	$StartMenu/CrosswordPuzzle6Button,
-	$StartMenu/CrosswordPuzzle7Button,
-	$StartMenu/CrosswordPuzzle8Button,
-	$StartMenu/CrosswordPuzzle9Button,
-	$StartMenu/CrosswordPuzzle10Button,
+	$Layout/Content/StartMenu/CrosswordGrid/CrosswordPuzzle1Button,
+	$Layout/Content/StartMenu/CrosswordGrid/CrosswordPuzzle2Button,
+	$Layout/Content/StartMenu/CrosswordGrid/CrosswordPuzzle3Button,
+	$Layout/Content/StartMenu/CrosswordGrid/CrosswordPuzzle4Button,
+	$Layout/Content/StartMenu/CrosswordGrid/CrosswordPuzzle5Button,
+	$Layout/Content/StartMenu/CrosswordGrid/CrosswordPuzzle6Button,
+	$Layout/Content/StartMenu/CrosswordGrid/CrosswordPuzzle7Button,
+	$Layout/Content/StartMenu/CrosswordGrid/CrosswordPuzzle8Button,
+	$Layout/Content/StartMenu/CrosswordGrid/CrosswordPuzzle9Button,
+	$Layout/Content/StartMenu/CrosswordGrid/CrosswordPuzzle10Button,
 ]
-@onready var _clue_list_view: ClueListView = $ClueListView
+@onready var _clue_list_view: ClueListView = $Layout/Content/PlayArea/ClueListView
 
 
 func _ready() -> void:
@@ -151,15 +160,13 @@ func _ready() -> void:
 	# the same way `file_selected` fires when one WAS picked.
 	_save_file_dialog.canceled.connect(_on_save_file_dialog_canceled)
 	# `confirmed` fires when the dialog's own built-in OK button (relabeled
-	# "Recommencer sans sauvegarder" — see scenes/main.tscn) is pressed.
+	# "Recommencer" — see scenes/main.tscn) is pressed.
 	_new_game_confirm_dialog.confirmed.connect(_start_new_game)
 	# `add_button` is how a ConfirmationDialog gets a THIRD button beyond
 	# its built-in OK/Cancel — it returns the new Button itself, the same
 	# as if it had been declared in the scene, so its `pressed` signal
 	# connects the usual way.
-	_save_and_restart_button = _new_game_confirm_dialog.add_button(
-		"Sauvegarder et recommencer", true
-	)
+	_save_and_restart_button = _new_game_confirm_dialog.add_button("Sauvegarder d'abord", true)
 	_save_and_restart_button.pressed.connect(_on_save_and_restart_pressed)
 	# `Callable.bind(n)` hands the same method one extra fixed argument
 	# per button (n itself), rather than writing four near-identical
@@ -269,6 +276,8 @@ func _on_names_confirmed() -> void:
 		_player_names.append(entered if entered != "" else "Joueur %d" % (i + 1))
 	_session = GameSession.new(_pending_player_count)
 	_name_entry_menu.visible = false
+	_title.visible = false
+	_tagline.visible = false
 	_board_view.visible = true
 	_hand_view.visible = true
 	_end_turn_button.visible = true
@@ -300,6 +309,8 @@ func _is_free_play() -> bool:
 func _on_free_play_chosen() -> void:
 	_free_play_session = FreePlaySession.new()
 	_start_menu.visible = false
+	_title.visible = false
+	_tagline.visible = false
 	_board_view.visible = true
 	_palette_view.visible = true
 	_new_game_button.visible = true
@@ -326,6 +337,8 @@ func _on_crossword_chosen(puzzle_index: int) -> void:
 	_free_play_session = FreePlaySession.new()
 	_crossword_puzzle = CrosswordPuzzle.new(puzzle_index)
 	_start_menu.visible = false
+	_title.visible = false
+	_tagline.visible = false
 	_board_view.visible = true
 	_palette_view.visible = true
 	_clue_list_view.visible = true
@@ -339,16 +352,19 @@ func _on_crossword_chosen(puzzle_index: int) -> void:
 # abandoning the current session outright (see `_start_new_game`,
 # `_on_save_and_restart_pressed`, and NewGameConfirmDialog in
 # scenes/main.tscn for the actual 3-way choice: restart without saving,
-# save first then restart, or cancel and keep playing).
+# save first then restart, or cancel and keep playing). Closes the "☰"
+# dropdown first — otherwise it would stay open, floating over the
+# confirmation dialog.
 func _on_new_game_pressed() -> void:
+	_options_panel.visible = false
 	_new_game_confirm_dialog.popup_centered()
 
 
 # Actually abandons the current session (unsaved progress is lost unless
-# the player chose "Sauvegarder et recommencer" first — see
+# the player chose "Sauvegarder d'abord" first — see
 # `_on_save_and_restart_pressed`) and goes back to `StartMenu`. Connected
 # to NewGameConfirmDialog's `confirmed` signal (its built-in OK button,
-# relabeled "Recommencer sans sauvegarder" in scenes/main.tscn).
+# relabeled "Recommencer" in scenes/main.tscn).
 func _start_new_game() -> void:
 	_session = null
 	_free_play_session = null
@@ -356,7 +372,7 @@ func _start_new_game() -> void:
 	_return_to_start_menu()
 
 
-# Called when NewGameConfirmDialog's extra "Sauvegarder et recommencer"
+# Called when NewGameConfirmDialog's extra "Sauvegarder d'abord"
 # button is pressed. Closes this dialog and opens the ordinary save
 # FileDialog instead — `_on_save_file_selected` is what actually follows
 # through with `_start_new_game` once that save completes, via
@@ -375,8 +391,11 @@ func _on_save_file_dialog_canceled() -> void:
 
 
 # Called when the options button ("☰") is pressed — just shows/hides
-# OptionsPanel; nothing in it needs `_session` to exist, unlike
-# Save/Load/New Game, so this is available even from the start menu.
+# OptionsPanel, the dropdown menu holding Save/Load/New Game/the timer
+# toggle. Showing the button itself doesn't need `_session` to exist, but
+# Save/Load/New Game inside the menu are hidden individually until a game
+# actually starts, the same as before (see `_on_names_confirmed`/
+# `_return_to_start_menu`).
 func _on_options_pressed() -> void:
 	_options_panel.visible = not _options_panel.visible
 
@@ -428,14 +447,17 @@ func _process(_delta: float) -> void:
 # Called when the Save button is pressed — opens the save FileDialog (see
 # scenes/main.tscn) rather than saving straight away, so the player picks
 # where. The actual write happens in `_on_save_file_selected` once they
-# confirm a path.
+# confirm a path. Closes the "☰" dropdown first, the same reasoning as
+# `_on_new_game_pressed`.
 func _on_save_pressed() -> void:
+	_options_panel.visible = false
 	_save_file_dialog.popup_centered()
 
 
 # Called when the Load button is pressed — same idea as `_on_save_pressed`,
 # for the load FileDialog.
 func _on_load_pressed() -> void:
+	_options_panel.visible = false
 	_load_file_dialog.popup_centered()
 
 
@@ -574,6 +596,8 @@ func _format_end_turn_error() -> String:
 # by `_start_new_game()` (after abandoning one).
 func _return_to_start_menu() -> void:
 	_start_menu.visible = true
+	_title.visible = true
+	_tagline.visible = true
 	_board_view.visible = false
 	_hand_view.visible = false
 	_end_turn_button.visible = false
@@ -583,6 +607,7 @@ func _return_to_start_menu() -> void:
 	_palette_view.visible = false
 	_clue_list_view.visible = false
 	_name_entry_menu.visible = false
+	_options_panel.visible = false
 	_player_names = []
 	_end_turn_message.text = ""
 	_game_over_banner.text = ""
