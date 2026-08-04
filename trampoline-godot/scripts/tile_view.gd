@@ -12,68 +12,6 @@ const YELLOW_COLOR := Color(0.96, 0.87, 0.4)
 const GREEN_COLOR := Color(0.6, 0.85, 0.55)
 const EMPTY_COLOR := Color(0.88, 0.88, 0.88)
 
-# Built once, on first use, and reused by every tile/cell afterwards (see
-# `add_bevel_highlight` below) — a `Texture2D` (what `Gradient`Texture2D`
-# actually is) can be handed to any number of nodes at once, the same
-# image drawn stretched to fit each one, so there's no need for a fresh
-# copy per tile. `static var` (unlike a plain `var` on a `RefCounted`
-# class like this one, which never gets instantiated) is GDScript's way
-# of sharing one value across every caller of these `static func`s.
-static var _bevel_texture: GradientTexture2D
-
-
-# The diagonal light-to-dark sheen `add_bevel_highlight` draws over a
-# tile — built lazily (only the first time anything asks for it) since
-# most of a session's tiles are drawn well after this file first loads.
-static func _get_bevel_texture() -> GradientTexture2D:
-	if _bevel_texture == null:
-		# A `Gradient` is just a list of colors at positions (0 to 1) along
-		# a line; `set_color`/`add_point` below give it exactly two, one at
-		# each end — semi-transparent white fading to semi-transparent
-		# black is what reads as "light hitting the top-left corner of a
-		# raised surface, shadow pooling in the opposite corner."
-		var gradient := Gradient.new()
-		gradient.set_color(0, Color(1, 1, 1, 0.35))
-		gradient.set_color(1, Color(0, 0, 0, 0.2))
-		_bevel_texture = GradientTexture2D.new()
-		_bevel_texture.gradient = gradient
-		# `fill_from`/`fill_to` are in UV space (0,0 = top-left corner of
-		# whatever this texture is stretched across, 1,1 = bottom-right) —
-		# a straight line between those two corners is the actual diagonal.
-		_bevel_texture.fill_from = Vector2(0, 0)
-		_bevel_texture.fill_to = Vector2(1, 1)
-	return _bevel_texture
-
-
-# Lays a subtle diagonal light/shadow sheen over `panel` — the cheap,
-# shader-free way to make a flat-colored StyleBoxFlat rectangle read as a
-# small raised cube instead, echoing the real tiles' chunky wood/cork
-# look (see doc/real-game/). Every tile/cell view (BoardCell in
-# board_view.gd, TilePanel in hand_view.gd, and this file's own drag
-# preview below) calls this once, right after setting its base color —
-# never inside `refresh()`, since the sheen itself never changes.
-static func add_bevel_highlight(panel: Panel) -> void:
-	var sheen := TextureRect.new()
-	sheen.texture = _get_bevel_texture()
-	sheen.set_anchors_preset(Control.PRESET_FULL_RECT)
-	# `stretch_mode` makes the texture's own *pixels* fill whatever size
-	# this tile ends up at (which varies — see board_view.gd's
-	# `_update_cell_sizes`) instead of tiling. That alone isn't enough,
-	# though: a `TextureRect`'s default `expand_mode` keeps the CONTROL
-	# itself sized to the texture's own natural pixel dimensions
-	# (`GradientTexture2D`'s default width/height), no matter what its
-	# anchors say — so without this, every sheen was actually rendering
-	# as a fixed ~100x100 square regardless of tile size, spilling out
-	# over neighboring tiles and the bare background beyond them.
-	# IGNORE_SIZE is what makes it truly follow the anchors instead.
-	sheen.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	sheen.stretch_mode = TextureRect.STRETCH_SCALE
-	# Otherwise this full-rect overlay would swallow every click/drag
-	# meant for the tile underneath it (see board_cell.gd's `_gui_input`
-	# for why MOUSE_FILTER_IGNORE is the right one to reach for here).
-	sheen.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	panel.add_child(sheen)
-
 
 # The style to draw an occupied cell/tile with, based on which face it's
 # currently showing.
@@ -207,7 +145,6 @@ static func _build_tile_visual(tile: Tile, tile_size: Vector2) -> Control:
 	var visual := Panel.new()
 	visual.size = tile_size
 	visual.add_theme_stylebox_override("panel", style_for_tile(tile))
-	add_bevel_highlight(visual)
 	var label := Label.new()
 	label.set_anchors_preset(Control.PRESET_FULL_RECT)
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -221,9 +158,13 @@ static func _build_tile_visual(tile: Tile, tile_size: Vector2) -> Control:
 
 
 # A StyleBoxFlat is Godot's simplest drawable: a solid-colored (optionally
-# rounded/bordered) rectangle. The border/corner/shadow here are meant to
-# echo the real tiles' look (see doc/real-game/): a small cork/wood cube
-# with a visibly darker edge, not a flat rectangle of pure color.
+# rounded/bordered) rectangle. Deliberately kept flat rather than
+# embossed/beveled — a stronger "3D" look (tried and rejected earlier)
+# reads fine on one isolated tile but turns into a busy, repetitive
+# waffle pattern once tiled edge-to-edge 117 times across the board. A
+# thin border plus a soft shadow — closer to how a polished mobile
+# Scrabble app draws its own tiles — is what actually holds up at that
+# scale: a clean, flat color that still visibly sits above the board.
 static func _make_style(color: Color) -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
 	style.bg_color = color
@@ -233,7 +174,7 @@ static func _make_style(color: Color) -> StyleBoxFlat:
 	style.border_color = color.darkened(0.35)
 	style.set_border_width_all(2)
 	style.set_corner_radius_all(4)
-	style.shadow_color = Color(0, 0, 0, 0.25)
-	style.shadow_size = 2
-	style.shadow_offset = Vector2(0, 1)
+	style.shadow_color = Color(0, 0, 0, 0.3)
+	style.shadow_size = 3
+	style.shadow_offset = Vector2(0, 2)
 	return style

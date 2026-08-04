@@ -9,10 +9,12 @@
 # Instanced twice: as one player's turn-based hand (hand_view.tscn, an
 # HFlowContainer that wraps onto more rows rather than ever cropping a
 # full hand), and as the free-play palette of every currently-unplaced
-# tile (scenes/palette_view.tscn, a scrollable multi-row GridContainer) —
-# this script itself doesn't care which, since `refresh()` only ever deals
-# in a plain list of tiles (see hand_row.gd's own comment for why the SAME
-# `Row` script backs both container shapes).
+# tile (scenes/palette_view.tscn, a 4-column GridContainer tall enough
+# that main.tscn's own page-level scrolling is what reveals the rest,
+# rather than a second, nested scrollbar of its own) — this script itself
+# doesn't care which, since `refresh()` only ever deals in a plain list
+# of tiles (see hand_row.gd's own comment for why the SAME `Row` script
+# backs both container shapes).
 #
 # Unlike BoardView's grid (13x9, always the same 117 cells), the tiles
 # shown here change turn to turn — tiles leave when placed, more arrive on
@@ -70,7 +72,6 @@ func refresh(hand: Array[Tile]) -> void:
 		panel.mouse_filter = Control.MOUSE_FILTER_PASS
 		panel.custom_minimum_size = Vector2(32, 32)
 		panel.add_theme_stylebox_override("panel", TileView.style_for_tile(tile))
-		TileView.add_bevel_highlight(panel)
 
 		var label := Label.new()
 		label.set_anchors_preset(Control.PRESET_FULL_RECT)

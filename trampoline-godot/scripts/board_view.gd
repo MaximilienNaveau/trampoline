@@ -79,10 +79,6 @@ func _build_grid() -> void:
 			panel.col = col
 			panel.board_view = self
 			panel.add_theme_stylebox_override("panel", TileView.empty_style())
-			# A subtle light/shadow sheen (see tile_view.gd), added once here
-			# rather than in `refresh()` below — it never needs to change,
-			# whatever tile (if any) this cell ends up showing.
-			TileView.add_bevel_highlight(panel)
 			# Connects this cell's own signals to methods on BoardView (see
 			# `_on_cell_tile_dropped`/`_on_cell_tile_moved` below) — the
 			# standard Godot way of reacting to a signal, same idea as a Qt
