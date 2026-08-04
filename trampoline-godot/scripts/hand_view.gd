@@ -70,6 +70,7 @@ func refresh(hand: Array[Tile]) -> void:
 		panel.mouse_filter = Control.MOUSE_FILTER_PASS
 		panel.custom_minimum_size = Vector2(32, 32)
 		panel.add_theme_stylebox_override("panel", TileView.style_for_tile(tile))
+		TileView.add_bevel_highlight(panel)
 
 		var label := Label.new()
 		label.set_anchors_preset(Control.PRESET_FULL_RECT)

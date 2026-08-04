@@ -28,6 +28,12 @@ signal tile_moved(from_row: int, from_col: int, to_row: int, to_col: int)
 signal word_moved(from_row: int, from_col: int, to_row: int, to_col: int)
 signal tile_flipped(row: int, col: int)
 
+# Mirrors the fixed border main.tscn's own `Margin` node keeps around the
+# whole page — used by `_update_cell_sizes` below, which has no direct
+# way to ask that node for its own margin, so this just needs to be kept
+# in sync with it by hand if it ever changes.
+const _PAGE_MARGIN := 24.0
+
 # One cell per board square, indexed [row][col] — built once in _ready()
 # and reused by refresh(), rather than destroying and recreating 117 nodes
 # every time the board changes.
@@ -43,14 +49,18 @@ var _cell_panels: Array = []
 
 func _ready() -> void:
 	_build_grid()
-	# GridContainer's own `resized` signal fires whenever whatever contains
-	# BoardView (see main.tscn's portrait-first layout) hands it a
-	# different width — e.g. the player resizing the window, or an Android
-	# device simply having a different screen size than this one. Keeping
-	# cells sized off that, rather than a fixed 32px, is what makes the
-	# board fill the available width instead of always drawing the same
-	# small fixed-size grid regardless of screen size.
-	_grid.resized.connect(_update_cell_sizes)
+	# The viewport's own `size_changed` signal fires whenever the actual
+	# window/screen size changes — e.g. the player resizing the window,
+	# or an Android device simply having a different screen size than
+	# this one. Keeping cells sized off that, rather than a fixed 32px,
+	# is what makes the board fill the available width instead of always
+	# drawing the same small fixed-size grid regardless of screen size.
+	# (Listening on `_grid.resized` instead, as an earlier version of
+	# this did, doesn't work: once cells claim some size, nothing ever
+	# asks for less than that again, so GridContainer itself would only
+	# ever grow, never actually shrink back down to even NOTICE a
+	# smaller window — see `_update_cell_sizes`'s own comment.)
+	get_viewport().size_changed.connect(_update_cell_sizes)
 	_update_cell_sizes()
 
 
@@ -69,6 +79,10 @@ func _build_grid() -> void:
 			panel.col = col
 			panel.board_view = self
 			panel.add_theme_stylebox_override("panel", TileView.empty_style())
+			# A subtle light/shadow sheen (see tile_view.gd), added once here
+			# rather than in `refresh()` below — it never needs to change,
+			# whatever tile (if any) this cell ends up showing.
+			TileView.add_bevel_highlight(panel)
 			# Connects this cell's own signals to methods on BoardView (see
 			# `_on_cell_tile_dropped`/`_on_cell_tile_moved` below) — the
 			# standard Godot way of reacting to a signal, same idea as a Qt
@@ -103,23 +117,42 @@ func _build_grid() -> void:
 
 
 # Resizes every cell to be as big as it can while (a) staying square and
-# (b) fitting exactly `Board.COLUMNS` of them across whatever width
-# GridContainer currently has — instead of a fixed pixel size that would
-# leave empty space beside the board on a wide screen, or run off the edge
-# on a narrow one. `_grid.size.x` is GridContainer's OWN current width —
-# already whatever main.tscn's containers decided to give BoardView, minus
-# the wood frame's own margin (see board_view.tscn's PanelContainer style)
-# — so this only needs to subtract the gaps BETWEEN columns
-# (`h_separation`, a GridContainer theme constant) before dividing evenly.
+# (b) fitting exactly `Board.COLUMNS` of them across the viewport's
+# current width — instead of a fixed pixel size that would leave empty
+# space beside the board on a wide screen, or run off the edge on a
+# narrow one. Deliberately reads the VIEWPORT's width rather than
+# `_grid.size.x` (GridContainer's own current width) — a cell's own
+# `custom_minimum_size` is exactly what feeds into how wide GridContainer
+# (and everything containing it, up to BoardView itself) reports
+# NEEDING to be, so measuring that directly has a feedback problem: once
+# cells have claimed some size, nothing ever asks a *container* for less
+# than that claim again, even once the window shrinks and there's
+# genuinely less room. That was a real, one-way-ratchet bug this used to
+# have. The viewport's own width is the one number in this whole chain
+# that's never influenced by how big the cells last were.
 func _update_cell_sizes() -> void:
+	# The wood frame's own left/right content margin (see
+	# board_view.tscn's StyleBoxTexture) already eats into how much of
+	# BoardView's own width the grid actually gets — read directly off
+	# the stylebox rather than hardcoding it a second time here.
+	var frame_style: StyleBox = get_theme_stylebox("panel")
+	var frame_margin: float = frame_style.content_margin_left + frame_style.content_margin_right
 	var separation: int = _grid.get_theme_constant("h_separation")
-	var available_width := _grid.size.x - separation * (Board.COLUMNS - 1)
+	var available_width := (
+		get_viewport_rect().size.x - frame_margin - _PAGE_MARGIN - separation * (Board.COLUMNS - 1)
+	)
 	if available_width <= 0:
 		return
 	var cell_side: float = floor(available_width / Board.COLUMNS)
+	# The letter's font size scales with the cell itself, rather than
+	# staying fixed — a fixed size would look tiny on a wide screen's
+	# huge cells, or overflow a narrow screen's small ones. This ratio
+	# was picked by eye against the tile art.
+	var font_size := int(cell_side * 0.5)
 	for panel_row in _cell_panels:
 		for panel: BoardCell in panel_row:
 			panel.custom_minimum_size = Vector2(cell_side, cell_side)
+			panel.label.add_theme_font_size_override("font_size", font_size)
 
 
 # Redraws every cell from `board`'s current state. `is_takeable`/
