@@ -35,244 +35,255 @@ grow_horizontal=2
 grow_vertical=2
 horizontal_scroll_mode=0
 
-[node name="Content" type="VBoxContainer" parent="Layout"]
+[node name="Margin" type="MarginContainer" parent="Layout"]
+layout_mode=2
+size_flags_horizontal=3
+theme_override_constants/margin_left=12
+theme_override_constants/margin_top=12
+theme_override_constants/margin_right=12
+theme_override_constants/margin_bottom=12
+
+[node name="Content" type="VBoxContainer" parent="Layout/Margin"]
 layout_mode=2
 size_flags_horizontal=3
 theme_override_constants/separation=14
 
-[node name="TopBar" type="HBoxContainer" parent="Layout/Content"]
+[node name="TopBar" type="HBoxContainer" parent="Layout/Margin/Content"]
 layout_mode=2
 size_flags_horizontal=4
 theme_override_constants/separation=10
 
-[node name="OptionsButton" type="Button" parent="Layout/Content/TopBar"]
+[node name="OptionsButton" type="Button" parent="Layout/Margin/Content/TopBar"]
 layout_mode=2
 text="☰"
 
-[node name="TurnTimerLabel" type="Label" parent="Layout/Content/TopBar"]
+[node name="TurnTimerLabel" type="Label" parent="Layout/Margin/Content/TopBar"]
 layout_mode=2
 horizontal_alignment=1
 vertical_alignment=1
 visible=false
 
-[node name="EndTurnButton" type="Button" parent="Layout/Content/TopBar"]
+[node name="EndTurnButton" type="Button" parent="Layout/Margin/Content/TopBar"]
 layout_mode=2
 text="Fin du tour"
 
-[node name="OptionsPanel" type="PanelContainer" parent="Layout/Content"]
+[node name="OptionsPanel" type="PanelContainer" parent="Layout/Margin/Content"]
 layout_mode=2
 size_flags_horizontal=4
 visible=false
 
-[node name="MenuItems" type="VBoxContainer" parent="Layout/Content/OptionsPanel"]
+[node name="MenuItems" type="VBoxContainer" parent="Layout/Margin/Content/OptionsPanel"]
 layout_mode=2
 theme_override_constants/separation=6
 
-[node name="SaveButton" type="Button" parent="Layout/Content/OptionsPanel/MenuItems"]
+[node name="SaveButton" type="Button" parent="Layout/Margin/Content/OptionsPanel/MenuItems"]
 layout_mode=2
 text="Sauvegarder"
 
-[node name="LoadButton" type="Button" parent="Layout/Content/OptionsPanel/MenuItems"]
+[node name="LoadButton" type="Button" parent="Layout/Margin/Content/OptionsPanel/MenuItems"]
 layout_mode=2
 text="Charger"
 
-[node name="NewGameButton" type="Button" parent="Layout/Content/OptionsPanel/MenuItems"]
+[node name="NewGameButton" type="Button" parent="Layout/Margin/Content/OptionsPanel/MenuItems"]
 layout_mode=2
 text="Nouvelle partie"
 
-[node name="TimerToggle" type="CheckButton" parent="Layout/Content/OptionsPanel/MenuItems"]
+[node name="TimerToggle" type="CheckButton" parent="Layout/Margin/Content/OptionsPanel/MenuItems"]
 layout_mode=2
 text="Minuteur (3 min)"
 
-[node name="Title" type="Label" parent="Layout/Content"]
+[node name="Title" type="Label" parent="Layout/Margin/Content"]
 layout_mode=2
 theme_override_font_sizes/font_size=32
 horizontal_alignment=1
 text="Trampoline"
 
-[node name="Tagline" type="Label" parent="Layout/Content"]
+[node name="Tagline" type="Label" parent="Layout/Margin/Content"]
 layout_mode=2
 horizontal_alignment=1
 text="Un jeu pour faire rebondir les mots"
 
-[node name="Scoreboard" type="Label" parent="Layout/Content"]
+[node name="Scoreboard" type="Label" parent="Layout/Margin/Content"]
 layout_mode=2
 horizontal_alignment=1
+visible=false
 
-[node name="GameOverBanner" type="Label" parent="Layout/Content"]
+[node name="GameOverBanner" type="Label" parent="Layout/Margin/Content"]
 layout_mode=2
 theme_override_colors/font_color=Color(0.96, 0.4, 0.4, 1)
 theme_override_font_sizes/font_size=20
 horizontal_alignment=1
+visible=false
 
-[node name="EndTurnMessage" type="Label" parent="Layout/Content"]
+[node name="EndTurnMessage" type="Label" parent="Layout/Margin/Content"]
 layout_mode=2
 theme_override_colors/font_color=Color(0.96, 0.4, 0.4, 1)
 horizontal_alignment=1
 autowrap_mode=2
+visible=false
 
-[node name="StartMenu" type="VBoxContainer" parent="Layout/Content"]
+[node name="StartMenu" type="VBoxContainer" parent="Layout/Margin/Content"]
 layout_mode=2
 theme_override_constants/separation=16
 
-[node name="Prompt" type="Label" parent="Layout/Content/StartMenu"]
+[node name="Prompt" type="Label" parent="Layout/Margin/Content/StartMenu"]
 layout_mode=2
 horizontal_alignment=1
 text="Combien de joueurs ?"
 
-[node name="Players" type="HBoxContainer" parent="Layout/Content/StartMenu"]
+[node name="Players" type="HBoxContainer" parent="Layout/Margin/Content/StartMenu"]
 layout_mode=2
 size_flags_horizontal=4
 theme_override_constants/separation=10
 
-[node name="OnePlayerButton" type="Button" parent="Layout/Content/StartMenu/Players"]
+[node name="Button1" type="Button" parent="Layout/Margin/Content/StartMenu/Players"]
 custom_minimum_size=Vector2(64, 48)
 layout_mode=2
 text="1"
 
-[node name="TwoPlayersButton" type="Button" parent="Layout/Content/StartMenu/Players"]
+[node name="Button2" type="Button" parent="Layout/Margin/Content/StartMenu/Players"]
 custom_minimum_size=Vector2(64, 48)
 layout_mode=2
 text="2"
 
-[node name="ThreePlayersButton" type="Button" parent="Layout/Content/StartMenu/Players"]
+[node name="Button3" type="Button" parent="Layout/Margin/Content/StartMenu/Players"]
 custom_minimum_size=Vector2(64, 48)
 layout_mode=2
 text="3"
 
-[node name="FourPlayersButton" type="Button" parent="Layout/Content/StartMenu/Players"]
+[node name="Button4" type="Button" parent="Layout/Margin/Content/StartMenu/Players"]
 custom_minimum_size=Vector2(64, 48)
 layout_mode=2
 text="4"
 
-[node name="FreePlayButton" type="Button" parent="Layout/Content/StartMenu"]
+[node name="FreePlayButton" type="Button" parent="Layout/Margin/Content/StartMenu"]
 layout_mode=2
 size_flags_horizontal=4
 text="Jeu libre"
 
-[node name="CrosswordPrompt" type="Label" parent="Layout/Content/StartMenu"]
+[node name="CrosswordPrompt" type="Label" parent="Layout/Margin/Content/StartMenu"]
 layout_mode=2
 horizontal_alignment=1
 text="Mots croisés :"
 
-[node name="CrosswordGrid" type="GridContainer" parent="Layout/Content/StartMenu"]
+[node name="CrosswordGrid" type="GridContainer" parent="Layout/Margin/Content/StartMenu"]
 layout_mode=2
 size_flags_horizontal=4
 theme_override_constants/h_separation=8
 theme_override_constants/v_separation=8
 columns=5
 
-[node name="CrosswordPuzzle1Button" type="Button" parent="Layout/Content/StartMenu/CrosswordGrid"]
+[node name="CrosswordPuzzle1Button" type="Button" parent="Layout/Margin/Content/StartMenu/CrosswordGrid"]
 custom_minimum_size=Vector2(52, 44)
 layout_mode=2
 text="1"
 
-[node name="CrosswordPuzzle2Button" type="Button" parent="Layout/Content/StartMenu/CrosswordGrid"]
+[node name="CrosswordPuzzle2Button" type="Button" parent="Layout/Margin/Content/StartMenu/CrosswordGrid"]
 custom_minimum_size=Vector2(52, 44)
 layout_mode=2
 text="2"
 
-[node name="CrosswordPuzzle3Button" type="Button" parent="Layout/Content/StartMenu/CrosswordGrid"]
+[node name="CrosswordPuzzle3Button" type="Button" parent="Layout/Margin/Content/StartMenu/CrosswordGrid"]
 custom_minimum_size=Vector2(52, 44)
 layout_mode=2
 text="3"
 
-[node name="CrosswordPuzzle4Button" type="Button" parent="Layout/Content/StartMenu/CrosswordGrid"]
+[node name="CrosswordPuzzle4Button" type="Button" parent="Layout/Margin/Content/StartMenu/CrosswordGrid"]
 custom_minimum_size=Vector2(52, 44)
 layout_mode=2
 text="4"
 
-[node name="CrosswordPuzzle5Button" type="Button" parent="Layout/Content/StartMenu/CrosswordGrid"]
+[node name="CrosswordPuzzle5Button" type="Button" parent="Layout/Margin/Content/StartMenu/CrosswordGrid"]
 custom_minimum_size=Vector2(52, 44)
 layout_mode=2
 text="5"
 
-[node name="CrosswordPuzzle6Button" type="Button" parent="Layout/Content/StartMenu/CrosswordGrid"]
+[node name="CrosswordPuzzle6Button" type="Button" parent="Layout/Margin/Content/StartMenu/CrosswordGrid"]
 custom_minimum_size=Vector2(52, 44)
 layout_mode=2
 text="6"
 
-[node name="CrosswordPuzzle7Button" type="Button" parent="Layout/Content/StartMenu/CrosswordGrid"]
+[node name="CrosswordPuzzle7Button" type="Button" parent="Layout/Margin/Content/StartMenu/CrosswordGrid"]
 custom_minimum_size=Vector2(52, 44)
 layout_mode=2
 text="7"
 
-[node name="CrosswordPuzzle8Button" type="Button" parent="Layout/Content/StartMenu/CrosswordGrid"]
+[node name="CrosswordPuzzle8Button" type="Button" parent="Layout/Margin/Content/StartMenu/CrosswordGrid"]
 custom_minimum_size=Vector2(52, 44)
 layout_mode=2
 text="8"
 
-[node name="CrosswordPuzzle9Button" type="Button" parent="Layout/Content/StartMenu/CrosswordGrid"]
+[node name="CrosswordPuzzle9Button" type="Button" parent="Layout/Margin/Content/StartMenu/CrosswordGrid"]
 custom_minimum_size=Vector2(52, 44)
 layout_mode=2
 text="9"
 
-[node name="CrosswordPuzzle10Button" type="Button" parent="Layout/Content/StartMenu/CrosswordGrid"]
+[node name="CrosswordPuzzle10Button" type="Button" parent="Layout/Margin/Content/StartMenu/CrosswordGrid"]
 custom_minimum_size=Vector2(52, 44)
 layout_mode=2
 text="10"
 
-[node name="NameEntryMenu" type="VBoxContainer" parent="Layout/Content"]
+[node name="NameEntry" type="VBoxContainer" parent="Layout/Margin/Content"]
 layout_mode=2
 theme_override_constants/separation=10
 visible=false
 
-[node name="Prompt" type="Label" parent="Layout/Content/NameEntryMenu"]
+[node name="Prompt" type="Label" parent="Layout/Margin/Content/NameEntry"]
 layout_mode=2
 horizontal_alignment=1
 text="Noms des joueurs :"
 
-[node name="Name1Edit" type="LineEdit" parent="Layout/Content/NameEntryMenu"]
+[node name="Name1Edit" type="LineEdit" parent="Layout/Margin/Content/NameEntry"]
 custom_minimum_size=Vector2(0, 44)
 layout_mode=2
 placeholder_text="Joueur 1"
 
-[node name="Name2Edit" type="LineEdit" parent="Layout/Content/NameEntryMenu"]
+[node name="Name2Edit" type="LineEdit" parent="Layout/Margin/Content/NameEntry"]
 custom_minimum_size=Vector2(0, 44)
 layout_mode=2
 placeholder_text="Joueur 2"
 
-[node name="Name3Edit" type="LineEdit" parent="Layout/Content/NameEntryMenu"]
+[node name="Name3Edit" type="LineEdit" parent="Layout/Margin/Content/NameEntry"]
 custom_minimum_size=Vector2(0, 44)
 layout_mode=2
 placeholder_text="Joueur 3"
 
-[node name="Name4Edit" type="LineEdit" parent="Layout/Content/NameEntryMenu"]
+[node name="Name4Edit" type="LineEdit" parent="Layout/Margin/Content/NameEntry"]
 custom_minimum_size=Vector2(0, 44)
 layout_mode=2
 placeholder_text="Joueur 4"
 
-[node name="Buttons" type="HBoxContainer" parent="Layout/Content/NameEntryMenu"]
+[node name="Buttons" type="HBoxContainer" parent="Layout/Margin/Content/NameEntry"]
 layout_mode=2
 size_flags_horizontal=4
 theme_override_constants/separation=10
 
-[node name="StartButton" type="Button" parent="Layout/Content/NameEntryMenu/Buttons"]
+[node name="StartButton" type="Button" parent="Layout/Margin/Content/NameEntry/Buttons"]
 layout_mode=2
 text="Commencer"
 
-[node name="BackButton" type="Button" parent="Layout/Content/NameEntryMenu/Buttons"]
+[node name="BackButton" type="Button" parent="Layout/Margin/Content/NameEntry/Buttons"]
 layout_mode=2
 text="Retour"
 
-[node name="PlayArea" type="VBoxContainer" parent="Layout/Content"]
+[node name="PlayArea" type="VBoxContainer" parent="Layout/Margin/Content"]
 layout_mode=2
 size_flags_vertical=3
 theme_override_constants/separation=10
 
-[node name="BoardView" parent="Layout/Content/PlayArea" instance=ExtResource("2")]
+[node name="BoardView" parent="Layout/Margin/Content/PlayArea" instance=ExtResource("2")]
 layout_mode=2
 
-[node name="HandView" parent="Layout/Content/PlayArea" instance=ExtResource("3")]
+[node name="HandView" parent="Layout/Margin/Content/PlayArea" instance=ExtResource("3")]
 layout_mode=2
 
-[node name="PaletteView" parent="Layout/Content/PlayArea" instance=ExtResource("4")]
+[node name="PaletteView" parent="Layout/Margin/Content/PlayArea" instance=ExtResource("4")]
 layout_mode=2
 size_flags_horizontal=4
 size_flags_vertical=3
 visible=false
 
-[node name="ClueListView" parent="Layout/Content/PlayArea" instance=ExtResource("5")]
+[node name="ClueListView" parent="Layout/Margin/Content/PlayArea" instance=ExtResource("5")]
 layout_mode=2
 size_flags_vertical=3
 visible=false

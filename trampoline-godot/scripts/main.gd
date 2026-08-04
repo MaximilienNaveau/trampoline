@@ -43,10 +43,10 @@ var _pending_new_game_after_save: bool = false
 
 # How many players StartMenu's count buttons picked, remembered between
 # that click and `_on_names_confirmed` actually creating the session —
-# NameEntryMenu needs to know how many name fields to show in between.
+# NameEntry needs to know how many name fields to show in between.
 var _pending_player_count: int = 0
 
-# The names entered in NameEntryMenu for the CURRENT turn-based session,
+# The names entered in NameEntry for the CURRENT turn-based session,
 # index 0 = player 0, etc. — used by `_player_name` below instead of the
 # plain "Joueur N" fallback. Not saved/loaded (see save_game.gd — a
 # loaded session has no names of its own), and irrelevant to free
@@ -58,7 +58,7 @@ var _player_names: Array[String] = []
 # the scene, so it needs a plain `var` here instead of `@onready`.
 var _save_and_restart_button: Button
 
-# `$Layout/Content/...` look up the child nodes declared in scenes/main.tscn —
+# `$Layout/Margin/Content/...` look up the child nodes declared in scenes/main.tscn —
 # the same shorthand board_view.gd itself uses for its own "Grid" child.
 # `@onready` runs this once those children actually exist, rather than too
 # early (see board_view.gd for the same pattern). Everything visible lives
@@ -66,66 +66,69 @@ var _save_and_restart_button: Button
 # each node anchoring itself to a hand-picked pixel offset, so the whole
 # screen reflows on a narrower/taller window (a phone in portrait) instead
 # of clipping or running off-screen. `Layout`, the actual direct child of
-# Main, is a plain ScrollContainer wrapping `Content` — a safety net in
-# case some screen is too short to fit everything (the whole page scrolls
-# rather than cropping), not part of the reflow itself.
-@onready var _title: Label = $Layout/Content/Title
-@onready var _tagline: Label = $Layout/Content/Tagline
-@onready var _board_view: BoardView = $Layout/Content/PlayArea/BoardView
-@onready var _hand_view: HandView = $Layout/Content/PlayArea/HandView
-@onready var _end_turn_button: Button = $Layout/Content/TopBar/EndTurnButton
-@onready var _scoreboard: Label = $Layout/Content/Scoreboard
-@onready var _game_over_banner: Label = $Layout/Content/GameOverBanner
-@onready var _end_turn_message: Label = $Layout/Content/EndTurnMessage
+# Main, is a plain ScrollContainer around it all — a safety net in case
+# some screen is too short to fit everything (the whole page scrolls
+# rather than cropping), not part of the reflow itself. `Margin`, right
+# below it, just adds a fixed border of breathing room around `Content`
+# on all four sides (see main.tscn) so nothing sits flush against the
+# screen edge.
+@onready var _title: Label = $Layout/Margin/Content/Title
+@onready var _tagline: Label = $Layout/Margin/Content/Tagline
+@onready var _board_view: BoardView = $Layout/Margin/Content/PlayArea/BoardView
+@onready var _hand_view: HandView = $Layout/Margin/Content/PlayArea/HandView
+@onready var _end_turn_button: Button = $Layout/Margin/Content/TopBar/EndTurnButton
+@onready var _scoreboard: Label = $Layout/Margin/Content/Scoreboard
+@onready var _game_over_banner: Label = $Layout/Margin/Content/GameOverBanner
+@onready var _end_turn_message: Label = $Layout/Margin/Content/EndTurnMessage
 # Save/Load/New Game live inside the "☰" dropdown menu (OptionsPanel)
 # instead of a permanently-visible row, to leave more of a small phone
 # screen for the board itself — see `_on_options_pressed`.
-@onready var _save_button: Button = $Layout/Content/OptionsPanel/MenuItems/SaveButton
-@onready var _load_button: Button = $Layout/Content/OptionsPanel/MenuItems/LoadButton
-@onready var _new_game_button: Button = $Layout/Content/OptionsPanel/MenuItems/NewGameButton
-@onready var _options_button: Button = $Layout/Content/TopBar/OptionsButton
-@onready var _options_panel: PanelContainer = $Layout/Content/OptionsPanel
-@onready var _timer_toggle: CheckButton = $Layout/Content/OptionsPanel/MenuItems/TimerToggle
-@onready var _turn_timer_label: Label = $Layout/Content/TopBar/TurnTimerLabel
+@onready var _save_button: Button = $Layout/Margin/Content/OptionsPanel/MenuItems/SaveButton
+@onready var _load_button: Button = $Layout/Margin/Content/OptionsPanel/MenuItems/LoadButton
+@onready var _new_game_button: Button = $Layout/Margin/Content/OptionsPanel/MenuItems/NewGameButton
+@onready var _options_button: Button = $Layout/Margin/Content/TopBar/OptionsButton
+@onready var _options_panel: PanelContainer = $Layout/Margin/Content/OptionsPanel
+@onready var _timer_toggle: CheckButton = $Layout/Margin/Content/OptionsPanel/MenuItems/TimerToggle
+@onready var _turn_timer_label: Label = $Layout/Margin/Content/TopBar/TurnTimerLabel
 @onready var _turn_timer: Timer = $TurnTimer
 @onready var _save_file_dialog: FileDialog = $SaveFileDialog
 @onready var _load_file_dialog: FileDialog = $LoadFileDialog
 @onready var _new_game_confirm_dialog: ConfirmationDialog = $NewGameConfirmDialog
-@onready var _start_menu: Control = $Layout/Content/StartMenu
-@onready var _one_player_button: Button = $Layout/Content/StartMenu/Players/OnePlayerButton
-@onready var _two_players_button: Button = $Layout/Content/StartMenu/Players/TwoPlayersButton
-@onready var _three_players_button: Button = $Layout/Content/StartMenu/Players/ThreePlayersButton
-@onready var _four_players_button: Button = $Layout/Content/StartMenu/Players/FourPlayersButton
-@onready var _name_entry_menu: Control = $Layout/Content/NameEntryMenu
+@onready var _start_menu: Control = $Layout/Margin/Content/StartMenu
+@onready var _one_player_button: Button = $Layout/Margin/Content/StartMenu/Players/Button1
+@onready var _two_players_button: Button = $Layout/Margin/Content/StartMenu/Players/Button2
+@onready var _three_players_button: Button = $Layout/Margin/Content/StartMenu/Players/Button3
+@onready var _four_players_button: Button = $Layout/Margin/Content/StartMenu/Players/Button4
+@onready var _name_entry_menu: Control = $Layout/Margin/Content/NameEntry
 # The 4 name fields, indexed 0..3 to match player_id — see
 # `_on_player_count_chosen` for how only the first `count` of them are
 # actually shown.
 @onready var _name_edits: Array[LineEdit] = [
-	$Layout/Content/NameEntryMenu/Name1Edit,
-	$Layout/Content/NameEntryMenu/Name2Edit,
-	$Layout/Content/NameEntryMenu/Name3Edit,
-	$Layout/Content/NameEntryMenu/Name4Edit,
+	$Layout/Margin/Content/NameEntry/Name1Edit,
+	$Layout/Margin/Content/NameEntry/Name2Edit,
+	$Layout/Margin/Content/NameEntry/Name3Edit,
+	$Layout/Margin/Content/NameEntry/Name4Edit,
 ]
-@onready var _start_with_names_button: Button = $Layout/Content/NameEntryMenu/Buttons/StartButton
-@onready var _back_to_start_menu_button: Button = $Layout/Content/NameEntryMenu/Buttons/BackButton
-@onready var _free_play_button: Button = $Layout/Content/StartMenu/FreePlayButton
-@onready var _palette_view: HandView = $Layout/Content/PlayArea/PaletteView
+@onready var _start_with_names_button: Button = $Layout/Margin/Content/NameEntry/Buttons/StartButton
+@onready var _back_button: Button = $Layout/Margin/Content/NameEntry/Buttons/BackButton
+@onready var _free_play_button: Button = $Layout/Margin/Content/StartMenu/FreePlayButton
+@onready var _palette_view: HandView = $Layout/Margin/Content/PlayArea/PaletteView
 # The 10 crossword puzzle-picker buttons, indexed 0..9 to match
 # CrosswordPuzzles.PUZZLES — see `_ready()`'s loop below for how each one
 # reports its own index, and crossword_puzzles.gd for the data itself.
 @onready var _crossword_puzzle_buttons: Array[Button] = [
-	$Layout/Content/StartMenu/CrosswordGrid/CrosswordPuzzle1Button,
-	$Layout/Content/StartMenu/CrosswordGrid/CrosswordPuzzle2Button,
-	$Layout/Content/StartMenu/CrosswordGrid/CrosswordPuzzle3Button,
-	$Layout/Content/StartMenu/CrosswordGrid/CrosswordPuzzle4Button,
-	$Layout/Content/StartMenu/CrosswordGrid/CrosswordPuzzle5Button,
-	$Layout/Content/StartMenu/CrosswordGrid/CrosswordPuzzle6Button,
-	$Layout/Content/StartMenu/CrosswordGrid/CrosswordPuzzle7Button,
-	$Layout/Content/StartMenu/CrosswordGrid/CrosswordPuzzle8Button,
-	$Layout/Content/StartMenu/CrosswordGrid/CrosswordPuzzle9Button,
-	$Layout/Content/StartMenu/CrosswordGrid/CrosswordPuzzle10Button,
+	$Layout/Margin/Content/StartMenu/CrosswordGrid/CrosswordPuzzle1Button,
+	$Layout/Margin/Content/StartMenu/CrosswordGrid/CrosswordPuzzle2Button,
+	$Layout/Margin/Content/StartMenu/CrosswordGrid/CrosswordPuzzle3Button,
+	$Layout/Margin/Content/StartMenu/CrosswordGrid/CrosswordPuzzle4Button,
+	$Layout/Margin/Content/StartMenu/CrosswordGrid/CrosswordPuzzle5Button,
+	$Layout/Margin/Content/StartMenu/CrosswordGrid/CrosswordPuzzle6Button,
+	$Layout/Margin/Content/StartMenu/CrosswordGrid/CrosswordPuzzle7Button,
+	$Layout/Margin/Content/StartMenu/CrosswordGrid/CrosswordPuzzle8Button,
+	$Layout/Margin/Content/StartMenu/CrosswordGrid/CrosswordPuzzle9Button,
+	$Layout/Margin/Content/StartMenu/CrosswordGrid/CrosswordPuzzle10Button,
 ]
-@onready var _clue_list_view: ClueListView = $Layout/Content/PlayArea/ClueListView
+@onready var _clue_list_view: ClueListView = $Layout/Margin/Content/PlayArea/ClueListView
 
 
 func _ready() -> void:
@@ -176,7 +179,7 @@ func _ready() -> void:
 	_three_players_button.pressed.connect(_on_player_count_chosen.bind(3))
 	_four_players_button.pressed.connect(_on_player_count_chosen.bind(4))
 	_start_with_names_button.pressed.connect(_on_names_confirmed)
-	_back_to_start_menu_button.pressed.connect(_on_back_to_start_menu_pressed)
+	_back_button.pressed.connect(_on_back_to_start_menu_pressed)
 	_free_play_button.pressed.connect(_on_free_play_chosen)
 	# Same `Callable.bind` idea as the player-count buttons above, but
 	# looped since there are 10 of them — each button reports its own
@@ -252,7 +255,7 @@ func _on_hand_tile_returned(from_row: int, from_col: int) -> void:
 
 # Called when one of StartMenu's player-count buttons is pressed (see
 # `Callable.bind` above for how each one reports its own number). Doesn't
-# create the GameSession yet — shows NameEntryMenu first (see
+# create the GameSession yet — shows NameEntry first (see
 # `_on_names_confirmed`, which actually creates it), with exactly `count`
 # of its 4 name fields visible.
 func _on_player_count_chosen(count: int) -> void:
@@ -264,7 +267,7 @@ func _on_player_count_chosen(count: int) -> void:
 		_name_edits[i].text = ""
 
 
-# Called when NameEntryMenu's "Commencer" button is pressed. Only NOW
+# Called when NameEntry's "Commencer" button is pressed. Only NOW
 # does the actual GameSession get created — nothing before this point
 # could show real game state anyway, since GameSession would build its
 # own French dictionary and starting hands. A blank name field falls
@@ -288,7 +291,7 @@ func _on_names_confirmed() -> void:
 	_restart_turn_timer()
 
 
-# Called when NameEntryMenu's "Retour" button is pressed — no session
+# Called when NameEntry's "Retour" button is pressed — no session
 # exists yet at this point, so there's nothing to tear down, just go
 # back to picking a player count.
 func _on_back_to_start_menu_pressed() -> void:
@@ -499,7 +502,7 @@ func _on_load_file_selected(path: String) -> void:
 	if loaded_session != null:
 		_session = loaded_session
 		_player_names = []  # a loaded session has no names of its own
-		_end_turn_message.text = ""
+		_set_status_text(_end_turn_message, "")
 		_refresh_views()
 		_restart_turn_timer()
 
@@ -511,11 +514,22 @@ func _on_load_file_selected(path: String) -> void:
 # Cleared on success, since the turn actually ended.
 func _on_end_turn_pressed() -> void:
 	if _session.end_turn():
-		_end_turn_message.text = ""
+		_set_status_text(_end_turn_message, "")
 		_restart_turn_timer()
 	else:
-		_end_turn_message.text = _format_end_turn_error()
+		_set_status_text(_end_turn_message, _format_end_turn_error())
 	_refresh_views()
+
+
+# Sets a status label's text AND hides it whenever that text is empty —
+# used for `_scoreboard`/`_game_over_banner`/`_end_turn_message`, which
+# spend most of their time with nothing to say. A `Label` still reserves
+# its own line height in `Content`'s VBoxContainer even while showing an
+# empty string (only `visible=false` actually removes it), so setting
+# `.text` alone left a permanent gap between the header and the board.
+func _set_status_text(label: Label, text: String) -> void:
+	label.text = text
+	label.visible = text != ""
 
 
 # Redraws both views from the session's current state — the board, and
@@ -531,19 +545,19 @@ func _refresh_views() -> void:
 			_free_play_session.can_place_here
 		)
 		_palette_view.refresh(_free_play_session.available_tiles())
-		_scoreboard.text = "Score : %d" % _free_play_session.current_score()
+		_set_status_text(_scoreboard, "Score : %d" % _free_play_session.current_score())
 		if _is_crossword():
 			_clue_list_view.refresh(
 				_crossword_puzzle.clues, _crossword_puzzle.solved_rows(_free_play_session.board)
 			)
 			if _crossword_puzzle.is_solved(_free_play_session.board):
-				_game_over_banner.text = "Mots croisés résolus !"
+				_set_status_text(_game_over_banner, "Mots croisés résolus !")
 			else:
-				_game_over_banner.text = ""
+				_set_status_text(_game_over_banner, "")
 		return
 	_board_view.refresh(_session.board, _session.can_take_back, _session.can_place_here)
 	_hand_view.refresh(_session.bag.hand(_session.turns.current_player_id()))
-	_scoreboard.text = _format_scoreboard()
+	_set_status_text(_scoreboard, _format_scoreboard())
 	_update_game_over_banner()
 
 
@@ -609,9 +623,9 @@ func _return_to_start_menu() -> void:
 	_name_entry_menu.visible = false
 	_options_panel.visible = false
 	_player_names = []
-	_end_turn_message.text = ""
-	_game_over_banner.text = ""
-	_scoreboard.text = ""
+	_set_status_text(_end_turn_message, "")
+	_set_status_text(_game_over_banner, "")
+	_set_status_text(_scoreboard, "")
 	_turn_timer.stop()
 	_turn_timer_label.visible = false
 
@@ -622,12 +636,13 @@ func _return_to_start_menu() -> void:
 # button since there's no longer a turn to end. Blank/enabled otherwise.
 func _update_game_over_banner() -> void:
 	if not _session.is_game_over():
-		_game_over_banner.text = ""
+		_set_status_text(_game_over_banner, "")
 		_end_turn_button.disabled = false
 		return
 	var winner_id := _session.winner_id()
 	var winner_score := _session.turns.player_score(winner_id)
-	_game_over_banner.text = (
+	_set_status_text(
+		_game_over_banner,
 		"Partie terminée ! %s gagne avec %d points." % [_player_name(winner_id), winner_score]
 	)
 	_end_turn_button.disabled = true
