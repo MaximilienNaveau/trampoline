@@ -1,4 +1,4 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene load_steps=7 format=3]
 
 [ext_resource type="Script" path="res://scripts/main.gd" id="1"]
 [ext_resource type="PackedScene" path="res://scenes/board_view.tscn" id="2"]
@@ -6,6 +6,17 @@
 [ext_resource type="PackedScene" path="res://scenes/palette_view.tscn" id="4"]
 [ext_resource type="PackedScene" path="res://scenes/clue_list_view.tscn" id="5"]
 [ext_resource type="Theme" path="res://assets/theme.tres" id="6"]
+
+[sub_resource type="StyleBoxFlat" id="EndTurnBannerStyle"]
+bg_color = Color(0.75, 0.16, 0.16, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+content_margin_left = 12.0
+content_margin_top = 8.0
+content_margin_right = 12.0
+content_margin_bottom = 8.0
 
 [node name="Main" type="Control"]
 layout_mode=3
@@ -34,6 +45,28 @@ anchor_bottom=1.0
 grow_horizontal=2
 grow_vertical=2
 horizontal_scroll_mode=0
+
+[node name="EndTurnMessage" type="PanelContainer" parent="."]
+layout_mode=1
+anchors_preset=10
+anchor_right=1.0
+offset_left=16.0
+offset_top=16.0
+offset_right=-16.0
+offset_bottom=16.0
+grow_horizontal=2
+theme_override_styles/panel=SubResource("EndTurnBannerStyle")
+visible=false
+
+[node name="Text" type="Label" parent="EndTurnMessage"]
+layout_mode=2
+theme_override_colors/font_color=Color(1, 1, 1, 1)
+horizontal_alignment=1
+autowrap_mode=2
+
+[node name="EndTurnMessageTimer" type="Timer" parent="."]
+wait_time=4.0
+one_shot=true
 
 [node name="Margin" type="MarginContainer" parent="Layout"]
 layout_mode=2
@@ -113,13 +146,6 @@ layout_mode=2
 theme_override_colors/font_color=Color(0.96, 0.4, 0.4, 1)
 theme_override_font_sizes/font_size=20
 horizontal_alignment=1
-visible=false
-
-[node name="EndTurnMessage" type="Label" parent="Layout/Margin/Content"]
-layout_mode=2
-theme_override_colors/font_color=Color(0.96, 0.4, 0.4, 1)
-horizontal_alignment=1
-autowrap_mode=2
 visible=false
 
 [node name="StartMenu" type="VBoxContainer" parent="Layout/Margin/Content"]

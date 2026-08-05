@@ -12,6 +12,11 @@
 # (see `_on_player_count_chosen`/`_return_to_start_menu`).
 extends Control
 
+# How long the end-turn notification takes to fade in/out (see
+# `_set_end_turn_message` below) — snapping straight to full opacity read
+# as too abrupt for something popping up over the header.
+const _END_TURN_MESSAGE_FADE_SECONDS := 0.25
+
 # Kept as a field (not a local var in _ready()) now that other methods
 # below — `_on_board_tile_dropped`, `_on_end_turn_pressed` — need to reach
 # it too.
@@ -86,7 +91,16 @@ var _save_and_restart_button: Button
 @onready var _end_turn_button: Button = $Layout/Margin/Content/TopBar/EndTurnButton
 @onready var _scoreboard: Label = $Layout/Margin/Content/Scoreboard
 @onready var _game_over_banner: Label = $Layout/Margin/Content/GameOverBanner
-@onready var _end_turn_message: Label = $Layout/Margin/Content/EndTurnMessage
+# A floating notification, not part of the page's normal top-to-bottom
+# flow — declared as a direct child of Main in main.tscn (a sibling of
+# Layout, not nested inside it) so it draws OVER the header instead of
+# pushing the board down, and disappears on its own after
+# `_end_turn_message_timer` runs out (see `_set_end_turn_message` below).
+# `_end_turn_banner` is the whole colored box, `_end_turn_message` is just
+# its text.
+@onready var _end_turn_banner: PanelContainer = $EndTurnMessage
+@onready var _end_turn_message: Label = $EndTurnMessage/Text
+@onready var _end_turn_message_timer: Timer = $EndTurnMessageTimer
 # Save/Load/New Game live inside the "☰" dropdown menu (OptionsPanel)
 # instead of a permanently-visible row, to leave more of a small phone
 # screen for the board itself — see `_on_options_pressed`.
@@ -162,6 +176,7 @@ func _ready() -> void:
 	_new_game_button.pressed.connect(_on_new_game_pressed)
 	_options_button.pressed.connect(_on_options_pressed)
 	_timer_toggle.toggled.connect(_on_timer_toggle_toggled)
+	_end_turn_message_timer.timeout.connect(_on_end_turn_message_timer_timeout)
 	_save_file_dialog.file_selected.connect(_on_save_file_selected)
 	_load_file_dialog.file_selected.connect(_on_load_file_selected)
 	# Cancelling the save dialog must also cancel a pending "save and
@@ -519,7 +534,7 @@ func _on_load_file_selected(path: String) -> void:
 	if loaded_session != null:
 		_session = loaded_session
 		_player_names = []  # a loaded session has no names of its own
-		_set_status_text(_end_turn_message, "")
+		_set_end_turn_message("")
 		_refresh_views()
 		_restart_turn_timer()
 
@@ -531,22 +546,67 @@ func _on_load_file_selected(path: String) -> void:
 # Cleared on success, since the turn actually ended.
 func _on_end_turn_pressed() -> void:
 	if _session.end_turn():
-		_set_status_text(_end_turn_message, "")
+		_set_end_turn_message("")
 		_restart_turn_timer()
 	else:
-		_set_status_text(_end_turn_message, _format_end_turn_error())
+		_set_end_turn_message(_format_end_turn_error())
 	_refresh_views()
 
 
 # Sets a status label's text AND hides it whenever that text is empty —
-# used for `_scoreboard`/`_game_over_banner`/`_end_turn_message`, which
-# spend most of their time with nothing to say. A `Label` still reserves
-# its own line height in `Content`'s VBoxContainer even while showing an
-# empty string (only `visible=false` actually removes it), so setting
-# `.text` alone left a permanent gap between the header and the board.
+# used for `_scoreboard`/`_game_over_banner`, which spend most of their
+# time with nothing to say. A `Label` still reserves its own line height in
+# `Content`'s VBoxContainer even while showing an empty string (only
+# `visible=false` actually removes it), so setting `.text` alone left a
+# permanent gap between the header and the board.
 func _set_status_text(label: Label, text: String) -> void:
 	label.text = text
 	label.visible = text != ""
+
+
+# Same idea as `_set_status_text` above, but for the end-turn notification
+# specifically: it's a `PanelContainer` (for its colored background, see
+# main.tscn's EndTurnBannerStyle), not a plain `Label`, so the text and the
+# visibility toggle land on two different nodes (see `_end_turn_banner`/
+# `_end_turn_message` above) — and, being a notification rather than a
+# persistent status line, it fades in, then fades back out on its own once
+# `_end_turn_message_timer` runs out (see `_on_end_turn_message_timer_
+# timeout` below) rather than staying up until something else clears it.
+func _set_end_turn_message(text: String) -> void:
+	_end_turn_message.text = text
+	_end_turn_message_timer.stop()
+	if text == "":
+		_fade_out_end_turn_banner()
+		return
+	_end_turn_banner.visible = true
+	_end_turn_banner.modulate.a = 0.0
+	# `create_tween()` hands back a fresh Tween — Godot's way of animating a
+	# property smoothly over time instead of jumping straight to the target
+	# value; `tween_property` says WHICH property (here, the banner's own
+	# alpha/transparency), to WHAT value, over how many seconds.
+	create_tween().tween_property(
+		_end_turn_banner, "modulate:a", 1.0, _END_TURN_MESSAGE_FADE_SECONDS
+	)
+	_end_turn_message_timer.start()
+
+
+# Called once `_end_turn_message_timer` (see main.tscn, 4 seconds, one-shot)
+# runs out — fades out whatever notification is currently showing, same as
+# if `_set_end_turn_message("")` had been called directly.
+func _on_end_turn_message_timer_timeout() -> void:
+	_fade_out_end_turn_banner()
+
+
+# Shared by both ways the notification can go away (an explicit clear, or
+# the timer running out) — animates its alpha back down to 0, then actually
+# hides it (`visible = false`) only once that finishes, so a still-fading
+# banner doesn't just vanish mid-fade.
+func _fade_out_end_turn_banner() -> void:
+	if not _end_turn_banner.visible:
+		return
+	var tween := create_tween()
+	tween.tween_property(_end_turn_banner, "modulate:a", 0.0, _END_TURN_MESSAGE_FADE_SECONDS)
+	tween.tween_callback(func(): _end_turn_banner.visible = false)
 
 
 # Redraws both views from the session's current state — the board, and
@@ -572,7 +632,9 @@ func _refresh_views() -> void:
 			else:
 				_set_status_text(_game_over_banner, "")
 		return
-	_board_view.refresh(_session.board, _session.can_take_back, _session.can_place_here)
+	_board_view.refresh(
+		_session.board, _session.can_take_back, _session.can_place_here, _session.invalid_cells()
+	)
 	_hand_view.refresh(_session.bag.hand(_session.turns.current_player_id()))
 	_set_status_text(_scoreboard, _format_scoreboard())
 	_update_game_over_banner()
@@ -610,16 +672,29 @@ func _format_scoreboard() -> String:
 	return text
 
 
-# Builds the message shown by `_end_turn_message` after a refused
-# `end_turn()` — names the actual invalid word(s) (see
-# game_session.gd's `invalid_words`) rather than just saying "no".
+# Builds the message shown by `_end_turn_banner` after a refused
+# `end_turn()` — names the actual invalid word(s) (see game_session.gd's
+# `invalid_words`) and/or explains a broken single-row/single-word turn
+# (see `invalid_cells`) rather than just saying "no". Both can be true at
+# once (an invalid word AND a scattered turn), so each gets its own line
+# rather than one crowding the other out.
 func _format_end_turn_error() -> String:
+	var messages: Array[String] = []
+
 	var words: Array[String] = []
 	for entry in _session.invalid_words():
 		words.append(entry["word"])
 	if words.size() == 1:
-		return "Mot invalide : %s" % words[0]
-	return "Mots invalides : %s" % ", ".join(words)
+		messages.append("Mot invalide : %s" % words[0])
+	elif words.size() > 1:
+		messages.append("Mots invalides : %s" % ", ".join(words))
+
+	if not _session.invalid_cells().is_empty():
+		messages.append(
+			"Les lettres jouées ce tour doivent former un seul mot, sur une seule ligne."
+		)
+
+	return "\n".join(messages)
 
 
 # Hides everything that depends on `_session` and shows `StartMenu`
@@ -640,7 +715,7 @@ func _return_to_start_menu() -> void:
 	_name_entry_menu.visible = false
 	_options_panel.visible = false
 	_player_names = []
-	_set_status_text(_end_turn_message, "")
+	_set_end_turn_message("")
 	_set_status_text(_game_over_banner, "")
 	_set_status_text(_scoreboard, "")
 	_turn_timer.stop()

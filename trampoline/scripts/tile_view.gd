@@ -12,12 +12,28 @@ const YELLOW_COLOR := Color(0.96, 0.87, 0.4)
 const GREEN_COLOR := Color(0.6, 0.85, 0.55)
 const EMPTY_COLOR := Color(0.88, 0.88, 0.88)
 
+# The red used to flag a cell that's part of why the current turn can't
+# end yet (see GameSession.invalid_cells/invalid_words) — a thick border
+# rather than replacing the fill color, so the letter underneath (and
+# whether it's yellow or green) stays readable.
+const INVALID_BORDER_COLOR := Color(0.85, 0.2, 0.2)
+
 
 # The style to draw an occupied cell/tile with, based on which face it's
 # currently showing.
 static func style_for_tile(tile: Tile) -> StyleBoxFlat:
 	var color := GREEN_COLOR if tile.current_is_green() else YELLOW_COLOR
 	return _make_style(color)
+
+
+# Same as `style_for_tile`, but flagged as part of an invalid turn/word
+# right now — see this file's own `INVALID_BORDER_COLOR`.
+static func invalid_style_for_tile(tile: Tile) -> StyleBoxFlat:
+	var color := GREEN_COLOR if tile.current_is_green() else YELLOW_COLOR
+	var style := _make_style(color)
+	style.border_color = INVALID_BORDER_COLOR
+	style.set_border_width_all(4)
+	return style
 
 
 # The style to draw an empty cell with (no tile there at all).

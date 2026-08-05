@@ -1,9 +1,10 @@
 # One droppable (and, sometimes, draggable) cell in BoardView's grid (see
-# board_view.gd). Knows the Board only well enough to ask GrowthRules
-# whether a drop would be legal here — the same read-only relationship
-# BoardView itself has with Board, never mutating anything directly.
-# Actually placing/moving a tile is main.gd's job: this cell just reports
-# what happened via the signals below.
+# board_view.gd). Knows the Board only well enough to read it — the same
+# read-only relationship BoardView itself has with Board, never mutating
+# anything directly; `placeable`/`draggable`/`invalid` below are all
+# decided elsewhere (GameSession/FreePlaySession) and just handed to this
+# cell by BoardView. Actually placing/moving a tile is main.gd's job: this
+# cell just reports what happened via the signals below.
 class_name BoardCell
 extends Panel
 
@@ -34,13 +35,19 @@ var board: Board
 # itself: it has no notion of turns, only Board does.
 var draggable: bool = false
 
-# Whether a NEW tile could legally be dropped here right now — see
-# GameSession.can_place_here (turn-based play: must extend an existing
-# word) or FreePlaySession.can_place_here (free play: any empty cell).
-# Same reasoning as `draggable` above: BoardCell has no rules of its own,
-# it only asks whichever session is running through a Callable BoardView
-# hands it (see board_view.gd's `refresh`).
+# Whether a NEW tile could legally be dropped here right now — in both
+# modes, simply whether the cell is empty (see GameSession.can_place_here/
+# FreePlaySession.can_place_here). Same reasoning as `draggable` above:
+# BoardCell has no rules of its own, it only asks whichever session is
+# running through a Callable BoardView hands it (see board_view.gd's
+# `refresh`).
 var placeable: bool = false
+
+# Whether this cell is currently part of why the turn can't end yet — see
+# GameSession.invalid_cells/invalid_words. Kept up to date by
+# BoardView.refresh(), same as `board`/`draggable` above; free play has no
+# such concept and always leaves this false.
+var invalid: bool = false
 
 # This cell's own Label child, handed over once by BoardView right after
 # creating it (see board_view.gd's `_build_grid`) — kept here, not just
@@ -159,7 +166,10 @@ func refresh() -> void:
 		add_theme_stylebox_override("panel", TileView.empty_style())
 	else:
 		label.text = tile.current_letter()
-		add_theme_stylebox_override("panel", TileView.style_for_tile(tile))
+		var style := (
+			TileView.invalid_style_for_tile(tile) if invalid else TileView.style_for_tile(tile)
+		)
+		add_theme_stylebox_override("panel", style)
 		TileView.update_corner_badge(corner_badge, tile)
 
 

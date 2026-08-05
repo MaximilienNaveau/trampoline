@@ -160,7 +160,21 @@ func _update_cell_sizes() -> void:
 # instead of knowing either rule itself (see this file's header comment)
 # — main.gd passes `GameSession.can_take_back`/`GameSession.can_place_here`
 # (or FreePlaySession's own versions) here.
-func refresh(board: Board, is_takeable: Callable, can_place_here: Callable) -> void:
+#
+# `invalid_cells` is different: not a per-cell question, but the WHOLE list
+# of `{row, col}` problem cells at once (see GameSession.invalid_cells) —
+# free play has no such concept, so it defaults to empty rather than every
+# caller needing to pass an always-true/false Callable for it.
+func refresh(
+	board: Board, is_takeable: Callable, can_place_here: Callable, invalid_cells: Array = []
+) -> void:
+	# A quick "is (row, col) in the list" lookup built once per refresh,
+	# rather than re-scanning `invalid_cells` for every one of the 117
+	# cells below.
+	var invalid_lookup := {}
+	for cell in invalid_cells:
+		invalid_lookup["%d_%d" % [cell["row"], cell["col"]]] = true
+
 	for row in range(Board.ROWS):
 		for col in range(Board.COLUMNS):
 			var panel: BoardCell = _cell_panels[row][col]
@@ -169,6 +183,7 @@ func refresh(board: Board, is_takeable: Callable, can_place_here: Callable) -> v
 			panel.board = board
 			panel.draggable = is_takeable.call(row, col)
 			panel.placeable = can_place_here.call(row, col)
+			panel.invalid = invalid_lookup.has("%d_%d" % [row, col])
 			panel.refresh()
 
 
