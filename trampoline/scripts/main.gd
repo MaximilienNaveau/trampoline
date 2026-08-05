@@ -28,6 +28,13 @@ var _free_play_session: FreePlaySession
 # checking the board against a hidden target (see `_is_crossword`).
 var _crossword_puzzle: CrosswordPuzzle
 
+# Loaded once and reused for every session this app run creates (see
+# `_dictionary()` below) — every one of GameSession/FreePlaySession's own
+# constructors would otherwise happily load its own fresh copy, but
+# reading and normalizing the ~438,000-line word list takes a couple of
+# real seconds, noticeable every single time a mode is (re)started.
+var _shared_dictionary: FrenchDictionary
+
 # Whether the turn timer (see doc/RULES.md's "3-minute soft/hard time
 # limit") is switched on right now — a player preference toggled via
 # OptionsPanel's `_timer_toggle`, independent of any particular
@@ -277,7 +284,7 @@ func _on_names_confirmed() -> void:
 	for i in range(_pending_player_count):
 		var entered := _name_edits[i].text.strip_edges()
 		_player_names.append(entered if entered != "" else "Joueur %d" % (i + 1))
-	_session = GameSession.new(_pending_player_count)
+	_session = GameSession.new(_pending_player_count, _dictionary())
 	_name_entry_menu.visible = false
 	_title.visible = false
 	_tagline.visible = false
@@ -299,6 +306,16 @@ func _on_back_to_start_menu_pressed() -> void:
 	_start_menu.visible = true
 
 
+# The one FrenchDictionary this whole app run ever loads (see
+# `_shared_dictionary` above) — every GameSession/FreePlaySession this
+# script creates should be handed this instead of leaving their own
+# constructor default to loading yet another copy.
+func _dictionary() -> FrenchDictionary:
+	if _shared_dictionary == null:
+		_shared_dictionary = FrenchDictionary.new()
+	return _shared_dictionary
+
+
 # Whether the free-play sandbox is the one currently active, rather than
 # a turn-based `_session` (or nothing at all, at the start menu).
 func _is_free_play() -> bool:
@@ -310,7 +327,7 @@ func _is_free_play() -> bool:
 # (EndTurnButton stays hidden), but Save/Load do work here — see
 # save_game.gd's `save_free_play`/`load_free_play`.
 func _on_free_play_chosen() -> void:
-	_free_play_session = FreePlaySession.new()
+	_free_play_session = FreePlaySession.new(_dictionary())
 	_start_menu.visible = false
 	_title.visible = false
 	_tagline.visible = false
@@ -337,7 +354,7 @@ func _is_crossword() -> bool:
 # actually checks progress against the puzzle's hidden target each time
 # something changes.
 func _on_crossword_chosen(puzzle_index: int) -> void:
-	_free_play_session = FreePlaySession.new()
+	_free_play_session = FreePlaySession.new(_dictionary())
 	_crossword_puzzle = CrosswordPuzzle.new(puzzle_index)
 	_start_menu.visible = false
 	_title.visible = false
@@ -482,7 +499,7 @@ func _on_save_file_selected(path: String) -> void:
 
 # Called once the player confirms a path in the load FileDialog. Reuses
 # whichever session's dictionary is already loaded (see save_game.gd)
-# rather than paying to reload the ~79000-word list again. Does nothing
+# rather than paying to reload the ~421,000-word list again. Does nothing
 # if the file turns out missing, unreadable, or the wrong format for the
 # CURRENT mode (see `SaveGame.load`/`load_free_play` — a turn-based save
 # can't be loaded from within free play/crossword mode, or vice versa;

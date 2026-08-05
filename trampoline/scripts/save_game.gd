@@ -72,7 +72,7 @@ static func save(session: GameSession, path: String) -> bool:
 
 # Reconstructs a GameSession from a file written by `save`. `dictionary`
 # can be injected the same way GameSession's own constructor allows —
-# loading the ~79000-word dictionary fresh every time would be wasteful
+# loading the ~421,000-word dictionary fresh every time would be wasteful
 # when a caller already has one loaded. Returns null if the file is
 # missing or not valid JSON.
 static func load(path: String, dictionary: FrenchDictionary = null) -> GameSession:

@@ -27,7 +27,7 @@ var dictionary: FrenchDictionary
 
 # `dictionary` can be injected the same way GameSession's constructor
 # allows (e.g. a test reusing one already-loaded instance, since loading
-# it re-reads and normalizes ~79000 lines every time) — defaults to
+# it re-reads and normalizes ~438,000 lines every time) — defaults to
 # loading a fresh one.
 func _init(a_dictionary: FrenchDictionary = null) -> void:
 	board = Board.new()
