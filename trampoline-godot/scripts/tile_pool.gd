@@ -13,14 +13,17 @@ extends RefCounted
 # `std::vector<Tile>` in C++ or `list[Tile]` with a type checker in Python.
 var tiles: Array[Tile] = []
 
+
 func _init() -> void:
 	_build_tiles()
+
 
 # Appends one tile to the catalog. A tiny helper so the 117 lines below
 # read as plain data instead of repeating `tiles.append(Tile.new(...))`
 # 117 times.
 func _add(yellow: String, back: String, back_is_green: bool) -> void:
 	tiles.append(Tile.new(yellow, back, back_is_green))
+
 
 func _build_tiles() -> void:
 	_add("A", "E", true)
