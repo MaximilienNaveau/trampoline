@@ -4,12 +4,14 @@ extends SceneTree
 
 var _failures := 0
 
+
 func _check(condition: bool, message: String) -> void:
 	if condition:
 		print("PASS: ", message)
 	else:
 		print("FAIL: ", message)
 		_failures += 1
+
 
 func _initialize() -> void:
 	var dictionary := FrenchDictionary.new()
