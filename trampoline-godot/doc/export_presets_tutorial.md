@@ -9,7 +9,9 @@ crash. Do this once, save, and the file becomes the real, editor-verified
 source of truth going forward — no more guessing at field names.
 
 Do this from a normal `nix develop` shell in `trampoline-godot/`, running
-`godot4 --path .` (no `--headless`, so the editor UI actually opens).
+`godot4 --editor --path .` — the `--editor` flag matters: `godot4 --path .`
+alone runs the game itself (same as pressing Play), it's `--editor` that
+opens the editor UI instead.
 
 ## 1. Open the Export dialog
 
