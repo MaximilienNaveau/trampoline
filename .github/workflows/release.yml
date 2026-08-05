@@ -1,15 +1,17 @@
-name: Godot Release
+name: Release
 
-# `godot-v*` (never the bare `v*` the old Unity workflow used, so the two
-# can never collide) triggers a real, public release: a GitHub Release plus
-# a gh-pages deploy of the Web build. `workflow_dispatch` runs everything
+# A `v*` tag triggers a real, public release: a GitHub Release plus a
+# gh-pages deploy of the Web build. Unity used this exact same pattern
+# (last tag: v3.2.0) but is retired and won't be released again, so there's
+# no collision risk reusing it here — the next tag, whatever it is, is
+# unambiguously this (Godot) build. `workflow_dispatch` runs everything
 # EXCEPT those two public-facing steps (see the `release` job below) so this
 # can be dry-run freely to sanity-check the export step itself before ever
 # trusting a real tag.
 on:
   push:
     tags:
-      - 'godot-v[0-9]+.[0-9]+.[0-9]+'
+      - 'v[0-9]+.[0-9]+.[0-9]+'
   workflow_dispatch:
 
 jobs:
@@ -19,7 +21,7 @@ jobs:
     container: barichello/godot-ci:4.7.1-stable
     defaults:
       run:
-        working-directory: trampoline-godot
+        working-directory: trampoline
     strategy:
       fail-fast: false
       matrix:
@@ -43,8 +45,8 @@ jobs:
       - name: Make build directory
         run: mkdir -p ${{ matrix.build_dir }}
 
-      # Same "prime the import cache once" step godot_ci.yml runs before its
-      # own tests — an export run against never-imported assets is a known
+      # Same "prime the import cache once" step ci.yml runs before its own
+      # tests — an export run against never-imported assets is a known
       # source of missing-resource failures.
       - name: Import project resources
         run: godot --headless --editor --quit --path .
@@ -56,14 +58,14 @@ jobs:
         uses: actions/upload-artifact@v6
         with:
           name: ${{ matrix.artifact_name }}
-          path: trampoline-godot/${{ matrix.build_dir }}
+          path: trampoline/${{ matrix.build_dir }}
 
   export-ios:
     name: Export iOS (unsigned Xcode project)
     runs-on: macos-latest
     defaults:
       run:
-        working-directory: trampoline-godot
+        working-directory: trampoline
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -72,9 +74,9 @@ jobs:
         uses: DeterminateSystems/nix-installer-action@main
 
       # No Docker on macOS runners, so this job uses the same flake as
-      # local dev/godot_ci.yml instead of the barichello/godot-ci image —
-      # which also means, unlike that image, export templates aren't
-      # bundled here and need fetching to match the pinned 4.7.1 version.
+      # local dev/ci.yml instead of the barichello/godot-ci image — which
+      # also means, unlike that image, export templates aren't bundled
+      # here and need fetching to match the pinned 4.7.1 version.
       - name: Fetch matching export templates
         run: |
           set -e
@@ -103,7 +105,7 @@ jobs:
         uses: actions/upload-artifact@v6
         with:
           name: ios-xcodeproj
-          path: trampoline-godot/ios-xcodeproj.zip
+          path: trampoline/ios-xcodeproj.zip
 
   release:
     name: Publish release
@@ -121,11 +123,11 @@ jobs:
         run: |
           set -e
           cd artifacts
-          (cd linux-build && zip -r "../trampoline-godot-${{ github.ref_name }}-linux.zip" .)
-          (cd macos-build && zip -r "../trampoline-godot-${{ github.ref_name }}-macos.zip" .)
-          (cd web-build && zip -r "../trampoline-godot-${{ github.ref_name }}-web.zip" .)
-          cp ios-xcodeproj/ios-xcodeproj.zip "trampoline-godot-${{ github.ref_name }}-ios-xcodeproj.zip"
-          cp android-build/trampoline.apk "trampoline-godot-${{ github.ref_name }}-android.apk"
+          (cd linux-build && zip -r "../trampoline-${{ github.ref_name }}-linux.zip" .)
+          (cd macos-build && zip -r "../trampoline-${{ github.ref_name }}-macos.zip" .)
+          (cd web-build && zip -r "../trampoline-${{ github.ref_name }}-web.zip" .)
+          cp ios-xcodeproj/ios-xcodeproj.zip "trampoline-${{ github.ref_name }}-ios-xcodeproj.zip"
+          cp android-build/trampoline.apk "trampoline-${{ github.ref_name }}-android.apk"
 
       # Only a real tag push publishes anything publicly visible — a
       # workflow_dispatch test run stops right after the zips above, so its
@@ -135,7 +137,7 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
-          files: artifacts/trampoline-godot-*
+          files: artifacts/trampoline-*
 
       - name: Deploy Web build to GitHub Pages
         if: startsWith(github.ref, 'refs/tags/')
