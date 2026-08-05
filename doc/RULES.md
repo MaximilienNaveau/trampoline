@@ -141,6 +141,30 @@ Draw counts are tuned per player count so the 117 tiles divide evenly:
 Each turn has a 3-minute soft/hard time limit to place a word (treat as a
 real constraint to respect, not just a suggestion).
 
+**A turn is confined to a single row.** From the 2015 revised legacy design
+("Trampoline Version 2015.doc"): *"Jouer c'est placer une ou plusieurs
+lettres sur une seule ligne horizontale vide ou partiellement occupée"*
+("playing means placing one or more letters on a single horizontal line,
+empty or partially occupied") — a player picks ONE row (empty or already
+started) each turn and only extends/edits that one, never touching a
+second row in the same turn, and never splitting that one row's own
+letters into more than one disconnected group either. This was missing
+from an earlier version of this document and from the Godot implementation
+until 2026-08-05; see `TurnValidity` in
+`trampoline/scripts/turn_validity.gd` for the current enforcement.
+
+**Simplified for the current implementation** (confirmed by Maximilien,
+same spirit as "Word validation" below): the legacy text also frames each
+placement as extending the row's existing word from one of its two ends
+("chercher à allonger un mot déjà placé"), never dropping a letter
+elsewhere in an already-started row. The Godot implementation deliberately
+doesn't enforce that adjacency — any empty cell in the turn's chosen row is
+fair game, and `TurnValidity` only objects once the result is actually
+disconnected. A placement is never refused outright either way: like an
+invalid dictionary word, a broken turn is flagged live (the offending
+tiles are highlighted) and blocks ending the turn, rather than being
+silently rejected the moment it happens.
+
 ## Word validation
 
 Any word in a standard dictionary is legal, including proper nouns,

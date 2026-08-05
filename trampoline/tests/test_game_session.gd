@@ -20,7 +20,11 @@ func _initialize() -> void:
 	_test_initial_draw()
 	_test_place_tile_from_hand()
 	_test_place_tile_not_in_hand_fails()
-	_test_place_tile_illegal_location_fails()
+	_test_place_tile_anywhere_empty_succeeds()
+	_test_invalid_cells_empty_for_a_normal_word()
+	_test_invalid_cells_flags_a_disconnected_placement()
+	_test_invalid_cells_flags_two_different_rows()
+	_test_invalid_cells_clears_once_the_offending_tile_is_taken_back()
 	_test_can_end_turn_blocks_bad_word()
 	_test_end_turn_scores_and_advances()
 	_test_game_over_via_exhaustion()
@@ -30,6 +34,7 @@ func _initialize() -> void:
 	_test_remove_tile_allows_middle_of_this_turns_word()
 	_test_move_own_tile()
 	_test_move_own_tile_refuses_frozen_tile()
+	_test_move_own_tile_to_a_different_row_is_flagged_invalid()
 	_test_move_word()
 	_test_move_word_by_grabbed_tile_from_the_start()
 	_test_move_word_by_grabbed_tile_from_the_middle()
@@ -80,15 +85,87 @@ func _test_place_tile_not_in_hand_fails() -> void:
 	_check(session.board.is_empty(1, 4), "the board is untouched by the refused placement")
 
 
-func _test_place_tile_illegal_location_fails() -> void:
+# place_tile() no longer enforces GrowthRules/one-row-per-turn itself (see
+# game_session.gd's own comment) — a player can drop a tile on any empty
+# cell, anywhere, and rearrange all turn; `invalid_cells()`/`can_end_turn()`
+# (see the `_test_invalid_cells_*` tests below) are what actually catch an
+# illegal result, the same way a bad dictionary word already works.
+func _test_place_tile_anywhere_empty_succeeds() -> void:
 	var session := GameSession.new(2, _dictionary)
 	var first: Tile = session.bag.hand(0)[0]
 	var second: Tile = session.bag.hand(0)[1]
 	session.place_tile(2, 4, first)
 	_check(
-		not session.place_tile(2, 2, second), "a non-adjacent placement is refused by GrowthRules"
+		session.place_tile(2, 2, second), "a non-adjacent placement in the same row succeeds now"
 	)
-	_check(session.bag.hand(0).has(second), "the refused tile stays in hand, not consumed")
+	_check(not session.bag.hand(0).has(second), "...and is consumed like any other placement")
+
+
+# The common case: letters placed one after another, all touching, all in
+# the same row — this should never trip the single-row/single-word check.
+# Uses a real French word (unlike "CAT" elsewhere in this file) since this
+# one actually calls can_end_turn(), which also checks the dictionary.
+func _test_invalid_cells_empty_for_a_normal_word() -> void:
+	var session := GameSession.new(1, _dictionary)
+	var word := "CHAT"
+	var tiles: Array[Tile] = []
+	for letter in word:
+		var tile := Tile.new(letter, "Z", true)
+		_give_hand_tile(session, 0, tile)
+		tiles.append(tile)
+	for i in range(tiles.size()):
+		session.place_tile(2, 2 + i, tiles[i])
+	_check(session.invalid_cells().is_empty(), "one contiguous word this turn is entirely legal")
+	_check(session.can_end_turn(), "...so ending the turn is allowed")
+
+
+# Two separate groups of letters in the SAME row, placed the same turn —
+# doc/RULES.md's "extend the word, or start fresh in an empty row" doesn't
+# describe planting a second, disconnected clump, even though each cell
+# individually landed on an empty spot.
+func _test_invalid_cells_flags_a_disconnected_placement() -> void:
+	var session := GameSession.new(2, _dictionary)
+	var first: Tile = session.bag.hand(0)[0]
+	var second: Tile = session.bag.hand(0)[1]
+	session.place_tile(2, 0, first)
+	session.place_tile(2, 4, second)
+
+	var invalid := session.invalid_cells()
+	_check(invalid.size() == 2, "both disconnected cells are reported, not just one")
+	_check(not session.can_end_turn(), "a disconnected placement blocks ending the turn")
+
+
+# Same idea as `_test_invalid_cells_flags_a_disconnected_placement`, but
+# spread across two different rows instead of one — see doc/RULES.md's
+# "Turns and draws" section: a turn plays onto a single horizontal line.
+func _test_invalid_cells_flags_two_different_rows() -> void:
+	var session := GameSession.new(2, _dictionary)
+	var first: Tile = session.bag.hand(0)[0]
+	var second: Tile = session.bag.hand(0)[1]
+	session.place_tile(2, 4, first)
+	session.place_tile(5, 4, second)
+
+	var invalid := session.invalid_cells()
+	_check(invalid.size() == 2, "both rows' cells are reported")
+	_check(not session.can_end_turn(), "placements on two different rows block ending the turn")
+
+
+# invalid_cells() is recomputed fresh from the board each time, not a flag
+# set once and forgotten — so taking the offending tile back should be
+# enough to clear it, no separate "unlock" bookkeeping needed.
+func _test_invalid_cells_clears_once_the_offending_tile_is_taken_back() -> void:
+	var session := GameSession.new(1, _dictionary)
+	var first: Tile = session.bag.hand(0)[0]
+	var second: Tile = session.bag.hand(0)[1]
+	session.place_tile(2, 4, first)
+	session.place_tile(6, 0, second)
+	session.remove_tile(6, 0)
+
+	_check(
+		session.invalid_cells().is_empty(),
+		"with the stray second-row tile taken back, only row 2 remains touched"
+	)
+	_check(session.can_end_turn(), "...so ending the turn is allowed again")
 
 
 func _test_can_end_turn_blocks_bad_word() -> void:
@@ -131,9 +208,10 @@ func _test_game_over_via_board_completion() -> void:
 	var session := GameSession.new(2, _dictionary)
 	_check(not session.is_game_over(), "sanity: a fresh session isn't over")
 
-	# Fill the whole board directly (bypassing GrowthRules — this test is
-	# about GameSession's aggregation, not placement legality, which has
-	# its own tests already).
+	# Fill the whole board directly, skipping GameSession.place_tile
+	# entirely — this test is about GameSession's aggregation (is_game_over,
+	# winner_id), not placement, and this way avoids needing 117 tiles
+	# individually dealt into a hand first.
 	for row in range(12):
 		session.board.place(row, 0, Tile.new("X", "Z", true))
 		var shorten_tile := Tile.new("Y", "", true)
@@ -247,6 +325,24 @@ func _test_move_own_tile_refuses_frozen_tile() -> void:
 	_check(session.board.tile_at(9, 0) == tile, "it stays exactly where it was")
 
 
+# move_own_tile() doesn't enforce the single-row rule either — moving this
+# turn's own tile to a different row succeeds, same as a fresh placement
+# there would, and shows up via invalid_cells() instead.
+func _test_move_own_tile_to_a_different_row_is_flagged_invalid() -> void:
+	var session := GameSession.new(1, _dictionary)
+	var tiles: Array[Tile] = []
+	for letter in ["C", "A"]:
+		var tile := Tile.new(letter, "Z", true)
+		_give_hand_tile(session, 0, tile)
+		tiles.append(tile)
+	session.place_tile(10, 2, tiles[0])
+	session.place_tile(10, 3, tiles[1])
+
+	_check(session.move_own_tile(10, 2, 6, 0), "moving to a different row succeeds")
+	_check(session.board.tile_at(6, 0) == tiles[0], "the tile is now at its new position")
+	_check(not session.can_end_turn(), "...but leaves the turn spread across two rows, blocked")
+
+
 func _test_move_word() -> void:
 	var session := GameSession.new(1, _dictionary)
 	var tiles: Array[Tile] = []
@@ -317,10 +413,10 @@ func _test_move_word_by_grabbed_tile_refuses_illegal_destination() -> void:
 	session.place_tile(12, 3, tiles[1])
 	session.place_tile(12, 4, tiles[2])
 
-	# Placed directly on the board (bypassing GrowthRules, same as
-	# _test_game_over_via_board_completion) since a disconnected tile at
-	# col 7 wouldn't be adjacent to anything and GrowthRules would refuse
-	# it — this test is about WordMove's destination check, not placement.
+	# Placed directly on the board (same shortcut as
+	# _test_game_over_via_board_completion, no hand bookkeeping needed) —
+	# this test is about WordMove's destination-occupied check, not
+	# placement itself.
 	session.board.place(12, 7, Tile.new("X", "Z", true))  # occupies where "T" would land
 
 	_check(

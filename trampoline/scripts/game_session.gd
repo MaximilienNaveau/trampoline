@@ -17,13 +17,16 @@ var dictionary: FrenchDictionary
 # still "in progress" and can be freely taken back or relocated (see
 # `_can_take_back`/`move_own_tile` below), unlike a tile placed in an
 # earlier, already-ended turn, which is frozen in place (only a whole word
-# can be relocated afterward, via `move_word`). Reset every `_start_turn()`.
+# can be relocated afterward, via `move_word`). Also what `invalid_cells()`
+# below checks against: a turn confined to one row and one connected group
+# of letters (see doc/RULES.md) is a property of ALL of this turn's tiles
+# together, not any single placement. Reset every `_start_turn()`.
 var _placed_this_turn: Array[Tile] = []
 
 
 # `dictionary` can be injected (e.g. a test reusing one already-loaded
 # instance across several sessions, since loading it re-reads and
-# normalizes ~79000 lines every time) — defaults to loading a fresh one.
+# normalizes ~438,000 lines every time) — defaults to loading a fresh one.
 func _init(number_of_players: int, a_dictionary: FrenchDictionary = null) -> void:
 	board = Board.new()
 	# Kept as its own field (not just handed to TileBag and forgotten) so
@@ -67,15 +70,20 @@ func winner_id() -> int:
 	return best
 
 
-# Places one of the current player's own hand tiles at (row, col), if
-# GrowthRules allows it there. Returns false and does nothing if `tile`
-# isn't currently in the current player's hand, or if the placement
-# itself isn't legal.
+# Places one of the current player's own hand tiles at (row, col), as long
+# as it's actually empty. Returns false and does nothing if `tile` isn't
+# currently in the current player's hand, or the cell is already occupied.
+# Deliberately does NOT check GrowthRules/TurnValidity here — a player is
+# free to place tiles anywhere and rearrange all turn; `can_end_turn()`
+# below is what actually catches an illegal result, the same way an
+# invalid dictionary word already works (see word_challenge.gd). This lets
+# the UI show the player what's wrong (see `invalid_cells()`) rather than
+# just silently refusing to let a tile land somewhere.
 func place_tile(row: int, col: int, tile: Tile) -> bool:
 	var player_id := turns.current_player_id()
 	if not bag.hand(player_id).has(tile):
 		return false
-	if not GrowthRules.place(board, row, col, tile):
+	if not board.place(row, col, tile):
 		return false
 	bag.consume(player_id, tile)
 	scoring.record_placement(row, col, player_id)
@@ -126,15 +134,17 @@ func remove_tile(row: int, col: int) -> Tile:
 # from (from_row, from_col) to (to_row, to_col) — see `_can_take_back`
 # above for why an older, frozen tile can't move this way (use `move_word`
 # for those instead). Returns false and does nothing if picking the tile up
-# isn't legal, or if GrowthRules refuses the destination.
+# isn't legal, or the destination is already occupied — like `place_tile`,
+# doesn't otherwise restrict WHERE it can land; `can_end_turn()` is what
+# catches an illegal result.
 func move_own_tile(from_row: int, from_col: int, to_row: int, to_col: int) -> bool:
 	var tile := board.tile_at(from_row, from_col)
 	if tile == null or not _can_take_back(from_row, from_col, tile):
 		return false
 
 	board.remove(from_row, from_col)
-	if not GrowthRules.place(board, to_row, to_col, tile):
-		board.place(from_row, from_col, tile)  # rollback: destination refused
+	if not board.place(to_row, to_col, tile):
+		board.place(from_row, from_col, tile)  # rollback: destination occupied
 		return false
 
 	scoring.forget(from_row, from_col)
@@ -181,18 +191,21 @@ func flip_tile(row: int, col: int) -> bool:
 	return true
 
 
-# Whether (row, col) is currently a legal spot to drop a new tile (see
-# GrowthRules.can_place) — exposed so BoardView can ask through a Callable
-# (see board_view.gd's `refresh`) instead of BoardCell hardcoding
-# GrowthRules itself.
+# Whether (row, col) is currently a legal spot to drop a new tile: simply
+# whether it's empty. Placement itself no longer enforces GrowthRules (see
+# `place_tile`'s own comment) — exposed so BoardView can ask through a
+# Callable (see board_view.gd's `refresh`) instead of BoardCell hardcoding
+# this itself.
 func can_place_here(row: int, col: int) -> bool:
-	return GrowthRules.can_place(board, row, col)
+	return board.is_empty(row, col)
 
 
-# Whether the current player may end their turn right now (see
-# word_challenge.gd — blocked while any word on the board is invalid).
+# Whether the current player may end their turn right now: blocked while
+# any word on the board is invalid (see word_challenge.gd) OR this turn's
+# own placements don't form one legal single-row, single-word turn (see
+# turn_validity.gd).
 func can_end_turn() -> bool:
-	return WordChallenge.can_end_turn(board, dictionary)
+	return WordChallenge.can_end_turn(board, dictionary) and invalid_cells().is_empty()
 
 
 # The word(s) currently blocking `can_end_turn()` above, as a list of
@@ -201,6 +214,15 @@ func can_end_turn() -> bool:
 # refused, rather than only reporting that it did.
 func invalid_words() -> Array:
 	return WordChallenge.find_invalid_words(board, dictionary)
+
+
+# The cell(s) currently blocking `can_end_turn()` for the OTHER reason (see
+# turn_validity.gd) — this turn's own placements spread across more than
+# one row, or split into more than one disconnected group of letters.
+# Empty if this turn, so far, is legal on this front (independent of
+# whether a word elsewhere on the board also happens to be invalid).
+func invalid_cells() -> Array:
+	return TurnValidity.invalid_cells(board, _placed_this_turn)
 
 
 # Ends the current player's turn: tallies every player's current score,

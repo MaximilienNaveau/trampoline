@@ -1,12 +1,17 @@
-# The turn-based/scored-play ruleset for growing a row's words: a new
-# tile must extend one of the row's existing words (prefix or suffix,
-# never a gap) or start the row's first word if it's still empty, and
-# only a currently-blank-showing tile can be taken back — a real letter,
-# once placed, never can (see doc/RULES.md).
+# `can_remove`/`remove` (the "shorten" blank-at-an-edge mechanic) are still
+# what GameSession enforces during a turn (see doc/RULES.md). `can_place`/
+# `place`, on the other hand, describe what "growing" a row properly looks
+# like — a new tile extending one of the row's existing words (prefix or
+# suffix, never a gap) or starting the row's first word if it's still
+# empty — but GameSession no longer gates PLACEMENT on this: a player can
+# drop a tile anywhere and rearrange all turn, and `TurnValidity` is what
+# actually catches an illegal result at end-turn (see turn_validity.gd and
+# game_session.gd's `place_tile`). Kept here, tested and correct, in case a
+# future "does this look like a good spot" hint ever wants it again.
 #
-# This is NOT how free-play mode works — free play calls straight into
-# Board with no restrictions at all (see board.gd). Only turn-based/scored
-# modes should go through this file.
+# This is NOT how free-play mode works either way — free play calls
+# straight into Board with no restrictions at all (see board.gd). Only
+# turn-based/scored modes should go through this file.
 #
 # Every function here is `static`: this class holds no state of its own,
 # it only asks questions about (or acts on) a `Board` passed in as an
