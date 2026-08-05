@@ -1,6 +1,6 @@
 # Manages drawing tiles from a shared, shuffled pool and tracking which
 # tiles each player currently holds. This mirrors
-# `../trampoline/Assets/Scripts/TokenDistributor.cs` in the Unity project:
+# `../trampoline-unity/Assets/Scripts/TokenDistributor.cs` in the Unity project:
 # same shuffle-once-then-draw-in-order behavior, same per-player hand
 # tracking, just in GDScript.
 class_name TileBag

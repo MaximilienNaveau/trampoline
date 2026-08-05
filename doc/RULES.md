@@ -10,7 +10,7 @@ source to read first.
 (`Trampoline.doc`, `" Trampoline Version 2015.doc"`, `Compter les points
 .ods`, the `GRILLE *.xls` puzzle booklet, `Une lettre.xls`, `testtonio.xls`)
 and cross-validated against the existing Unity/C# implementation in
-`../trampoline/Assets/Scripts/` (`TokenPool.cs`, `BasicToken.cs`,
+`../trampoline-unity/Assets/Scripts/` (`TokenPool.cs`, `BasicToken.cs`,
 `TokenDistributor.cs`, `RowLetterHistory.cs`, `TurnManager.cs`), plus
 clarifications from Maximilien Naveau (current implementer) where the
 sources disagreed or were ambiguous. Where this document and the legacy
@@ -111,7 +111,7 @@ green penalty by design.
 The exact front/back pairing for all 117 tiles (which specific yellow
 letter is paired with which specific green letter) is not separately
 documented here — it's canonically defined in
-`../trampoline/Assets/Scripts/TokenPool.cs` (`InitializeTokens()`, all 117
+`../trampoline-unity/Assets/Scripts/TokenPool.cs` (`InitializeTokens()`, all 117
 `SetParameters(...)` calls). Treat that file as the source of truth for
 pairing; reuse it directly when porting rather than re-deriving a new one.
 
@@ -152,7 +152,7 @@ proven wrong, it's removed from the board and the offending player loses
 their turn. **Simplified for the current implementation** (confirmed by
 Maximilien): rather than building the full challenge/penalty flow now, a
 player simply cannot end their turn while any word on the board is
-invalid (`WordChallenge.can_end_turn`, in `trampoline-godot/scripts/`) —
+invalid (`WordChallenge.can_end_turn`, in `trampoline/scripts/`) —
 every turn must leave only valid words behind, no challenging needed. The
 fuller challenge/penalty mechanic — including several open questions
 (where removed tiles go, what the penalty actually is, who can challenge

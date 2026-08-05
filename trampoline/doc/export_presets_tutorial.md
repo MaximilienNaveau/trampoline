@@ -1,6 +1,6 @@
 # Rebuilding/validating `export_presets.cfg` through the editor
 
-`export_presets.cfg` (repo root of `trampoline-godot/`) was hand-authored
+`export_presets.cfg` (repo root of `trampoline/`) was hand-authored
 because there's no local Android/iOS/macOS toolchain here to generate it the
 normal way. This tutorial uses the *editor's own Export dialog* to validate
 (and fix) that file — Godot parses whatever's on disk, so anything it
@@ -8,7 +8,7 @@ misunderstood will show up as a missing preset or an empty field, not a
 crash. Do this once, save, and the file becomes the real, editor-verified
 source of truth going forward — no more guessing at field names.
 
-Do this from a normal `nix develop` shell in `trampoline-godot/`, running
+Do this from a normal `nix develop` shell in `trampoline/`, running
 `godot4 --editor --path .` — the `--editor` flag matters: `godot4 --path .`
 alone runs the game itself (same as pressing Play), it's `--editor` that
 opens the editor UI instead.
@@ -138,7 +138,7 @@ there's no separate "Save" button to hunt for. As a safety net, click
 Then, from a shell:
 
 ```
-git diff trampoline-godot/export_presets.cfg
+git diff trampoline/export_presets.cfg
 ```
 
 Whatever shows up there is the real, ground-truth correction to whatever I
@@ -149,6 +149,6 @@ reference literally) changed.
 One more side effect to know about: opening the full editor UI (as opposed
 to `--headless`) on this project will likely also rewrite `project.godot`
 itself — Godot tends to strip out hand-written comments there the same way
-it did once already this session. Run `git diff trampoline-godot/project.godot`
+it did once already this session. Run `git diff trampoline/project.godot`
 too, and if it just shows lost comments with no real setting changes,
 `git restore` it before committing anything.

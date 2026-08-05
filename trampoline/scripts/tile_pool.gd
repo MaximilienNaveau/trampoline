@@ -1,6 +1,6 @@
 # The fixed catalog of all 117 tiles that exist in a single game.
 #
-# This mirrors `../trampoline/Assets/Scripts/TokenPool.cs::InitializeTokens()`
+# This mirrors `../trampoline-unity/Assets/Scripts/TokenPool.cs::InitializeTokens()`
 # in the original Unity project exactly — same 117 letter pairs, same order
 # — so it's the authoritative source for tile pairing, not something to
 # redesign. See doc/RULES.md for the rules this data encodes (letter
