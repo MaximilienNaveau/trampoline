@@ -1,0 +1,145 @@
+name: Godot Release
+
+# `godot-v*` (never the bare `v*` the old Unity workflow used, so the two
+# can never collide) triggers a real, public release: a GitHub Release plus
+# a gh-pages deploy of the Web build. `workflow_dispatch` runs everything
+# EXCEPT those two public-facing steps (see the `release` job below) so this
+# can be dry-run freely to sanity-check the export step itself before ever
+# trusting a real tag.
+on:
+  push:
+    tags:
+      - 'godot-v[0-9]+.[0-9]+.[0-9]+'
+  workflow_dispatch:
+
+jobs:
+  export-desktop-mobile-web:
+    name: Export ${{ matrix.preset }}
+    runs-on: ubuntu-latest
+    container: barichello/godot-ci:4.7.1-stable
+    defaults:
+      run:
+        working-directory: trampoline-godot
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - preset: Linux
+            artifact_name: linux-build
+            build_dir: build/linux
+          - preset: Android
+            artifact_name: android-build
+            build_dir: build/android
+          - preset: macOS
+            artifact_name: macos-build
+            build_dir: build/macos
+          - preset: Web
+            artifact_name: web-build
+            build_dir: build/web
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Make build directory
+        run: mkdir -p ${{ matrix.build_dir }}
+
+      # Same "prime the import cache once" step godot_ci.yml runs before its
+      # own tests — an export run against never-imported assets is a known
+      # source of missing-resource failures.
+      - name: Import project resources
+        run: godot --headless --editor --quit --path .
+
+      - name: Export ${{ matrix.preset }}
+        run: godot --headless --verbose --export-release "${{ matrix.preset }}"
+
+      - name: Upload ${{ matrix.preset }} artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: trampoline-godot/${{ matrix.build_dir }}
+
+  export-ios:
+    name: Export iOS (unsigned Xcode project)
+    runs-on: macos-latest
+    defaults:
+      run:
+        working-directory: trampoline-godot
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@main
+
+      # No Docker on macOS runners, so this job uses the same flake as
+      # local dev/godot_ci.yml instead of the barichello/godot-ci image —
+      # which also means, unlike that image, export templates aren't
+      # bundled here and need fetching to match the pinned 4.7.1 version.
+      - name: Fetch matching export templates
+        run: |
+          set -e
+          curl -L -o /tmp/export_templates.tpz \
+            "https://github.com/godotengine/godot/releases/download/4.7.1-stable/Godot_v4.7.1-stable_export_templates.tpz"
+          template_dir="$HOME/Library/Application Support/Godot/export_templates/4.7.1.stable"
+          mkdir -p "$template_dir"
+          unzip -q /tmp/export_templates.tpz -d /tmp/export_templates
+          mv /tmp/export_templates/templates/* "$template_dir/"
+
+      - name: Make build directory
+        run: mkdir -p build/ios
+
+      - name: Import project resources
+        run: nix develop --command godot4 --headless --editor --quit --path .
+
+      - name: Export iOS
+        run: nix develop --command godot4 --headless --verbose --export-release "iOS"
+
+      - name: Zip Xcode project
+        run: |
+          cd build/ios
+          zip -r ../../ios-xcodeproj.zip .
+
+      - name: Upload iOS artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: ios-xcodeproj
+          path: trampoline-godot/ios-xcodeproj.zip
+
+  release:
+    name: Publish release
+    needs: [export-desktop-mobile-web, export-ios]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v7
+        with:
+          path: artifacts
+
+      - name: Zip per-platform builds
+        run: |
+          set -e
+          cd artifacts
+          (cd linux-build && zip -r "../trampoline-godot-${{ github.ref_name }}-linux.zip" .)
+          (cd macos-build && zip -r "../trampoline-godot-${{ github.ref_name }}-macos.zip" .)
+          (cd web-build && zip -r "../trampoline-godot-${{ github.ref_name }}-web.zip" .)
+          cp ios-xcodeproj/ios-xcodeproj.zip "trampoline-godot-${{ github.ref_name }}-ios-xcodeproj.zip"
+          cp android-build/trampoline.apk "trampoline-godot-${{ github.ref_name }}-android.apk"
+
+      # Only a real tag push publishes anything publicly visible — a
+      # workflow_dispatch test run stops right after the zips above, so its
+      # output can be inspected as an ordinary (private) workflow artifact
+      # without creating a GitHub Release or touching gh-pages.
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/trampoline-godot-*
+
+      - name: Deploy Web build to GitHub Pages
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          branch: gh-pages
+          folder: artifacts/web-build
