@@ -1,0 +1,45 @@
+name: Godot CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint-and-test:
+    name: Lint & test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: trampoline-godot
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@main
+
+      - name: Check formatting (gdformat)
+        run: nix develop --command gdformat --check scripts/*.gd
+
+      - name: Lint (gdlint)
+        run: nix develop --command gdlint scripts/*.gd
+
+      - name: Refresh class-name cache
+        run: nix develop --command godot4 --headless --editor --quit --path .
+
+      - name: Run test suite
+        run: |
+          nix develop --command bash -c '
+            set -e
+            status=0
+            for test_file in tests/*.gd; do
+              echo "::group::$test_file"
+              if ! godot4 --headless --path . --script "$test_file"; then
+                status=1
+              fi
+              echo "::endgroup::"
+            done
+            exit "$status"
+          '
