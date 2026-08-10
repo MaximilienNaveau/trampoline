@@ -40,7 +40,7 @@ jobs:
             build_dir: build/web
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Make build directory
         run: mkdir -p ${{ matrix.build_dir }}
@@ -68,7 +68,7 @@ jobs:
         working-directory: trampoline
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@main
