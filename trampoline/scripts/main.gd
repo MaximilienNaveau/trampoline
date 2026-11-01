@@ -158,6 +158,16 @@ var _save_and_restart_button: Button
 	$Layout/Margin/Content/StartMenu/CrosswordGrid/CrosswordPuzzle10Button,
 ]
 @onready var _clue_list_view: ClueListView = $Layout/Margin/Content/PlayArea/HandArea/ClueListView
+# The "pass the phone" screen shown between two players' turns (see
+# `_begin_turn` below). Like EndTurnMessage, it's a direct child of Main,
+# declared AFTER Layout in main.tscn so it draws over the whole page —
+# board and hand included — and, being a fully opaque `Panel` (same theme
+# background as `Background`), hides the next player's tiles until they
+# press "Jouer". A `Panel` also swallows every click/touch that lands on
+# it, so nothing underneath can be dragged while it's up.
+@onready var _handoff_screen: Panel = $HandoffScreen
+@onready var _handoff_player_name: Label = $HandoffScreen/Center/Items/PlayerName
+@onready var _handoff_play_button: Button = $HandoffScreen/Center/Items/PlayButton
 
 
 func _ready() -> void:
@@ -190,6 +200,7 @@ func _ready() -> void:
 	_update_play_area_orientation()
 	_hand_view.tile_returned.connect(_on_hand_tile_returned)
 	_end_turn_button.pressed.connect(_on_end_turn_pressed)
+	_handoff_play_button.pressed.connect(_on_handoff_play_pressed)
 	_save_button.pressed.connect(_on_save_pressed)
 	_load_button.pressed.connect(_on_load_pressed)
 	_new_game_button.pressed.connect(_on_new_game_pressed)
@@ -351,7 +362,7 @@ func _on_names_confirmed() -> void:
 	_load_button.visible = true
 	_new_game_button.visible = true
 	_refresh_views()
-	_restart_turn_timer()
+	_begin_turn()
 
 
 # Called when NameEntry's "Retour" button is pressed — no session
@@ -577,7 +588,7 @@ func _on_load_file_selected(path: String) -> void:
 		_player_names = []  # a loaded session has no names of its own
 		_set_end_turn_message("")
 		_refresh_views()
-		_restart_turn_timer()
+		_begin_turn()
 
 
 # Called when the End Turn button is pressed. `end_turn()` itself refuses
@@ -588,10 +599,34 @@ func _on_load_file_selected(path: String) -> void:
 func _on_end_turn_pressed() -> void:
 	if _session.end_turn():
 		_set_end_turn_message("")
-		_restart_turn_timer()
+		_begin_turn()
 	else:
 		_set_end_turn_message(_format_end_turn_error())
 	_refresh_views()
+
+
+# Starts whoever's turn it now is. With 2+ players sharing one phone, the
+# next player's hand must stay hidden from the one who just played, so
+# this first covers the screen with HandoffScreen showing who's up next —
+# the real turn (and its timer) only starts once they press "Jouer" (see
+# `_on_handoff_play_pressed`). Solo play, and a game that just ended,
+# have nobody to hand over to, so they skip straight to the timer.
+func _begin_turn() -> void:
+	if _session.turns.number_of_players == 1 or _session.is_game_over():
+		_restart_turn_timer()
+		return
+	_handoff_player_name.text = _player_name(_session.turns.current_player_id())
+	_handoff_screen.visible = true
+	# Paused while the phone changes hands, so passing it around doesn't
+	# eat into the next player's 3 minutes.
+	_turn_timer.stop()
+
+
+# Called when HandoffScreen's "Jouer" button is pressed — the next player
+# now holds the phone, so reveal their hand and start their clock.
+func _on_handoff_play_pressed() -> void:
+	_handoff_screen.visible = false
+	_restart_turn_timer()
 
 
 # Sets a status label's text AND hides it whenever that text is empty —
@@ -757,6 +792,7 @@ func _return_to_start_menu() -> void:
 	_clue_list_view.visible = false
 	_name_entry_menu.visible = false
 	_options_panel.visible = false
+	_handoff_screen.visible = false
 	_player_names = []
 	_set_end_turn_message("")
 	_set_status_text(_game_over_banner, "")
