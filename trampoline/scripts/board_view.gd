@@ -142,12 +142,7 @@ func _build_grid() -> void:
 			panel.word_moved.connect(_on_cell_word_moved)
 			panel.tile_flipped.connect(_on_cell_tile_flipped)
 
-			var label := Label.new()
-			# PRESET_FULL_RECT stretches the label to fill its parent
-			# panel entirely, rather than sizing itself to just the text.
-			label.set_anchors_preset(Control.PRESET_FULL_RECT)
-			label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-			label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+			var label := TileView.build_letter_label()
 			panel.add_child(label)
 			# Handed to the cell itself (not just kept here) so it can
 			# redraw its own text/color — needed both by `refresh()` below
@@ -218,15 +213,13 @@ func _update_cell_sizes() -> void:
 	_cell_side = min(
 		floor(available_width / Board.COLUMNS), floor(available_height / Board.ROWS), _MAX_CELL_SIDE
 	)
-	# The letter's font size scales with the cell itself, rather than
+	# The letter and corner square scale with the cell itself, rather than
 	# staying fixed — a fixed size would look tiny on a wide screen's
-	# huge cells, or overflow a narrow screen's small ones. This ratio
-	# was picked by eye against the tile art.
-	var font_size := int(_cell_side * 0.5)
+	# huge cells, or overflow a narrow screen's small ones.
 	for panel_row in _cell_panels:
 		for panel: BoardCell in panel_row:
 			panel.custom_minimum_size = Vector2(_cell_side, _cell_side)
-			panel.label.add_theme_font_size_override("font_size", font_size)
+			TileView.fit_to_side(panel.label, panel.corner_badge, _cell_side)
 	cell_size_changed.emit(_cell_side)
 
 

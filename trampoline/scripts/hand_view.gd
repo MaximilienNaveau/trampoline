@@ -89,10 +89,7 @@ func refresh(hand: Array[Tile], tile_side: float) -> void:
 		panel.custom_minimum_size = Vector2(tile_side, tile_side)
 		panel.add_theme_stylebox_override("panel", TileView.style_for_tile(tile))
 
-		var label := Label.new()
-		label.set_anchors_preset(Control.PRESET_FULL_RECT)
-		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		var label := TileView.build_letter_label()
 		label.text = tile.current_letter()
 		panel.add_child(label)
 		panel.label = label
@@ -104,6 +101,8 @@ func refresh(hand: Array[Tile], tile_side: float) -> void:
 		TileView.update_corner_badge(corner_badge, tile)
 		panel.add_child(corner_badge)
 		panel.corner_badge = corner_badge
+		# Same letter/corner proportions as on the board, at this size.
+		TileView.fit_to_side(label, corner_badge, tile_side)
 
 		_row.add_child(panel)
 

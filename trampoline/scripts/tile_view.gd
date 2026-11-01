@@ -8,9 +8,48 @@
 class_name TileView
 extends RefCounted
 
-const YELLOW_COLOR := Color(0.96, 0.87, 0.4)
-const GREEN_COLOR := Color(0.6, 0.85, 0.55)
+# Face colors and letter ink taken from the physical tiles (see
+# doc/ART_DIRECTION.md's palette and the photos in doc/real-game/): a pale
+# butter-lime yellow, a muted sage green, and slate-charcoal letters.
+const YELLOW_COLOR := Color("eae5a0")
+const GREEN_COLOR := Color("9cb46b")
+const LETTER_COLOR := Color("363a42")
 const EMPTY_COLOR := Color(0.88, 0.88, 0.88)
+
+# Jost SemiBold — a geometric sans close to the real tiles' lettering.
+# `preload` loads a resource once, when this script itself is loaded
+# (like a module-level constant in Python), rather than on every call.
+# jost_semibold.tres is a FontVariation: Godot's way of picking one weight
+# out of a variable font file that holds them all.
+const LETTER_FONT := preload("res://assets/fonts/jost_semibold.tres")
+
+# Sizes relative to the tile's side: the main letter, the corner square,
+# and the corner square's letter. Tuned by rendering every letter A-Z at
+# 32/40/48 px tiles and measuring the gap between the letter's ink and
+# the corner square: with these values (and the shift below) even the
+# widest letters (W, V, H, K) keep at least 3 px clear of it. A bigger
+# main letter or square made W/V touch or overlap the square.
+const _LETTER_SIZE_RATIO := 0.55
+const _CORNER_SIZE_RATIO := 0.34
+const _CORNER_LETTER_SIZE_RATIO := 0.30
+
+# How far the main letter sits below and left of center, as fractions of
+# the side — away from the top-right square. Moving it down buys the most
+# clearance for the least shrinking (the real tiles' letters also sit a
+# little low); the small left shift balances it in the space the square
+# leaves free.
+const _LETTER_DROP_RATIO := 0.09
+const _LETTER_LEFT_RATIO := 0.05
+
+# Godot centers a label's whole line box, which in Jost leaves more room
+# below the capitals (for descenders) than above — so the corner letter
+# rendered about 2 px low, with J's tail poking out under the square.
+# Lifting it by this fraction of the side re-centers it (measured: equal
+# gaps above and below a capital E).
+const _CORNER_LETTER_LIFT_RATIO := 0.04
+
+# Tile corners are only slightly rounded — the real tiles are cut squares.
+const _CORNER_RADIUS := 3
 
 # The red used to flag a cell that's part of why the current turn can't
 # end yet (see GameSession.invalid_cells/invalid_words) — a thick border
@@ -44,21 +83,64 @@ static func empty_style() -> StyleBoxFlat:
 # The letter a tile would show if flipped right now — whichever face ISN'T
 # currently showing. Lets a player see what's "behind" a tile before
 # committing to flip it (see doc/RULES.md's "trampoline" mechanic). A
-# blank back face (the "shorten" mechanic) reads as "-", matching the
-# physical tile's own printed face.
+# blank back face (the "shorten" mechanic) has no letter: it's shown as a
+# plain dark square instead (see `other_face_color`), as on the physical
+# tile.
 static func other_face_letter(tile: Tile) -> String:
 	if tile.is_showing_front():
-		return tile.back_letter() if tile.back_letter() != "" else "-"
+		return tile.back_letter()
 	return tile.front_letter()
 
 
 # The color other_face_letter() above would be shown in — the front face
 # is always yellow (see tile.gd); the back is green unless it's one of the
-# two special all-yellow tiles.
+# two special all-yellow tiles, or ink-dark when it's blank.
 static func other_face_color(tile: Tile) -> Color:
 	if tile.is_showing_front():
+		if tile.back_letter() == "":
+			return LETTER_COLOR
 		return GREEN_COLOR if tile.back_is_green() else YELLOW_COLOR
 	return YELLOW_COLOR
+
+
+# Creates the big centered letter every tile view shows (BoardCell,
+# TilePanel, drag previews), in the tiles' own font and ink color, so the
+# three places that draw a tile can't drift apart. Its size is set
+# separately by `fit_to_side` below, once the tile's size is known.
+static func build_letter_label() -> Label:
+	var label := Label.new()
+	# PRESET_FULL_RECT stretches the label to fill its parent panel
+	# entirely, rather than sizing itself to just the text.
+	label.set_anchors_preset(Control.PRESET_FULL_RECT)
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	label.add_theme_font_override("font", LETTER_FONT)
+	label.add_theme_color_override("font_color", LETTER_COLOR)
+	return label
+
+
+# Scales a tile's letter and corner square to a tile `side` pixels wide —
+# called whenever tiles change size (see BoardView._update_cell_sizes,
+# HandView.refresh), so the proportions match the real tile at any size.
+static func fit_to_side(letter: Label, badge: Panel, side: float) -> void:
+	letter.add_theme_font_size_override("font_size", int(side * _LETTER_SIZE_RATIO))
+	# The label fills the tile (see `build_letter_label`); its `offset_*`
+	# values are pixel distances from those anchored edges, so adding the
+	# same amount to both top and bottom slides it down without resizing
+	# it (and the same for left/right, sliding it left).
+	var drop := roundf(side * _LETTER_DROP_RATIO)
+	letter.offset_top = drop
+	letter.offset_bottom = drop
+	var left := roundf(side * _LETTER_LEFT_RATIO)
+	letter.offset_left = -left
+	letter.offset_right = -left
+	var corner_side := roundf(side * _CORNER_SIZE_RATIO)
+	badge.custom_minimum_size = Vector2(corner_side, corner_side)
+	var badge_label: Label = badge.get_node("Label")
+	badge_label.add_theme_font_size_override("font_size", int(side * _CORNER_LETTER_SIZE_RATIO))
+	var lift := roundf(side * _CORNER_LETTER_LIFT_RATIO)
+	badge_label.offset_top = -lift
+	badge_label.offset_bottom = -lift
 
 
 # Creates the small top-right badge every tile view (BoardCell, TilePanel,
@@ -85,18 +167,19 @@ static func build_corner_badge() -> Panel:
 	# Panel like this one would just get resolved back down to 0x0 the next
 	# time anything re-runs layout on it (unlike a Label, whose own text
 	# already gives it a real size to grow from).
-	badge.custom_minimum_size = Vector2(14, 12)
+	# (Its real size is set by `fit_to_side` above; this is just a
+	# placeholder until then.)
+	badge.custom_minimum_size = Vector2(14, 14)
+	# Lets clicks/drags through to the tile underneath — the badge is part
+	# of the tile's picture, not something to interact with on its own.
+	badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	badge.visible = false
 
-	var label := Label.new()
+	var label := build_letter_label()
 	# A node's `name` lets a later lookup find it again via get_node() (see
 	# update_corner_badge below) — like a dictionary key, except it's how
 	# Godot's scene tree itself is addressed.
 	label.name = "Label"
-	label.set_anchors_preset(Control.PRESET_FULL_RECT)
-	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	label.add_theme_font_size_override("font_size", 8)
 	badge.add_child(label)
 
 	return badge
@@ -104,10 +187,16 @@ static func build_corner_badge() -> Panel:
 
 # Refreshes a badge built by build_corner_badge() above to match `tile`'s
 # current state — needed after a flip, since which face counts as "the
-# other one" swaps too.
+# other one" swaps too. Drawn as a flat square flush in the tile's
+# top-right corner, like the patch printed on the physical tile: no
+# border or shadow of its own, and only its top-right corner rounded, to
+# follow the tile's own rounded corner.
 static func update_corner_badge(badge: Panel, tile: Tile) -> void:
 	badge.visible = true
-	badge.add_theme_stylebox_override("panel", _make_style(other_face_color(tile)))
+	var style := StyleBoxFlat.new()
+	style.bg_color = other_face_color(tile)
+	style.corner_radius_top_right = _CORNER_RADIUS
+	badge.add_theme_stylebox_override("panel", style)
 	var label: Label = badge.get_node("Label")
 	label.text = other_face_letter(tile)
 
@@ -161,15 +250,13 @@ static func _build_tile_visual(tile: Tile, tile_size: Vector2) -> Control:
 	var visual := Panel.new()
 	visual.size = tile_size
 	visual.add_theme_stylebox_override("panel", style_for_tile(tile))
-	var label := Label.new()
-	label.set_anchors_preset(Control.PRESET_FULL_RECT)
-	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	var label := build_letter_label()
 	label.text = tile.current_letter()
 	visual.add_child(label)
 	var corner := build_corner_badge()
 	update_corner_badge(corner, tile)
 	visual.add_child(corner)
+	fit_to_side(label, corner, tile_size.x)
 	return visual
 
 
@@ -177,20 +264,20 @@ static func _build_tile_visual(tile: Tile, tile_size: Vector2) -> Control:
 # rounded/bordered) rectangle. Deliberately kept flat rather than
 # embossed/beveled — a stronger "3D" look (tried and rejected earlier)
 # reads fine on one isolated tile but turns into a busy, repetitive
-# waffle pattern once tiled edge-to-edge 117 times across the board. A
-# thin border plus a soft shadow — closer to how a polished mobile
-# Scrabble app draws its own tiles — is what actually holds up at that
-# scale: a clean, flat color that still visibly sits above the board.
+# waffle pattern once tiled edge-to-edge 117 times across the board. The
+# real tiles are flat printed card on a thin cork base, so: a matte face,
+# a 2px darker bottom edge standing in for that base's thickness, and a
+# small shadow to lift it off the board.
 static func _make_style(color: Color) -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
 	style.bg_color = color
 	# `darkened()` returns the same hue at a lower brightness — cheaper
 	# than a second color constant per caller, and always stays in sync
 	# with whichever color this style was actually built for.
-	style.border_color = color.darkened(0.35)
-	style.set_border_width_all(2)
-	style.set_corner_radius_all(4)
-	style.shadow_color = Color(0, 0, 0, 0.3)
-	style.shadow_size = 3
-	style.shadow_offset = Vector2(0, 2)
+	style.border_color = color.darkened(0.3)
+	style.border_width_bottom = 2
+	style.set_corner_radius_all(_CORNER_RADIUS)
+	style.shadow_color = Color(0, 0, 0, 0.25)
+	style.shadow_size = 2
+	style.shadow_offset = Vector2(0, 1)
 	return style
