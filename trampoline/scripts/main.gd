@@ -158,6 +158,10 @@ var _save_and_restart_button: Button
 	$Layout/Margin/Content/StartMenu/CrosswordGrid/CrosswordPuzzle10Button,
 ]
 @onready var _clue_list_view: ClueListView = $Layout/Margin/Content/PlayArea/HandArea/ClueListView
+# Portrait's replacement for `_clue_list_view`: a "?" per board row that
+# pops up its clue in a speech bubble (see clue_markers_view.gd). A child
+# of BoardView in main.tscn, so it sits over the board and scrolls with it.
+@onready var _clue_markers: ClueMarkersView = $Layout/Margin/Content/PlayArea/BoardView/ClueMarkers
 # The "pass the phone" screen shown between two players' turns (see
 # `_begin_turn` below). Like EndTurnMessage, it's a direct child of Main,
 # declared AFTER Layout in main.tscn so it draws over the whole page —
@@ -312,8 +316,16 @@ func _on_board_cell_size_changed(_side: float) -> void:
 # genuinely the entire difference between those two node types under the
 # hood, `BoxContainer.vertical` is just normally locked once you pick one.
 func _update_play_area_orientation() -> void:
+	_play_area.vertical = _is_portrait()
+
+
+# Whether the window is at least as tall as it is wide (a phone held
+# upright) — read straight off the viewport rather than `_play_area.
+# vertical`, since BoardView's own resize handling can trigger
+# `_refresh_views` before `_update_play_area_orientation` has caught up.
+func _is_portrait() -> bool:
 	var size := get_viewport_rect().size
-	_play_area.vertical = size.x <= size.y
+	return size.x <= size.y
 
 
 # Called whenever a BoardCell gets dragged onto the hand row OR the
@@ -428,7 +440,6 @@ func _on_crossword_chosen(puzzle_index: int) -> void:
 	_tagline.visible = false
 	_board_view.visible = true
 	_palette_view.visible = true
-	_clue_list_view.visible = true
 	_new_game_button.visible = true
 	_save_button.visible = true
 	_load_button.visible = true
@@ -579,7 +590,6 @@ func _on_load_file_selected(path: String) -> void:
 			_free_play_session = loaded["session"]
 			var puzzle_index: int = loaded["puzzle_index"]
 			_crossword_puzzle = (CrosswordPuzzle.new(puzzle_index) if puzzle_index != -1 else null)
-			_clue_list_view.visible = _is_crossword()
 			_refresh_views()
 		return
 	var loaded_session := SaveGame.load(path, _session.dictionary)
@@ -699,10 +709,25 @@ func _refresh_views() -> void:
 		)
 		_palette_view.refresh(_free_play_session.available_tiles(), _board_view.cell_side())
 		_set_status_text(_scoreboard, "Score : %d" % _free_play_session.current_score())
+		# Clues as a list beside the board in landscape, where it fits; as
+		# "?" bubbles on the board itself in portrait, where a list would
+		# push the palette off-screen.
+		_clue_list_view.visible = _is_crossword() and not _is_portrait()
+		_clue_markers.visible = _is_crossword() and _is_portrait()
+		# Shrinks the cells just enough to fit the "?" column inside the
+		# frame. Re-fitting the cells calls back into `_refresh_views`
+		# (see `_on_board_cell_size_changed`), but only on an actual
+		# change, so this settles after one extra pass.
+		_board_view.reserved_right_width = (
+			ClueMarkersView.LANE_WIDTH if _clue_markers.visible else 0.0
+		)
 		if _is_crossword():
-			_clue_list_view.refresh(
-				_crossword_puzzle.clues, _crossword_puzzle.solved_rows(_free_play_session.board)
-			)
+			var solved := _crossword_puzzle.solved_rows(_free_play_session.board)
+			_clue_list_view.refresh(_crossword_puzzle.clues, solved)
+			var row_rects: Array[Rect2] = []
+			for row in range(Board.ROWS):
+				row_rects.append(_board_view.row_rect(row))
+			_clue_markers.refresh(_crossword_puzzle.clues, solved, row_rects)
 			if _crossword_puzzle.is_solved(_free_play_session.board):
 				_set_status_text(_game_over_banner, "Mots croisés résolus !")
 			else:
@@ -790,6 +815,8 @@ func _return_to_start_menu() -> void:
 	_new_game_button.visible = false
 	_palette_view.visible = false
 	_clue_list_view.visible = false
+	_clue_markers.visible = false
+	_board_view.reserved_right_width = 0.0
 	_name_entry_menu.visible = false
 	_options_panel.visible = false
 	_handoff_screen.visible = false

@@ -1,4 +1,4 @@
-[gd_scene load_steps=7 format=3]
+[gd_scene load_steps=8 format=3]
 
 [ext_resource type="Script" path="res://scripts/main.gd" id="1"]
 [ext_resource type="PackedScene" path="res://scenes/board_view.tscn" id="2"]
@@ -6,6 +6,7 @@
 [ext_resource type="PackedScene" path="res://scenes/palette_view.tscn" id="4"]
 [ext_resource type="PackedScene" path="res://scenes/clue_list_view.tscn" id="5"]
 [ext_resource type="Theme" path="res://assets/theme.tres" id="6"]
+[ext_resource type="Script" path="res://scripts/clue_markers_view.gd" id="7"]
 
 [sub_resource type="StyleBoxFlat" id="EndTurnBannerStyle"]
 bg_color = Color(0.75, 0.16, 0.16, 1)
@@ -306,6 +307,12 @@ theme_override_constants/separation=10
 
 [node name="BoardView" parent="Layout/Margin/Content/PlayArea" instance=ExtResource("2")]
 layout_mode=2
+
+[node name="ClueMarkers" type="Control" parent="Layout/Margin/Content/PlayArea/BoardView"]
+layout_mode=2
+mouse_filter=2
+script=ExtResource("7")
+visible=false
 
 [node name="HandArea" type="VBoxContainer" parent="Layout/Margin/Content/PlayArea"]
 layout_mode=2

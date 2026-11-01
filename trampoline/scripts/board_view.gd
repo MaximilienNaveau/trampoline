@@ -69,6 +69,19 @@ const _MAX_CELL_SIDE := 64.0
 # if main.tscn's header area ever changes size.
 const _VERTICAL_OVERHEAD := 120.0
 
+# Extra width, in pixels, kept free inside the frame right of the grid —
+# room for an overlay to draw beside the rows (crossword mode's "?"
+# column, see ClueMarkersView.LANE_WIDTH). 0 means the grid fills the
+# frame, as usual. The `set(value):` block below is a GDScript property
+# setter (like a Python @property setter): it runs on every
+# `reserved_right_width = ...`, so the cells re-fit straight away.
+var reserved_right_width: float = 0.0:
+	set(value):
+		if value == reserved_right_width:
+			return
+		reserved_right_width = value
+		_update_cell_sizes()
+
 # One cell per board square, indexed [row][col] — built once in _ready()
 # and reused by refresh(), rather than destroying and recreating 117 nodes
 # every time the board changes.
@@ -187,7 +200,9 @@ func _update_cell_sizes() -> void:
 	# it (see `_is_landscape`/`LANDSCAPE_BOARD_WIDTH_FRACTION` above).
 	if _is_landscape():
 		content_width *= LANDSCAPE_BOARD_WIDTH_FRACTION
-	var available_width := content_width - frame_margin_h - h_separation * (Board.COLUMNS - 1)
+	var available_width := (
+		content_width - frame_margin_h - reserved_right_width - h_separation * (Board.COLUMNS - 1)
+	)
 
 	# However wide a cell could be isn't the whole story — a tall, narrow
 	# board would still spill past the bottom of the screen on an ordinary
@@ -229,6 +244,20 @@ func _is_landscape() -> bool:
 # hand_view.gd) match the board's own size instead of a fixed guess.
 func cell_side() -> float:
 	return _cell_side
+
+
+# The rectangle board row `row` occupies, in Grid's own coordinates —
+# which are also the coordinates of any overlay node added as another
+# child of BoardView (see ClueMarkers in main.tscn), since a
+# PanelContainer stretches every one of its children over the exact same
+# area inside the frame. Computed from `_cell_side` rather than read off
+# the cells' own `position`s, which only catch up once Godot's container
+# layout runs again a frame later.
+func row_rect(row: int) -> Rect2:
+	var h_separation: int = _grid.get_theme_constant("h_separation")
+	var v_separation: int = _grid.get_theme_constant("v_separation")
+	var width := Board.COLUMNS * _cell_side + (Board.COLUMNS - 1) * h_separation
+	return Rect2(0, row * (_cell_side + v_separation), width, _cell_side)
 
 
 # Redraws every cell from `board`'s current state. `is_takeable`/
