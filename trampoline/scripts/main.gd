@@ -86,8 +86,16 @@ var _save_and_restart_button: Button
 # screen edge.
 @onready var _title: Label = $Layout/Margin/Content/Title
 @onready var _tagline: Label = $Layout/Margin/Content/Tagline
+# Stacks BoardView above HandArea (the hand/palette/clue list, grouped so
+# they move as one) in portrait, or arranges them side by side in
+# landscape (see `_update_play_area_orientation` below). Declared as a
+# plain `BoxContainer` in main.tscn rather than `VBoxContainer` — Godot
+# specifically refuses to change `vertical` at runtime on VBoxContainer/
+# HBoxContainer (its own two fixed-orientation convenience subclasses),
+# only on their shared base class.
+@onready var _play_area: BoxContainer = $Layout/Margin/Content/PlayArea
 @onready var _board_view: BoardView = $Layout/Margin/Content/PlayArea/BoardView
-@onready var _hand_view: HandView = $Layout/Margin/Content/PlayArea/HandView
+@onready var _hand_view: HandView = $Layout/Margin/Content/PlayArea/HandArea/HandView
 @onready var _end_turn_button: Button = $Layout/Margin/Content/TopBar/EndTurnButton
 @onready var _scoreboard: Label = $Layout/Margin/Content/Scoreboard
 @onready var _game_over_banner: Label = $Layout/Margin/Content/GameOverBanner
@@ -133,7 +141,7 @@ var _save_and_restart_button: Button
 @onready var _start_with_names_button: Button = $Layout/Margin/Content/NameEntry/Buttons/StartButton
 @onready var _back_button: Button = $Layout/Margin/Content/NameEntry/Buttons/BackButton
 @onready var _free_play_button: Button = $Layout/Margin/Content/StartMenu/FreePlayButton
-@onready var _palette_view: HandView = $Layout/Margin/Content/PlayArea/PaletteView
+@onready var _palette_view: HandView = $Layout/Margin/Content/PlayArea/HandArea/PaletteView
 # The 10 crossword puzzle-picker buttons, indexed 0..9 to match
 # CrosswordPuzzles.PUZZLES — see `_ready()`'s loop below for how each one
 # reports its own index, and crossword_puzzles.gd for the data itself.
@@ -149,7 +157,7 @@ var _save_and_restart_button: Button
 	$Layout/Margin/Content/StartMenu/CrosswordGrid/CrosswordPuzzle9Button,
 	$Layout/Margin/Content/StartMenu/CrosswordGrid/CrosswordPuzzle10Button,
 ]
-@onready var _clue_list_view: ClueListView = $Layout/Margin/Content/PlayArea/ClueListView
+@onready var _clue_list_view: ClueListView = $Layout/Margin/Content/PlayArea/HandArea/ClueListView
 
 
 func _ready() -> void:
@@ -169,6 +177,17 @@ func _ready() -> void:
 	_board_view.tile_moved.connect(_on_board_tile_moved)
 	_board_view.word_moved.connect(_on_board_word_moved)
 	_board_view.tile_flipped.connect(_on_board_tile_flipped)
+	# Keeps the free-play palette's (and the turn-based hand's) own tile
+	# size in sync with the board's, which BoardView already recomputes on
+	# every viewport resize (see board_view.gd's `_update_cell_sizes`) —
+	# without this, resizing the window would resize the board but leave
+	# the hand/palette at whatever size they were last drawn at.
+	_board_view.cell_size_changed.connect(_on_board_cell_size_changed)
+	# A wide-but-short window (a computer) fits the board and hand/palette
+	# comfortably side by side; a narrow-but-tall one (a phone) doesn't —
+	# see `_update_play_area_orientation` below.
+	get_viewport().size_changed.connect(_update_play_area_orientation)
+	_update_play_area_orientation()
 	_hand_view.tile_returned.connect(_on_hand_tile_returned)
 	_end_turn_button.pressed.connect(_on_end_turn_pressed)
 	_save_button.pressed.connect(_on_save_pressed)
@@ -262,6 +281,28 @@ func _on_board_tile_flipped(row: int, col: int) -> void:
 	else:
 		_session.flip_tile(row, col)
 	_refresh_views()
+
+
+# BoardView itself starts recomputing cell sizes from `_ready()` onward,
+# well before either kind of session might exist (e.g. resizing the window
+# while still at the start menu) — `_refresh_views()` reaches straight into
+# `_session`/`_free_play_session`, so it'd error without this guard.
+func _on_board_cell_size_changed(_side: float) -> void:
+	if _is_free_play() or _session != null:
+		_refresh_views()
+
+
+# Landscape (wider than tall) arranges PlayArea's two children — BoardView
+# and HandArea — side by side instead of stacked, matching BoardView's own
+# `_is_landscape` check so the board's own width math (see
+# `LANDSCAPE_BOARD_WIDTH_FRACTION`) agrees with how the page is actually
+# laid out. `vertical = true` behaves exactly like a VBoxContainer (today's
+# portrait layout); `false` behaves exactly like an HBoxContainer — that's
+# genuinely the entire difference between those two node types under the
+# hood, `BoxContainer.vertical` is just normally locked once you pick one.
+func _update_play_area_orientation() -> void:
+	var size := get_viewport_rect().size
+	_play_area.vertical = size.x <= size.y
 
 
 # Called whenever a BoardCell gets dragged onto the hand row OR the
@@ -621,7 +662,7 @@ func _refresh_views() -> void:
 			_free_play_session.can_take_back,
 			_free_play_session.can_place_here
 		)
-		_palette_view.refresh(_free_play_session.available_tiles())
+		_palette_view.refresh(_free_play_session.available_tiles(), _board_view.cell_side())
 		_set_status_text(_scoreboard, "Score : %d" % _free_play_session.current_score())
 		if _is_crossword():
 			_clue_list_view.refresh(
@@ -635,7 +676,9 @@ func _refresh_views() -> void:
 	_board_view.refresh(
 		_session.board, _session.can_take_back, _session.can_place_here, _session.invalid_cells()
 	)
-	_hand_view.refresh(_session.bag.hand(_session.turns.current_player_id()))
+	_hand_view.refresh(
+		_session.bag.hand(_session.turns.current_player_id()), _board_view.cell_side()
+	)
 	_set_status_text(_scoreboard, _format_scoreboard())
 	_update_game_over_banner()
 

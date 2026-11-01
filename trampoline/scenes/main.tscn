@@ -61,6 +61,7 @@ visible=false
 [node name="Text" type="Label" parent="EndTurnMessage"]
 layout_mode=2
 theme_override_colors/font_color=Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size=20
 horizontal_alignment=1
 autowrap_mode=2
 
@@ -83,12 +84,16 @@ theme_override_constants/separation=14
 
 [node name="TopBar" type="HBoxContainer" parent="Layout/Margin/Content"]
 layout_mode=2
-size_flags_horizontal=4
+size_flags_horizontal=3
 theme_override_constants/separation=10
 
 [node name="OptionsButton" type="Button" parent="Layout/Margin/Content/TopBar"]
 layout_mode=2
 text="☰"
+
+[node name="TopBarSpacer" type="Control" parent="Layout/Margin/Content/TopBar"]
+layout_mode=2
+size_flags_horizontal=3
 
 [node name="TurnTimerLabel" type="Label" parent="Layout/Margin/Content/TopBar"]
 layout_mode=2
@@ -138,6 +143,7 @@ text="Un jeu pour faire rebondir les mots"
 
 [node name="Scoreboard" type="Label" parent="Layout/Margin/Content"]
 layout_mode=2
+theme_override_font_sizes/font_size=20
 horizontal_alignment=1
 visible=false
 
@@ -292,24 +298,31 @@ text="Commencer"
 layout_mode=2
 text="Retour"
 
-[node name="PlayArea" type="VBoxContainer" parent="Layout/Margin/Content"]
+[node name="PlayArea" type="BoxContainer" parent="Layout/Margin/Content"]
 layout_mode=2
 size_flags_vertical=3
+vertical=true
 theme_override_constants/separation=10
 
 [node name="BoardView" parent="Layout/Margin/Content/PlayArea" instance=ExtResource("2")]
 layout_mode=2
 
-[node name="HandView" parent="Layout/Margin/Content/PlayArea" instance=ExtResource("3")]
+[node name="HandArea" type="VBoxContainer" parent="Layout/Margin/Content/PlayArea"]
+layout_mode=2
+size_flags_horizontal=3
+size_flags_vertical=3
+theme_override_constants/separation=10
+
+[node name="HandView" parent="Layout/Margin/Content/PlayArea/HandArea" instance=ExtResource("3")]
 layout_mode=2
 
-[node name="PaletteView" parent="Layout/Margin/Content/PlayArea" instance=ExtResource("4")]
+[node name="PaletteView" parent="Layout/Margin/Content/PlayArea/HandArea" instance=ExtResource("4")]
 layout_mode=2
 size_flags_horizontal=4
 size_flags_vertical=3
 visible=false
 
-[node name="ClueListView" parent="Layout/Margin/Content/PlayArea" instance=ExtResource("5")]
+[node name="ClueListView" parent="Layout/Margin/Content/PlayArea/HandArea" instance=ExtResource("5")]
 layout_mode=2
 size_flags_vertical=3
 visible=false
