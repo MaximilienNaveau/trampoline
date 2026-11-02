@@ -127,6 +127,11 @@ var _discard_tray: DiscardTray = $Layout/Margin/Content/PlayArea/HandArea/HandBa
 @onready var _save_button: Button = $Layout/Margin/Content/OptionsPanel/MenuItems/SaveButton
 @onready var _load_button: Button = $Layout/Margin/Content/OptionsPanel/MenuItems/LoadButton
 @onready var _new_game_button: Button = $Layout/Margin/Content/OptionsPanel/MenuItems/NewGameButton
+# "Comment jouer": the animated rules (see how_to_play_view.gd), opened
+# from the start menu or the ☰ menu, drawn over everything else.
+@onready var _how_to_play: HowToPlayView = $HowToPlay
+@onready var _how_to_play_button: Button = %StartMenu/HowToPlayButton
+@onready var _how_to_play_menu_button: Button = %HowToPlayMenuButton
 @onready var _options_button: Button = $Layout/Margin/Content/TopBar/OptionsButton
 @onready var _options_panel: PanelContainer = $Layout/Margin/Content/OptionsPanel
 @onready var _timer_toggle: CheckButton = $Layout/Margin/Content/OptionsPanel/MenuItems/TimerToggle
@@ -242,6 +247,8 @@ func _ready() -> void:
 	_save_button.pressed.connect(_on_save_pressed)
 	_load_button.pressed.connect(_on_load_pressed)
 	_new_game_button.pressed.connect(_on_new_game_pressed)
+	_how_to_play_button.pressed.connect(_how_to_play.open)
+	_how_to_play_menu_button.pressed.connect(_on_how_to_play_menu_pressed)
 	_options_button.pressed.connect(_on_options_pressed)
 	_timer_toggle.toggled.connect(_on_timer_toggle_toggled)
 	_end_turn_message_timer.timeout.connect(_on_end_turn_message_timer_timeout)
@@ -686,6 +693,12 @@ func _on_end_turn_pressed() -> void:
 	else:
 		_set_end_turn_message(_format_end_turn_error())
 	_refresh_views()
+
+
+# "Comment jouer" from the ☰ menu: closes the menu, then shows the rules.
+func _on_how_to_play_menu_pressed() -> void:
+	_options_panel.visible = false
+	_how_to_play.open()
 
 
 # A hand tile dragged into the discard tray: it'll go back to the bag

@@ -274,7 +274,7 @@ static func hide_corner_badge(badge: Panel) -> void:
 # where Godot moves the root.
 static func build_drag_preview(tile: Tile, tile_size: Vector2) -> Control:
 	var root := Control.new()
-	var visual := _build_tile_visual(tile, tile_size)
+	var visual := build_tile_visual(tile, tile_size)
 	visual.position = -tile_size / 2
 	root.add_child(visual)
 	return root
@@ -289,7 +289,7 @@ static func build_word_drag_preview(
 ) -> Control:
 	var root := Control.new()
 	for i in range(tiles.size()):
-		var visual := _build_tile_visual(tiles[i], tile_size)
+		var visual := build_tile_visual(tiles[i], tile_size)
 		# How many tile-widths this tile sits from the grabbed one, plus
 		# the same "center on the cursor" offset build_drag_preview uses.
 		visual.position = Vector2((i - grabbed_index) * tile_size.x, 0) - tile_size / 2
@@ -298,12 +298,13 @@ static func build_word_drag_preview(
 
 
 # The actual colored, lettered rectangle both preview builders above
-# position — never added to the real scene tree, so nothing ever runs a
-# layout pass on it: setting only `custom_minimum_size` (a mere size
-# *request* for a parent container to honor) would leave its actual `size`
-# at (0, 0). Setting `size` directly gives it real, immediate dimensions to
-# render and to position against.
-static func _build_tile_visual(tile: Tile, tile_size: Vector2) -> Control:
+# position (and the "Comment jouer" cards, see how_to_play_view.gd) —
+# meant for a parent that isn't a container, so nothing runs a layout pass
+# on it: setting only `custom_minimum_size` (a mere size *request* for a
+# parent container to honor) would leave its actual `size` at (0, 0).
+# Setting `size` directly gives it real, immediate dimensions to render
+# and to position against.
+static func build_tile_visual(tile: Tile, tile_size: Vector2) -> Control:
 	var visual := Panel.new()
 	visual.size = tile_size
 	visual.add_theme_stylebox_override("panel", style_for_tile(tile))
