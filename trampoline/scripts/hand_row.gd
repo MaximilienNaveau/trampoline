@@ -17,15 +17,20 @@ class_name HandRow
 extends Container
 
 signal tile_returned(from_row: int, from_col: int)
+signal tile_unmarked(tile: Tile)
 
 
-# Only accepts drops that came from a BoardCell (see board_cell.gd's
-# `_get_drag_data`, which is the only source that adds "from_row" to the
-# dragged data) — a drag already starting from within the hand doesn't need
-# handling here yet (see hand_view.gd's header comment).
+# Accepts drops that came from a BoardCell (see board_cell.gd's
+# `_get_drag_data`, the only source that adds "from_row" to the dragged
+# data), or from the discard tray (see tile_panel.gd, which adds
+# "from_tray") — a drag starting from within the hand itself has nothing
+# to do here.
 func _can_drop_data(_at_position: Vector2, data: Variant) -> bool:
-	return data is Dictionary and data.has("from_row")
+	return data is Dictionary and (data.has("from_row") or data.has("from_tray"))
 
 
 func _drop_data(_at_position: Vector2, data: Variant) -> void:
-	tile_returned.emit(data["from_row"], data["from_col"])
+	if data.has("from_tray"):
+		tile_unmarked.emit(data["tile"])
+	else:
+		tile_returned.emit(data["from_row"], data["from_col"])

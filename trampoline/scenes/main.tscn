@@ -1,4 +1,4 @@
-[gd_scene load_steps=17 format=3]
+[gd_scene load_steps=19 format=3]
 
 [ext_resource type="Script" path="res://scripts/main.gd" id="1"]
 [ext_resource type="PackedScene" path="res://scenes/board_view.tscn" id="2"]
@@ -13,6 +13,7 @@
 [ext_resource type="FontVariation" path="res://assets/fonts/jost_semibold.tres" id="11"]
 [ext_resource type="FontFile" path="res://assets/fonts/Caveat-Variable.ttf" id="12"]
 [ext_resource type="Texture2D" path="res://assets/textures/lid_underside.jpg" id="13"]
+[ext_resource type="Script" path="res://scripts/discard_tray.gd" id="14"]
 
 [sub_resource type="StyleBoxFlat" id="EndTurnBannerStyle"]
 bg_color = Color(0.75, 0.16, 0.16, 1)
@@ -49,6 +50,19 @@ width = 4
 height = 32
 fill_to = Vector2(0, 1)
 
+
+[sub_resource type="StyleBoxFlat" id="TrayStyle"]
+content_margin_left = 4.0
+content_margin_top = 4.0
+content_margin_right = 4.0
+content_margin_bottom = 4.0
+bg_color = Color(0.122, 0.165, 0.133, 1)
+border_width_top = 3
+border_color = Color(0.067, 0.09, 0.075, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
 
 [node name="Main" type="Control"]
 layout_mode=3
@@ -133,13 +147,6 @@ horizontal_alignment=1
 vertical_alignment=1
 visible=false
 
-[node name="SwapButton" type="Button" parent="Layout/Margin/Content/TopBar"]
-theme_type_variation=&"ToggleButton"
-visible=false
-layout_mode=2
-toggle_mode=true
-text="Échanger"
-
 [node name="EndTurnButton" type="Button" parent="Layout/Margin/Content/TopBar"]
 theme_type_variation=&"PrimaryButton"
 layout_mode=2
@@ -206,8 +213,40 @@ size_flags_horizontal=3
 size_flags_vertical=3
 theme_override_constants/separation=10
 
-[node name="HandView" parent="Layout/Margin/Content/PlayArea/HandArea" instance=ExtResource("3")]
+[node name="HandBar" type="HBoxContainer" parent="Layout/Margin/Content/PlayArea/HandArea"]
 layout_mode=2
+theme_override_constants/separation=8
+
+[node name="HandView" parent="Layout/Margin/Content/PlayArea/HandArea/HandBar" instance=ExtResource("3")]
+layout_mode=2
+size_flags_horizontal=3
+
+[node name="DiscardTray" type="PanelContainer" parent="Layout/Margin/Content/PlayArea/HandArea/HandBar"]
+visible=false
+layout_mode=2
+size_flags_vertical=0
+theme_override_styles/panel=SubResource("TrayStyle")
+script=ExtResource("14")
+
+[node name="Hint" type="Label" parent="Layout/Margin/Content/PlayArea/HandArea/HandBar/DiscardTray"]
+layout_mode=2
+mouse_filter=2
+theme_override_colors/font_color=Color(0.953, 0.937, 0.847, 0.45)
+theme_override_font_sizes/font_size=14
+text="À rendre"
+horizontal_alignment=1
+vertical_alignment=1
+
+[node name="Scroll" type="ScrollContainer" parent="Layout/Margin/Content/PlayArea/HandArea/HandBar/DiscardTray"]
+layout_mode=2
+mouse_filter=1
+vertical_scroll_mode=0
+
+[node name="Tiles" type="GridContainer" parent="Layout/Margin/Content/PlayArea/HandArea/HandBar/DiscardTray/Scroll"]
+layout_mode=2
+mouse_filter=1
+theme_override_constants/h_separation=4
+theme_override_constants/v_separation=4
 
 [node name="PaletteView" parent="Layout/Margin/Content/PlayArea/HandArea" instance=ExtResource("4")]
 layout_mode=2

@@ -150,8 +150,9 @@ the implementation does:**
   that limit from the shared bag, as far as the bag allows — never above
   it. (A tile picked back up off the board can take a hand over the
   limit; that hand then simply draws nothing.)
-- **Giving tiles back**: during their turn a player may mark tiles in
-  their hand ("Échanger" in the game); when the turn ends those go back
+- **Giving tiles back**: during their turn a player may set tiles aside
+  (dragged into the "À rendre" tray beside the hand, in the game; dragged
+  back out if they change their mind); when the turn ends those go back
   into the bag at random places, and the next turn's refill replaces
   them — so the next player never sees the new tiles.
 - Since tiles return to the bag, the per-player totals in the table

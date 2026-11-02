@@ -103,13 +103,12 @@ var _save_and_restart_button: Button
 @onready var _margin: MarginContainer = $Layout/Margin
 @onready var _content: VBoxContainer = $Layout/Margin/Content
 @onready var _board_view: BoardView = $Layout/Margin/Content/PlayArea/BoardView
-@onready var _hand_view: HandView = $Layout/Margin/Content/PlayArea/HandArea/HandView
+@onready var _hand_view: HandView = $Layout/Margin/Content/PlayArea/HandArea/HandBar/HandView
+# Beside the hand: where the player drags tiles to give them back to the
+# bag at the end of their turn (see discard_tray.gd).
+@onready
+var _discard_tray: DiscardTray = $Layout/Margin/Content/PlayArea/HandArea/HandBar/DiscardTray
 @onready var _end_turn_button: Button = $Layout/Margin/Content/TopBar/EndTurnButton
-# "Échanger": a toggle (`toggle_mode` in main.tscn — stays pressed until
-# tapped again). While pressed, tapping hand tiles marks them to be given
-# back to the bag when the turn ends (see game_session.gd's
-# `toggle_discard`), instead of flipping them.
-@onready var _swap_button: Button = $Layout/Margin/Content/TopBar/SwapButton
 @onready var _scoreboard: Label = $Layout/Margin/Content/Scoreboard
 @onready var _game_over_banner: Label = $Layout/Margin/Content/GameOverBanner
 # A floating notification, not part of the page's normal top-to-bottom
@@ -237,9 +236,8 @@ func _ready() -> void:
 	_play_area.item_rect_changed.connect(_update_board_height_budget)
 	_hand_view.tile_returned.connect(_on_hand_tile_returned)
 	_end_turn_button.pressed.connect(_on_end_turn_pressed)
-	# `toggled` fires with the button's new pressed state.
-	_swap_button.toggled.connect(_on_swap_toggled)
-	_hand_view.discard_toggled.connect(_on_hand_discard_toggled)
+	_discard_tray.tile_marked.connect(_on_tile_marked_for_discard)
+	_hand_view.tile_unmarked.connect(_on_tile_unmarked_for_discard)
 	_handoff_play_button.pressed.connect(_on_handoff_play_pressed)
 	_save_button.pressed.connect(_on_save_pressed)
 	_load_button.pressed.connect(_on_load_pressed)
@@ -430,7 +428,7 @@ func _on_names_confirmed() -> void:
 	_board_view.visible = true
 	_hand_view.visible = true
 	_end_turn_button.visible = true
-	_swap_button.visible = true
+	_discard_tray.visible = true
 	_save_button.visible = true
 	_load_button.visible = true
 	_new_game_button.visible = true
@@ -672,7 +670,6 @@ func _on_load_file_selected(path: String) -> void:
 		_session = loaded_session
 		_player_names = []  # a loaded session has no names of its own
 		_set_end_turn_message("")
-		_swap_button.button_pressed = false
 		_refresh_views()
 		_begin_turn()
 
@@ -685,24 +682,23 @@ func _on_load_file_selected(path: String) -> void:
 func _on_end_turn_pressed() -> void:
 	if _session.end_turn():
 		_set_end_turn_message("")
-		# The next player starts with taps flipping tiles again.
-		_swap_button.button_pressed = false
 		_begin_turn()
 	else:
 		_set_end_turn_message(_format_end_turn_error())
 	_refresh_views()
 
 
-# The "Échanger" button switched on or off: tapping hand tiles now marks
-# them to give back, or flips them again.
-func _on_swap_toggled(pressed: bool) -> void:
-	_hand_view.discard_mode = pressed
+# A hand tile dragged into the discard tray: it'll go back to the bag
+# when the turn ends.
+func _on_tile_marked_for_discard(tile: Tile) -> void:
+	_session.set_marked_for_discard(tile, true)
+	_refresh_views()
 
 
-# A hand tile tapped in "Échanger" mode: mark or unmark it to be given
-# back when the turn ends.
-func _on_hand_discard_toggled(tile: Tile) -> void:
-	_session.toggle_discard(tile)
+# A tile dragged from the discard tray back into the hand: keep it after
+# all.
+func _on_tile_unmarked_for_discard(tile: Tile) -> void:
+	_session.set_marked_for_discard(tile, false)
 	_refresh_views()
 
 
@@ -830,11 +826,14 @@ func _refresh_views() -> void:
 	_board_view.refresh(
 		_session.board, _session.can_take_back, _session.can_place_here, _session.invalid_cells()
 	)
-	var hand := _session.bag.hand(_session.turns.current_player_id())
-	# `filter` keeps the elements a function returns true for, like
-	# Python's filter(); `is_marked_for_discard` is passed as a Callable.
-	var marked := hand.filter(_session.is_marked_for_discard)
-	_hand_view.refresh(hand, _board_view.cell_side(), marked)
+	# The hand shows the tiles the player keeps; the tray beside it, the
+	# ones marked to give back.
+	var kept: Array[Tile] = []
+	for tile in _session.bag.hand(_session.turns.current_player_id()):
+		if not _session.is_marked_for_discard(tile):
+			kept.append(tile)
+	_hand_view.refresh(kept, _board_view.cell_side())
+	_discard_tray.refresh(_session.marked_for_discard(), _board_view.cell_side())
 	_set_status_text(_scoreboard, _format_scoreboard())
 	_update_game_over_banner()
 
@@ -912,8 +911,7 @@ func _return_to_start_menu() -> void:
 	_board_view.visible = false
 	_hand_view.visible = false
 	_end_turn_button.visible = false
-	_swap_button.visible = false
-	_swap_button.button_pressed = false
+	_discard_tray.visible = false
 	_save_button.visible = false
 	_load_button.visible = false
 	_new_game_button.visible = false

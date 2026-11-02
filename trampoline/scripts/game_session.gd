@@ -24,7 +24,8 @@ var dictionary: FrenchDictionary
 var _placed_this_turn: Array[Tile] = []
 
 # Tiles in the current player's hand they've chosen to give back to the
-# bag when their turn ends, to draw others instead (see `toggle_discard`).
+# bag when their turn ends, to draw others instead (see
+# `set_marked_for_discard`), in the order they were marked.
 # Reset every `_start_turn()`.
 var _marked_for_discard: Array[Tile] = []
 
@@ -97,24 +98,29 @@ func place_tile(row: int, col: int, tile: Tile) -> bool:
 
 
 # Marks `tile`, in the current player's hand, to be given back to the bag
-# when their turn ends — or unmarks it if it already was. Their next turn
-# then refills their hand with other tiles (see `_start_turn`). Returns
-# whether the tile is now marked; false (and does nothing) if it isn't in
-# the current player's hand.
-func toggle_discard(tile: Tile) -> bool:
+# when their turn ends (`marked` true), or changes their mind (false).
+# Their next turn then refills their hand with other tiles (see
+# `_start_turn`). Returns false and does nothing if the tile isn't in the
+# current player's hand.
+func set_marked_for_discard(tile: Tile, marked: bool) -> bool:
 	if not bag.hand(turns.current_player_id()).has(tile):
 		return false
-	if _marked_for_discard.has(tile):
-		_marked_for_discard.erase(tile)
-		return false
-	_marked_for_discard.append(tile)
+	_marked_for_discard.erase(tile)
+	if marked:
+		_marked_for_discard.append(tile)
 	return true
 
 
 # Whether `tile` is currently marked to be given back (see
-# `toggle_discard`).
+# `set_marked_for_discard`).
 func is_marked_for_discard(tile: Tile) -> bool:
 	return _marked_for_discard.has(tile)
+
+
+# Every tile currently marked to be given back, in the order marked — a
+# copy, so the caller can't change the marks behind this class's back.
+func marked_for_discard() -> Array[Tile]:
+	return _marked_for_discard.duplicate()
 
 
 # Whether the tile at (row, col) can currently be picked back up — either

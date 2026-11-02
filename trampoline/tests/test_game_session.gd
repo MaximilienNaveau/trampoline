@@ -97,13 +97,17 @@ func _test_discard() -> void:
 	var given_back: Tile = session.bag.hand(0)[1]
 	var bag_before := session.bag.remaining_count()
 
-	_check(session.toggle_discard(given_back), "marking a hand tile succeeds")
+	_check(session.set_marked_for_discard(given_back, true), "marking a hand tile succeeds")
 	_check(session.is_marked_for_discard(given_back), "...and it's marked")
-	session.toggle_discard(kept)
-	_check(not session.toggle_discard(kept), "toggling a marked tile again unmarks it")
-	_check(not session.is_marked_for_discard(kept), "...so it isn't marked any more")
+	session.set_marked_for_discard(kept, true)
+	session.set_marked_for_discard(kept, false)
+	_check(not session.is_marked_for_discard(kept), "a tile can be unmarked again")
 	_check(
-		not session.toggle_discard(session.bag.hand(1)[0]),
+		session.marked_for_discard().size() == 1 and session.marked_for_discard()[0] == given_back,
+		"the marked list holds just that tile"
+	)
+	_check(
+		not session.set_marked_for_discard(session.bag.hand(1)[0], true),
 		"the other player's tile can't be marked"
 	)
 
@@ -123,7 +127,7 @@ func _test_discard_then_place() -> void:
 	var session := GameSession.new(2, _dictionary)
 	var tile := Tile.new("A", "Z", true)
 	_give_hand_tile(session, 0, tile)
-	session.toggle_discard(tile)
+	session.set_marked_for_discard(tile, true)
 	session.place_tile(4, 0, tile)
 	_check(not session.is_marked_for_discard(tile), "placing a marked tile unmarks it")
 

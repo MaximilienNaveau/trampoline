@@ -28,13 +28,9 @@ class_name HandView
 extends Control
 
 signal tile_returned(from_row: int, from_col: int)
-# Fired when a tile is tapped while `discard_mode` is on — main.gd marks
-# or unmarks it to be given back (see game_session.gd's `toggle_discard`).
-signal discard_toggled(tile: Tile)
-
-# Whether tapping a tile marks it to be given back (the "Échanger" button
-# in main.tscn), instead of flipping it.
-var discard_mode := false
+# A tile dragged back out of the discard tray into this hand (see
+# discard_tray.gd): the player no longer wants to give it back.
+signal tile_unmarked(tile: Tile)
 
 # `$Row` looks up the child node named "Row" declared in hand_view.tscn,
 # same `@onready`/`$Name` pattern as BoardView's `_grid`.
@@ -43,6 +39,9 @@ var discard_mode := false
 
 func _ready() -> void:
 	_row.tile_returned.connect(_on_row_tile_returned)
+	# A signal can be connected straight to another signal's `emit`,
+	# re-broadcasting it unchanged.
+	_row.tile_unmarked.connect(tile_unmarked.emit)
 
 
 func _on_row_tile_returned(from_row: int, from_col: int) -> void:
@@ -53,8 +52,8 @@ func _on_row_tile_returned(from_row: int, from_col: int) -> void:
 # `tile_side` pixels square — matching BoardView's own current cell size
 # (see board_view.gd's `cell_side()`) rather than a fixed guess, so a tile
 # looks the same size whether it's in a hand/palette or already on the
-# board. Tiles in `marked` are drawn dimmed: marked to be given back.
-func refresh(hand: Array[Tile], tile_side: float, marked: Array = []) -> void:
+# board.
+func refresh(hand: Array[Tile], tile_side: float) -> void:
 	# `queue_free()` marks a node for deletion at the end of this frame,
 	# rather than destroying it immediately (Godot's usual way to remove a
 	# node safely) — `free()` would work too here since none of these
@@ -75,57 +74,7 @@ func refresh(hand: Array[Tile], tile_side: float, marked: Array = []) -> void:
 		_update_palette_columns(tile_side)
 
 	for tile in hand:
-		var panel := TilePanel.new()
-		panel.tile = tile
-		panel.marked = marked.has(tile)
-		# `bind(panel)` makes the connected method receive this panel as an
-		# extra argument — like functools.partial in Python.
-		panel.tapped.connect(_on_tile_tapped.bind(panel))
-		# Every Control can pick its own mouse cursor shape for whenever the
-		# pointer is hovering over it — a hint that this tile can be picked
-		# up, shown before the player even starts dragging. CURSOR_DRAG
-		# would be the conceptually closest match, but on this system (X11)
-		# Godot maps it to the 4-way "move" cross, not a hand; the actual
-		# hand-shaped cursor Godot ships is CURSOR_POINTING_HAND.
-		panel.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-		# A Control's default MOUSE_FILTER_STOP means it swallows mouse
-		# events entirely, including a drag-and-drop drop — since a
-		# TilePanel doesn't handle drops itself, an unhandled drop landing
-		# on one (rather than the gap between tiles) would otherwise never
-		# reach HandRow, the actual drop target (see hand_row.gd). PASS lets
-		# a TilePanel still handle its OWN events (starting a drag out of
-		# it still works) while letting anything it doesn't handle continue
-		# on to its parent.
-		panel.mouse_filter = Control.MOUSE_FILTER_PASS
-		panel.custom_minimum_size = Vector2(tile_side, tile_side)
-		panel.add_theme_stylebox_override("panel", TileView.style_for_tile(tile))
-
-		var label := TileView.build_letter_label()
-		label.text = tile.current_letter()
-		panel.add_child(label)
-		panel.label = label
-
-		# The small "other face" hint badge (see tile_view.gd's
-		# build_corner_badge/update_corner_badge) — lets a player see what
-		# flipping this tile would reveal before they commit to it.
-		var corner_badge := TileView.build_corner_badge()
-		TileView.update_corner_badge(corner_badge, tile)
-		panel.add_child(corner_badge)
-		panel.corner_badge = corner_badge
-		# Same letter/corner proportions as on the board, at this size.
-		TileView.fit_to_side(label, corner_badge, tile_side)
-
-		_row.add_child(panel)
-
-
-# A tap on a tile: in discard mode, ask main.gd to mark/unmark it;
-# otherwise flip it, to choose which face to place.
-func _on_tile_tapped(panel: TilePanel) -> void:
-	if discard_mode:
-		discard_toggled.emit(panel.tile)
-	else:
-		panel.tile.flip()
-		panel.refresh()
+		_row.add_child(TilePanel.create(tile, tile_side))
 
 
 # Fits as many `tile_side`-wide tiles as possible across the palette's own

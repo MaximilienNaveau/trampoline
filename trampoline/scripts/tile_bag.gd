@@ -43,8 +43,8 @@ func draw(player_id: int, count: int) -> Array[Tile]:
 
 
 # Returns one tile from a player's hand back to the bag (a player giving
-# it back to draw another, see game_session.gd's `toggle_discard`). It's
-# slipped in at a random place in the pile, not on top, so nobody can
+# it back to draw another, see game_session.gd's `set_marked_for_discard`).
+# It's slipped in at a random place in the pile, not on top, so nobody can
 # tell when it will come out again. Does nothing if that player isn't
 # actually holding it.
 func return_tile(player_id: int, tile: Tile) -> void:
