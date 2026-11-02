@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=3]
+[gd_scene load_steps=17 format=3]
 
 [ext_resource type="Script" path="res://scripts/main.gd" id="1"]
 [ext_resource type="PackedScene" path="res://scenes/board_view.tscn" id="2"]
@@ -7,6 +7,12 @@
 [ext_resource type="PackedScene" path="res://scenes/clue_list_view.tscn" id="5"]
 [ext_resource type="Theme" path="res://assets/theme.tres" id="6"]
 [ext_resource type="Script" path="res://scripts/clue_markers_view.gd" id="7"]
+[ext_resource type="Script" path="res://scripts/box_lid.gd" id="8"]
+[ext_resource type="Texture2D" path="res://assets/textures/box_lid.jpg" id="9"]
+[ext_resource type="Texture2D" path="res://assets/textures/ribbon_bow.svg" id="10"]
+[ext_resource type="FontVariation" path="res://assets/fonts/jost_semibold.tres" id="11"]
+[ext_resource type="FontFile" path="res://assets/fonts/Caveat-Variable.ttf" id="12"]
+[ext_resource type="Texture2D" path="res://assets/textures/lid_underside.jpg" id="13"]
 
 [sub_resource type="StyleBoxFlat" id="EndTurnBannerStyle"]
 bg_color = Color(0.75, 0.16, 0.16, 1)
@@ -18,6 +24,31 @@ content_margin_left = 12.0
 content_margin_top = 8.0
 content_margin_right = 12.0
 content_margin_bottom = 8.0
+
+[sub_resource type="StyleBoxFlat" id="CardStyle"]
+content_margin_left = 22.0
+content_margin_top = 16.0
+content_margin_right = 22.0
+content_margin_bottom = 20.0
+bg_color = Color(0.953, 0.937, 0.847, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+shadow_color = Color(0, 0, 0, 0.35)
+shadow_size = 8
+shadow_offset = Vector2(0, 4)
+
+[sub_resource type="Gradient" id="RibbonSatin"]
+offsets = PackedFloat32Array(0, 0.45, 1)
+colors = PackedColorArray(0.953, 0.604, 0.376, 1, 0.894, 0.451, 0.227, 1, 0.722, 0.333, 0.122, 1)
+
+[sub_resource type="GradientTexture2D" id="RibbonBand"]
+gradient = SubResource("RibbonSatin")
+width = 4
+height = 32
+fill_to = Vector2(0, 1)
+
 
 [node name="Main" type="Control"]
 layout_mode=3
@@ -103,6 +134,7 @@ vertical_alignment=1
 visible=false
 
 [node name="EndTurnButton" type="Button" parent="Layout/Margin/Content/TopBar"]
+theme_type_variation=&"PrimaryButton"
 layout_mode=2
 text="Fin du tour"
 
@@ -131,17 +163,6 @@ text="Nouvelle partie"
 layout_mode=2
 text="Minuteur (3 min)"
 
-[node name="Title" type="Label" parent="Layout/Margin/Content"]
-layout_mode=2
-theme_override_font_sizes/font_size=32
-horizontal_alignment=1
-text="Trampoline"
-
-[node name="Tagline" type="Label" parent="Layout/Margin/Content"]
-layout_mode=2
-horizontal_alignment=1
-text="Un jeu pour faire rebondir les mots"
-
 [node name="Scoreboard" type="Label" parent="Layout/Margin/Content"]
 layout_mode=2
 theme_override_font_sizes/font_size=20
@@ -155,150 +176,6 @@ theme_override_colors/font_color=Color(0.96, 0.4, 0.4, 1)
 theme_override_font_sizes/font_size=20
 horizontal_alignment=1
 visible=false
-
-[node name="StartMenu" type="VBoxContainer" parent="Layout/Margin/Content"]
-layout_mode=2
-theme_override_constants/separation=16
-
-[node name="Prompt" type="Label" parent="Layout/Margin/Content/StartMenu"]
-layout_mode=2
-horizontal_alignment=1
-text="Combien de joueurs ?"
-
-[node name="Players" type="HBoxContainer" parent="Layout/Margin/Content/StartMenu"]
-layout_mode=2
-size_flags_horizontal=4
-theme_override_constants/separation=10
-
-[node name="Button1" type="Button" parent="Layout/Margin/Content/StartMenu/Players"]
-custom_minimum_size=Vector2(64, 48)
-layout_mode=2
-text="1"
-
-[node name="Button2" type="Button" parent="Layout/Margin/Content/StartMenu/Players"]
-custom_minimum_size=Vector2(64, 48)
-layout_mode=2
-text="2"
-
-[node name="Button3" type="Button" parent="Layout/Margin/Content/StartMenu/Players"]
-custom_minimum_size=Vector2(64, 48)
-layout_mode=2
-text="3"
-
-[node name="Button4" type="Button" parent="Layout/Margin/Content/StartMenu/Players"]
-custom_minimum_size=Vector2(64, 48)
-layout_mode=2
-text="4"
-
-[node name="FreePlayButton" type="Button" parent="Layout/Margin/Content/StartMenu"]
-layout_mode=2
-size_flags_horizontal=4
-text="Jeu libre"
-
-[node name="CrosswordPrompt" type="Label" parent="Layout/Margin/Content/StartMenu"]
-layout_mode=2
-horizontal_alignment=1
-text="Mots croisés :"
-
-[node name="CrosswordGrid" type="GridContainer" parent="Layout/Margin/Content/StartMenu"]
-layout_mode=2
-size_flags_horizontal=4
-theme_override_constants/h_separation=8
-theme_override_constants/v_separation=8
-columns=5
-
-[node name="CrosswordPuzzle1Button" type="Button" parent="Layout/Margin/Content/StartMenu/CrosswordGrid"]
-custom_minimum_size=Vector2(52, 44)
-layout_mode=2
-text="1"
-
-[node name="CrosswordPuzzle2Button" type="Button" parent="Layout/Margin/Content/StartMenu/CrosswordGrid"]
-custom_minimum_size=Vector2(52, 44)
-layout_mode=2
-text="2"
-
-[node name="CrosswordPuzzle3Button" type="Button" parent="Layout/Margin/Content/StartMenu/CrosswordGrid"]
-custom_minimum_size=Vector2(52, 44)
-layout_mode=2
-text="3"
-
-[node name="CrosswordPuzzle4Button" type="Button" parent="Layout/Margin/Content/StartMenu/CrosswordGrid"]
-custom_minimum_size=Vector2(52, 44)
-layout_mode=2
-text="4"
-
-[node name="CrosswordPuzzle5Button" type="Button" parent="Layout/Margin/Content/StartMenu/CrosswordGrid"]
-custom_minimum_size=Vector2(52, 44)
-layout_mode=2
-text="5"
-
-[node name="CrosswordPuzzle6Button" type="Button" parent="Layout/Margin/Content/StartMenu/CrosswordGrid"]
-custom_minimum_size=Vector2(52, 44)
-layout_mode=2
-text="6"
-
-[node name="CrosswordPuzzle7Button" type="Button" parent="Layout/Margin/Content/StartMenu/CrosswordGrid"]
-custom_minimum_size=Vector2(52, 44)
-layout_mode=2
-text="7"
-
-[node name="CrosswordPuzzle8Button" type="Button" parent="Layout/Margin/Content/StartMenu/CrosswordGrid"]
-custom_minimum_size=Vector2(52, 44)
-layout_mode=2
-text="8"
-
-[node name="CrosswordPuzzle9Button" type="Button" parent="Layout/Margin/Content/StartMenu/CrosswordGrid"]
-custom_minimum_size=Vector2(52, 44)
-layout_mode=2
-text="9"
-
-[node name="CrosswordPuzzle10Button" type="Button" parent="Layout/Margin/Content/StartMenu/CrosswordGrid"]
-custom_minimum_size=Vector2(52, 44)
-layout_mode=2
-text="10"
-
-[node name="NameEntry" type="VBoxContainer" parent="Layout/Margin/Content"]
-layout_mode=2
-theme_override_constants/separation=10
-visible=false
-
-[node name="Prompt" type="Label" parent="Layout/Margin/Content/NameEntry"]
-layout_mode=2
-horizontal_alignment=1
-text="Noms des joueurs :"
-
-[node name="Name1Edit" type="LineEdit" parent="Layout/Margin/Content/NameEntry"]
-custom_minimum_size=Vector2(0, 44)
-layout_mode=2
-placeholder_text="Joueur 1"
-
-[node name="Name2Edit" type="LineEdit" parent="Layout/Margin/Content/NameEntry"]
-custom_minimum_size=Vector2(0, 44)
-layout_mode=2
-placeholder_text="Joueur 2"
-
-[node name="Name3Edit" type="LineEdit" parent="Layout/Margin/Content/NameEntry"]
-custom_minimum_size=Vector2(0, 44)
-layout_mode=2
-placeholder_text="Joueur 3"
-
-[node name="Name4Edit" type="LineEdit" parent="Layout/Margin/Content/NameEntry"]
-custom_minimum_size=Vector2(0, 44)
-layout_mode=2
-placeholder_text="Joueur 4"
-
-[node name="Buttons" type="HBoxContainer" parent="Layout/Margin/Content/NameEntry"]
-layout_mode=2
-size_flags_horizontal=4
-theme_override_constants/separation=10
-
-[node name="StartButton" type="Button" parent="Layout/Margin/Content/NameEntry/Buttons"]
-layout_mode=2
-text="Commencer"
-
-[node name="BackButton" type="Button" parent="Layout/Margin/Content/NameEntry/Buttons"]
-layout_mode=2
-text="Retour"
 
 [node name="PlayArea" type="BoxContainer" parent="Layout/Margin/Content"]
 layout_mode=2
@@ -399,7 +276,338 @@ theme_override_font_sizes/font_size=40
 horizontal_alignment=1
 
 [node name="PlayButton" type="Button" parent="HandoffScreen/Center/Items"]
+theme_type_variation=&"PrimaryButton"
 custom_minimum_size=Vector2(160, 52)
 layout_mode=2
 size_flags_horizontal=4
 text="Jouer"
+
+[node name="BoxLid" type="Control" parent="."]
+layout_mode=1
+anchors_preset=15
+anchor_right=1.0
+anchor_bottom=1.0
+grow_horizontal=2
+grow_vertical=2
+script=ExtResource("8")
+
+[node name="Box" type="Control" parent="BoxLid"]
+layout_mode=1
+anchors_preset=15
+anchor_right=1.0
+anchor_bottom=1.0
+grow_horizontal=2
+grow_vertical=2
+mouse_filter=2
+
+[node name="Frame" type="NinePatchRect" parent="BoxLid/Box"]
+layout_mode=1
+anchors_preset=15
+anchor_right=1.0
+anchor_bottom=1.0
+grow_horizontal=2
+grow_vertical=2
+mouse_filter=2
+texture=ExtResource("9")
+region_rect=Rect2(40, 40, 460, 880)
+draw_center=false
+patch_margin_left=30
+patch_margin_top=30
+patch_margin_right=30
+patch_margin_bottom=30
+
+[node name="Inside" type="ColorRect" parent="BoxLid/Box"]
+layout_mode=1
+anchors_preset=15
+anchor_right=1.0
+anchor_bottom=1.0
+grow_horizontal=2
+grow_vertical=2
+mouse_filter=2
+color=Color(0.18, 0.169, 0.133, 1)
+
+[node name="LidEdges" type="Control" parent="BoxLid/Box"]
+layout_mode=1
+anchors_preset=15
+anchor_right=1.0
+anchor_bottom=1.0
+grow_horizontal=2
+grow_vertical=2
+mouse_filter=2
+
+[node name="Hinge" type="Node2D" parent="BoxLid/Box"]
+
+[node name="Lid" type="Control" parent="BoxLid/Box/Hinge"]
+layout_mode=3
+anchors_preset=0
+mouse_filter=2
+theme=ExtResource("6")
+
+[node name="Paint" type="NinePatchRect" parent="BoxLid/Box/Hinge/Lid"]
+layout_mode=1
+anchors_preset=15
+anchor_right=1.0
+anchor_bottom=1.0
+grow_horizontal=2
+grow_vertical=2
+mouse_filter=2
+texture=ExtResource("9")
+region_rect=Rect2(40, 40, 460, 880)
+
+[node name="CardArea" type="VBoxContainer" parent="BoxLid/Box/Hinge/Lid"]
+layout_mode=1
+anchor_top=0.18
+anchor_right=1.0
+anchor_bottom=1.0
+offset_left=10.0
+offset_top=30.0
+offset_right=-10.0
+offset_bottom=-70.0
+grow_horizontal=2
+grow_vertical=2
+mouse_filter=2
+
+[node name="Card" type="PanelContainer" parent="BoxLid/Box/Hinge/Lid/CardArea"]
+custom_minimum_size=Vector2(340, 0)
+layout_mode=2
+size_flags_horizontal=4
+theme_override_styles/panel=SubResource("CardStyle")
+
+[node name="Items" type="VBoxContainer" parent="BoxLid/Box/Hinge/Lid/CardArea/Card"]
+layout_mode=2
+theme_override_constants/separation=12
+
+[node name="Title" type="Label" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items"]
+theme_type_variation=&"InkLabel"
+theme_override_fonts/font=ExtResource("11")
+layout_mode=2
+theme_override_font_sizes/font_size=48
+horizontal_alignment=1
+text="Trampoline"
+
+[node name="Tagline" type="Label" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items"]
+theme_type_variation=&"InkLabel"
+theme_override_fonts/font=ExtResource("12")
+theme_override_font_sizes/font_size=24
+layout_mode=2
+horizontal_alignment=1
+text="Un jeu pour faire rebondir les mots"
+
+[node name="StartMenu" type="VBoxContainer" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items"]
+unique_name_in_owner=true
+layout_mode=2
+theme_override_constants/separation=16
+
+[node name="Prompt" type="Label" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/StartMenu"]
+theme_type_variation=&"InkLabel"
+layout_mode=2
+horizontal_alignment=1
+text="Combien de joueurs ?"
+
+[node name="Players" type="HBoxContainer" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/StartMenu"]
+layout_mode=2
+size_flags_horizontal=4
+theme_override_constants/separation=10
+
+[node name="Button1" type="Button" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/StartMenu/Players"]
+custom_minimum_size=Vector2(64, 48)
+layout_mode=2
+text="1"
+
+[node name="Button2" type="Button" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/StartMenu/Players"]
+custom_minimum_size=Vector2(64, 48)
+layout_mode=2
+text="2"
+
+[node name="Button3" type="Button" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/StartMenu/Players"]
+custom_minimum_size=Vector2(64, 48)
+layout_mode=2
+text="3"
+
+[node name="Button4" type="Button" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/StartMenu/Players"]
+custom_minimum_size=Vector2(64, 48)
+layout_mode=2
+text="4"
+
+[node name="FreePlayButton" type="Button" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/StartMenu"]
+layout_mode=2
+size_flags_horizontal=4
+text="Jeu libre"
+
+[node name="CrosswordPrompt" type="Label" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/StartMenu"]
+theme_type_variation=&"InkLabel"
+layout_mode=2
+horizontal_alignment=1
+text="Mots croisés :"
+
+[node name="CrosswordGrid" type="GridContainer" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/StartMenu"]
+layout_mode=2
+size_flags_horizontal=4
+theme_override_constants/h_separation=8
+theme_override_constants/v_separation=8
+columns=5
+
+[node name="CrosswordPuzzle1Button" type="Button" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/StartMenu/CrosswordGrid"]
+custom_minimum_size=Vector2(52, 44)
+layout_mode=2
+text="1"
+
+[node name="CrosswordPuzzle2Button" type="Button" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/StartMenu/CrosswordGrid"]
+custom_minimum_size=Vector2(52, 44)
+layout_mode=2
+text="2"
+
+[node name="CrosswordPuzzle3Button" type="Button" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/StartMenu/CrosswordGrid"]
+custom_minimum_size=Vector2(52, 44)
+layout_mode=2
+text="3"
+
+[node name="CrosswordPuzzle4Button" type="Button" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/StartMenu/CrosswordGrid"]
+custom_minimum_size=Vector2(52, 44)
+layout_mode=2
+text="4"
+
+[node name="CrosswordPuzzle5Button" type="Button" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/StartMenu/CrosswordGrid"]
+custom_minimum_size=Vector2(52, 44)
+layout_mode=2
+text="5"
+
+[node name="CrosswordPuzzle6Button" type="Button" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/StartMenu/CrosswordGrid"]
+custom_minimum_size=Vector2(52, 44)
+layout_mode=2
+text="6"
+
+[node name="CrosswordPuzzle7Button" type="Button" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/StartMenu/CrosswordGrid"]
+custom_minimum_size=Vector2(52, 44)
+layout_mode=2
+text="7"
+
+[node name="CrosswordPuzzle8Button" type="Button" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/StartMenu/CrosswordGrid"]
+custom_minimum_size=Vector2(52, 44)
+layout_mode=2
+text="8"
+
+[node name="CrosswordPuzzle9Button" type="Button" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/StartMenu/CrosswordGrid"]
+custom_minimum_size=Vector2(52, 44)
+layout_mode=2
+text="9"
+
+[node name="CrosswordPuzzle10Button" type="Button" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/StartMenu/CrosswordGrid"]
+custom_minimum_size=Vector2(52, 44)
+layout_mode=2
+text="10"
+
+[node name="NameEntry" type="VBoxContainer" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items"]
+unique_name_in_owner=true
+layout_mode=2
+theme_override_constants/separation=10
+visible=false
+
+[node name="Prompt" type="Label" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/NameEntry"]
+theme_type_variation=&"InkLabel"
+layout_mode=2
+horizontal_alignment=1
+text="Noms des joueurs :"
+
+[node name="Name1Edit" type="LineEdit" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/NameEntry"]
+custom_minimum_size=Vector2(0, 44)
+layout_mode=2
+placeholder_text="Joueur 1"
+
+[node name="Name2Edit" type="LineEdit" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/NameEntry"]
+custom_minimum_size=Vector2(0, 44)
+layout_mode=2
+placeholder_text="Joueur 2"
+
+[node name="Name3Edit" type="LineEdit" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/NameEntry"]
+custom_minimum_size=Vector2(0, 44)
+layout_mode=2
+placeholder_text="Joueur 3"
+
+[node name="Name4Edit" type="LineEdit" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/NameEntry"]
+custom_minimum_size=Vector2(0, 44)
+layout_mode=2
+placeholder_text="Joueur 4"
+
+[node name="Buttons" type="HBoxContainer" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/NameEntry"]
+layout_mode=2
+size_flags_horizontal=4
+theme_override_constants/separation=10
+
+[node name="StartButton" type="Button" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/NameEntry/Buttons"]
+theme_type_variation=&"PrimaryButton"
+layout_mode=2
+text="Commencer"
+
+[node name="BackButton" type="Button" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/NameEntry/Buttons"]
+layout_mode=2
+text="Retour"
+
+[node name="Signature" type="Label" parent="BoxLid/Box/Hinge/Lid"]
+layout_mode=1
+anchor_left=1.0
+anchor_top=1.0
+anchor_right=1.0
+anchor_bottom=1.0
+offset_left=-200.0
+offset_top=-62.0
+offset_right=-14.0
+offset_bottom=-14.0
+grow_horizontal=0
+grow_vertical=0
+rotation=-0.14
+pivot_offset=Vector2(186, 48)
+theme_override_colors/font_color=Color(0.13, 0.15, 0.17, 0.75)
+theme_override_fonts/font=ExtResource("12")
+theme_override_font_sizes/font_size=34
+horizontal_alignment=2
+text="M. Cheenne"
+
+[node name="Underside" type="TextureRect" parent="BoxLid/Box/Hinge/Lid"]
+visible=false
+layout_mode=1
+anchors_preset=15
+anchor_right=1.0
+anchor_bottom=1.0
+grow_horizontal=2
+grow_vertical=2
+mouse_filter=2
+texture=ExtResource("13")
+expand_mode=1
+
+[node name="Ribbon" type="Control" parent="BoxLid"]
+layout_mode=1
+anchors_preset=15
+anchor_right=1.0
+anchor_bottom=1.0
+grow_horizontal=2
+grow_vertical=2
+mouse_filter=2
+
+[node name="Band" type="TextureRect" parent="BoxLid/Ribbon"]
+layout_mode=1
+anchor_top=0.18
+anchor_right=1.0
+anchor_bottom=0.18
+offset_top=-7.0
+offset_bottom=7.0
+grow_horizontal=2
+mouse_filter=2
+texture=SubResource("RibbonBand")
+expand_mode=1
+
+[node name="Bow" type="TextureRect" parent="BoxLid/Ribbon"]
+layout_mode=1
+anchor_left=0.5
+anchor_top=0.18
+anchor_right=0.5
+anchor_bottom=0.18
+offset_left=-60.0
+offset_top=-34.0
+offset_right=60.0
+offset_bottom=36.0
+grow_horizontal=2
+mouse_filter=2
+texture=ExtResource("10")
+expand_mode=1
+stretch_mode=5

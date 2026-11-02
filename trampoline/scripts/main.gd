@@ -89,8 +89,8 @@ var _save_and_restart_button: Button
 # below it, just adds a fixed border of breathing room around `Content`
 # on all four sides (see main.tscn) so nothing sits flush against the
 # screen edge.
-@onready var _title: Label = $Layout/Margin/Content/Title
-@onready var _tagline: Label = $Layout/Margin/Content/Tagline
+@onready var _title: Label = $BoxLid/Box/Hinge/Lid/CardArea/Card/Items/Title
+@onready var _tagline: Label = $BoxLid/Box/Hinge/Lid/CardArea/Card/Items/Tagline
 # Stacks BoardView above HandArea (the hand/palette/clue list, grouped so
 # they move as one) in portrait, or arranges them side by side in
 # landscape (see `_update_play_area_orientation` below). Declared as a
@@ -131,45 +131,54 @@ var _save_and_restart_button: Button
 @onready var _save_file_dialog: FileDialog = $SaveFileDialog
 @onready var _load_file_dialog: FileDialog = $LoadFileDialog
 @onready var _new_game_confirm_dialog: ConfirmationDialog = $NewGameConfirmDialog
-@onready var _start_menu: Control = $Layout/Margin/Content/StartMenu
-@onready var _one_player_button: Button = $Layout/Margin/Content/StartMenu/Players/Button1
-@onready var _two_players_button: Button = $Layout/Margin/Content/StartMenu/Players/Button2
-@onready var _three_players_button: Button = $Layout/Margin/Content/StartMenu/Players/Button3
-@onready var _four_players_button: Button = $Layout/Margin/Content/StartMenu/Players/Button4
-@onready var _name_entry_menu: Control = $Layout/Margin/Content/NameEntry
+# `%Name` finds a node marked "unique name in owner" in main.tscn (shown
+# with a % in the editor) wherever it sits in the scene — shorter than
+# the full `$Path/To/Node`, and survives moving the node around.
+@onready var _start_menu: Control = %StartMenu
+@onready var _one_player_button: Button = %StartMenu/Players/Button1
+@onready var _two_players_button: Button = %StartMenu/Players/Button2
+@onready var _three_players_button: Button = %StartMenu/Players/Button3
+@onready var _four_players_button: Button = %StartMenu/Players/Button4
+@onready var _name_entry_menu: Control = %NameEntry
 # The 4 name fields, indexed 0..3 to match player_id — see
 # `_on_player_count_chosen` for how only the first `count` of them are
 # actually shown.
 @onready var _name_edits: Array[LineEdit] = [
-	$Layout/Margin/Content/NameEntry/Name1Edit,
-	$Layout/Margin/Content/NameEntry/Name2Edit,
-	$Layout/Margin/Content/NameEntry/Name3Edit,
-	$Layout/Margin/Content/NameEntry/Name4Edit,
+	%NameEntry/Name1Edit,
+	%NameEntry/Name2Edit,
+	%NameEntry/Name3Edit,
+	%NameEntry/Name4Edit,
 ]
-@onready var _start_with_names_button: Button = $Layout/Margin/Content/NameEntry/Buttons/StartButton
-@onready var _back_button: Button = $Layout/Margin/Content/NameEntry/Buttons/BackButton
-@onready var _free_play_button: Button = $Layout/Margin/Content/StartMenu/FreePlayButton
+@onready var _start_with_names_button: Button = %NameEntry/Buttons/StartButton
+@onready var _back_button: Button = %NameEntry/Buttons/BackButton
+@onready var _free_play_button: Button = %StartMenu/FreePlayButton
 @onready var _palette_view: HandView = $Layout/Margin/Content/PlayArea/HandArea/PaletteView
 # The 10 crossword puzzle-picker buttons, indexed 0..9 to match
 # CrosswordPuzzles.PUZZLES — see `_ready()`'s loop below for how each one
 # reports its own index, and crossword_puzzles.gd for the data itself.
 @onready var _crossword_puzzle_buttons: Array[Button] = [
-	$Layout/Margin/Content/StartMenu/CrosswordGrid/CrosswordPuzzle1Button,
-	$Layout/Margin/Content/StartMenu/CrosswordGrid/CrosswordPuzzle2Button,
-	$Layout/Margin/Content/StartMenu/CrosswordGrid/CrosswordPuzzle3Button,
-	$Layout/Margin/Content/StartMenu/CrosswordGrid/CrosswordPuzzle4Button,
-	$Layout/Margin/Content/StartMenu/CrosswordGrid/CrosswordPuzzle5Button,
-	$Layout/Margin/Content/StartMenu/CrosswordGrid/CrosswordPuzzle6Button,
-	$Layout/Margin/Content/StartMenu/CrosswordGrid/CrosswordPuzzle7Button,
-	$Layout/Margin/Content/StartMenu/CrosswordGrid/CrosswordPuzzle8Button,
-	$Layout/Margin/Content/StartMenu/CrosswordGrid/CrosswordPuzzle9Button,
-	$Layout/Margin/Content/StartMenu/CrosswordGrid/CrosswordPuzzle10Button,
+	%StartMenu/CrosswordGrid/CrosswordPuzzle1Button,
+	%StartMenu/CrosswordGrid/CrosswordPuzzle2Button,
+	%StartMenu/CrosswordGrid/CrosswordPuzzle3Button,
+	%StartMenu/CrosswordGrid/CrosswordPuzzle4Button,
+	%StartMenu/CrosswordGrid/CrosswordPuzzle5Button,
+	%StartMenu/CrosswordGrid/CrosswordPuzzle6Button,
+	%StartMenu/CrosswordGrid/CrosswordPuzzle7Button,
+	%StartMenu/CrosswordGrid/CrosswordPuzzle8Button,
+	%StartMenu/CrosswordGrid/CrosswordPuzzle9Button,
+	%StartMenu/CrosswordGrid/CrosswordPuzzle10Button,
 ]
 @onready var _clue_list_view: ClueListView = $Layout/Margin/Content/PlayArea/HandArea/ClueListView
 # Portrait's replacement for `_clue_list_view`: a "?" per board row that
 # pops up its clue in a speech bubble (see clue_markers_view.gd). A child
 # of BoardView in main.tscn, so it sits over the board and scrolls with it.
 @onready var _clue_markers: ClueMarkersView = $Layout/Margin/Content/PlayArea/BoardView/ClueMarkers
+# The start screen: the closed game box, with the menu on a card on its
+# lid (see box_lid.gd). Choosing a mode sets the game up underneath
+# FIRST, then slides the lid away to reveal it — in multiplayer, that
+# reveals the pass-the-phone screen (see `_begin_turn`), drawn under the
+# lid in main.tscn, so player 1's tiles still stay hidden until "Jouer".
+@onready var _box_lid: BoxLid = $BoxLid
 # The "pass the phone" screen shown between two players' turns (see
 # `_begin_turn` below). Like EndTurnMessage, it's a direct child of Main,
 # declared AFTER Layout in main.tscn so it draws over the whole page —
@@ -418,6 +427,7 @@ func _on_names_confirmed() -> void:
 	_new_game_button.visible = true
 	_refresh_views()
 	_begin_turn()
+	_box_lid.open()
 
 
 # Called when NameEntry's "Retour" button is pressed — no session
@@ -470,6 +480,7 @@ func _on_free_play_chosen() -> void:
 	_save_button.visible = true
 	_load_button.visible = true
 	_refresh_views()
+	_box_lid.open()
 
 
 # Whether a crossword puzzle is the one currently active — always
@@ -498,6 +509,7 @@ func _on_crossword_chosen(puzzle_index: int) -> void:
 	_save_button.visible = true
 	_load_button.visible = true
 	_refresh_views()
+	_box_lid.open()
 
 
 # Called when the New Game button is pressed — asks first, rather than
@@ -867,6 +879,7 @@ func _format_end_turn_error() -> String:
 # by `_start_new_game()` (after abandoning one).
 func _return_to_start_menu() -> void:
 	_start_menu.visible = true
+	_box_lid.close()
 	_title.visible = true
 	_tagline.visible = true
 	_board_view.visible = false

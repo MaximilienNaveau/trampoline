@@ -55,7 +55,6 @@ colours anywhere else.
 | `frame_paint` | `#5FA373` | Painted frame, secondary buttons |
 | `frame_shade` | `#3C7F5C` | Frame bevel shadow, pressed state |
 | `frame_wood` | `#9A6B3F` | Wood showing through the paint (texture only) |
-| `folder_yellow` | `#E6CF3A` | Start-screen background (the folder) |
 | `ribbon` | `#E4733A` | The **single** primary action per screen ("Fin du tour", "Commencer") |
 | `felt` | `#26282A` | In-game background (desk mat) |
 | `cream_text` | `#F3EFD8` | Text on `felt` / `frame_paint` |
@@ -75,9 +74,9 @@ Rules:
   (OFL, Futura-like, Google Fonts): SemiBold for tile letters, Medium for
   buttons, Regular for body. It replaces Baloo 2, which is too rounded and
   cartoonish next to the original.
-- **Signature accent**: a handwritten face (e.g. **Caveat**, OFL) used only
-  for "M. Cheenne" on the frame and on the start screen, and for the
-  tagline "Un jeu pour faire rebondir les mots". Nowhere else.
+- **Signature accent**: a handwritten face (**Caveat**, OFL) used only
+  for "M. Cheenne" on the box lid and for the tagline "Un jeu pour faire
+  rebondir les mots". Nowhere else.
 - Tile letter height ≈ 55% of the tile side; corner letter ≈ 22%, inside a
   square that is ≈ 30% of the side.
 - French UI text: sentence case, a space before `:` `?` `!` (already done,
@@ -85,18 +84,26 @@ Rules:
 
 ## Screens
 
-### Start screen = the closed folder
-- Full `folder_yellow` background, a soft glossy highlight (one wide
-  diagonal gradient, nothing more).
-- An orange ribbon bow (`ribbon`) as the logo mark across the top third;
-  the title "Trampoline" set large in Jost Bold `ink`, the tagline under it
-  in Caveat.
-- Player count and modes as cards / buttons in `frame_paint` with
-  `cream_text`. Today the title is small and the buttons float in empty
-  space: make the title about 3× bigger and group the choices into two
-  clear blocks, "Partie" (1–4 joueurs) and "Seul" (Jeu libre, Mots croisés).
-- Transition into the game: the folder slides away and shows the board
-  (a 300–400 ms slide is enough).
+### Start screen = the closed box
+- The closed box on the felt, in a flat 2.5D (oblique) view: every top
+  face stays an undistorted rectangle so the menu reads normally, and
+  the front and right sides show as slanted strips below and to the
+  right of it.
+- The box is the board's mitred frame, hand-painted mint-green over wood
+  (brown showing through in dry-brush streaks). The lid is a smaller,
+  thinner painted panel set inside the frame, over the game, with its
+  own 2.5D edges, and "M. Cheenne" signed in its bottom-right corner in
+  a handwriting face (Caveat).
+- The orange ribbon and bow are tied around the whole box, across the
+  upper third, wrapping down its right side.
+- The menu sits on a cream card lying on the lid: title in Jost, tagline
+  in Caveat, slate `ink` text, then the choices.
+- Choosing a mode sets the game up underneath, then: the ribbon comes
+  off (0.2 s); the lid is opened by hand, lifting on its right edge and
+  turning over its left edge like a book page, but rigid (0.7 s),
+  showing its bare-wood underside and uncovering the empty board; it is
+  carried off screen (0.35 s); the box fades onto the game (0.3 s).
+  Going back to the menu plays it in reverse.
 
 ### Game screen = the board on the desk
 - Background `felt` (dark), so the green frame and pale tiles pop, the
