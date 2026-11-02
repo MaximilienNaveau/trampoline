@@ -49,6 +49,12 @@ var placeable: bool = false
 # such concept and always leaves this false.
 var invalid: bool = false
 
+# The tile's face: a Panel filling the hole (see TileView.face_rect),
+# holding the letter and corner badge below. Handed over by BoardView at
+# creation time like them; this cell itself draws the hole under it (see
+# `_draw`).
+var face: Panel
+
 # This cell's own Label child, handed over once by BoardView right after
 # creating it (see board_view.gd's `_build_grid`) — kept here, not just
 # there, so this cell can redraw its own text/color itself (see `refresh`
@@ -149,9 +155,7 @@ func _get_drag_data(_at_position: Vector2) -> Variant:
 # when the board itself hasn't changed yet so `refresh()` below would just
 # redraw the tile right back.
 func hide_tile() -> void:
-	label.text = ""
-	TileView.hide_corner_badge(corner_badge)
-	add_theme_stylebox_override("panel", TileView.empty_style())
+	face.visible = false
 
 
 # Redraws this single cell from `board`'s current state — used by
@@ -160,17 +164,18 @@ func hide_tile() -> void:
 # to restore its look if the drag didn't actually carry its tile away.
 func refresh() -> void:
 	var tile := board.tile_at(row, col)
-	if tile == null:
-		label.text = ""
-		TileView.hide_corner_badge(corner_badge)
-		add_theme_stylebox_override("panel", TileView.empty_style())
-	else:
+	face.visible = tile != null
+	if tile != null:
 		label.text = tile.current_letter()
-		var style := (
-			TileView.invalid_style_for_tile(tile) if invalid else TileView.style_for_tile(tile)
-		)
-		add_theme_stylebox_override("panel", style)
+		face.add_theme_stylebox_override("panel", TileView.board_face_style(tile, invalid))
 		TileView.update_corner_badge(corner_badge, tile)
+
+
+# Godot calls this when this cell needs redrawing (like Qt's paintEvent);
+# what it draws sits under the cell's children (the tile's face, which
+# covers all but a thin gap of the hole when a tile is in it).
+func _draw() -> void:
+	TileView.draw_hole(self, Rect2(Vector2.ZERO, size))
 
 
 # Virtual function: Godot calls this on EVERY Control (not just the one

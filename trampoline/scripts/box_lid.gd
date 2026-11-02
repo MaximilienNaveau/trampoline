@@ -50,6 +50,8 @@ const _RIGHT_TINT := Color(0.52, 0.52, 0.52)
 const _EDGE := Color(0, 0, 0, 0.35)
 const _RIM := Color(1, 1, 1, 0.3)
 const _SHADOW := Color(0, 0, 0, 0.4)
+# The shade inside the closed box, seen through the gap around the lid.
+const _CAVITY := Color(0.12, 0.11, 0.09)
 const _RIBBON_SIDE := Color("b8551f")
 
 # Directions in the lid's "3D" world (x = right, y = toward the player,
@@ -281,6 +283,12 @@ func _draw_lid_edges() -> void:
 	var width := _lid.size.x
 	var length := _lid.size.y
 	var bottom := -_LID_THICKNESS
+	# While the lid is shut, the inside of the box is in shade: only a dark
+	# groove shows around the lid. Light floods in as the lid lifts, so
+	# the shade fades out over the first quarter of the turn.
+	var cavity := _CAVITY
+	cavity.a = 1.0 - clampf(_turn * 4.0, 0.0, 1.0)
+	_lid_edges.draw_rect(_inside.get_rect(), cavity)
 	# The shadow: the lid's outline dropped straight down onto the box
 	# (its x axis without the lift), under the lid's bottom face.
 	var drop := -Oblique.UP * _LID_THICKNESS + Vector2(2, 2)
@@ -336,10 +344,9 @@ func _draw_sides(canvas: CanvasItem, top: Rect2, depth: Vector2) -> void:
 	)
 
 
-# The inside of the box: the board's empty slots, so lifting the lid
+# The inside of the box: the board's empty holes, so lifting the lid
 # shows an empty board like the one the game then starts on.
 func _draw_slots() -> void:
-	var style := TileView.empty_style()
 	# Square slots as big as fit, the grid centred in the inside.
 	var cell := minf(_inside.size.x / Board.COLUMNS, _inside.size.y / Board.ROWS)
 	var origin := (_inside.size - cell * Vector2(Board.COLUMNS, Board.ROWS)) / 2
@@ -347,7 +354,7 @@ func _draw_slots() -> void:
 		for col in range(Board.COLUMNS):
 			var slot := Rect2(origin + cell * Vector2(col, row), Vector2(cell, cell))
 			# `grow(-x)` shrinks a Rect2 by x on every side — the gap.
-			_inside.draw_style_box(style, slot.grow(-_SLOT_GAP / 2))
+			TileView.draw_hole(_inside, slot.grow(-_SLOT_GAP / 2))
 
 
 # The ribbon is tied around the whole box: continue the band down the

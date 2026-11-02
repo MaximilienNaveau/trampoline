@@ -1,10 +1,11 @@
 # How a `Tile` gets drawn, shared by every view that shows one (BoardView,
-# HandView, ...) — just the yellow/green/empty color mapping and a helper to
-# turn a color into a drawable style, so each view doesn't redefine its own
-# copy of these three colors. Deliberately only about *drawing*, never
-# touching board/scoring/turn logic, per this project's "separate logic from
-# graphics" rule — this file is graphics code, but it's graphics code that
-# knows about `Tile`, not the other way around.
+# HandView, ...) — the yellow/green color mapping, a helper to turn a
+# color into a drawable style, and the "2.5D" board holes the tiles sit
+# in (see oblique.gd), so each view doesn't redefine its own copy.
+# Deliberately only about *drawing*, never touching board/scoring/turn
+# logic, per this project's "separate logic from graphics" rule — this
+# file is graphics code, but it's graphics code that knows about `Tile`,
+# not the other way around.
 class_name TileView
 extends RefCounted
 
@@ -14,11 +15,24 @@ extends RefCounted
 const YELLOW_COLOR := Color("eae5a0")
 const GREEN_COLOR := Color("9cb46b")
 const LETTER_COLOR := Color("363a42")
-# An empty cell: a slot sunk into the board's dark tray (see the Tray
-# node in board_view.tscn), a shade lighter than the tray itself, with a
-# darker top edge standing in for the slot's shadowed lip.
-const EMPTY_COLOR := Color("3a3629")
-const _EMPTY_LIP_COLOR := Color("1e1b15")
+# An empty hole cut into the board's painted wood: its walls and floor
+# are that same paint (the plain painted middle of the box's lid texture,
+# like the Tray around the holes in board_view.tscn), tinted by how much
+# shadow each gets. The light comes from the back-left, so the far (top)
+# and left walls face away from it and are darkest; the floor, facing up,
+# is only partly shaded. That shading is what reads as a slot.
+const _PAINT := preload("res://assets/textures/box_lid.jpg")
+const _PAINT_REGION := Rect2(40, 40, 460, 880)
+const _HOLE_TOP_WALL_TINT := Color(0.45, 0.45, 0.45)
+const _HOLE_LEFT_WALL_TINT := Color(0.55, 0.55, 0.55)
+const _HOLE_FLOOR_TINT := Color(0.72, 0.72, 0.72)
+
+# How deep a hole is, as a fraction of the cell's side. A tile is as
+# thick as its hole is deep, so once in it, its face is flush with the
+# board and its cork sides are hidden — only the face shows.
+const _HOLE_DEPTH_RATIO := 0.22
+# Gap, in px, between a tile and its hole's walls on each side.
+const _TILE_GAP := 1.0
 
 # Jost SemiBold — a geometric sans close to the real tiles' lettering.
 # `preload` loads a resource once, when this script itself is loaded
@@ -69,24 +83,58 @@ static func style_for_tile(tile: Tile) -> StyleBoxFlat:
 	return _make_style(color)
 
 
-# Same as `style_for_tile`, but flagged as part of an invalid turn/word
-# right now — see this file's own `INVALID_BORDER_COLOR`.
-static func invalid_style_for_tile(tile: Tile) -> StyleBoxFlat:
-	var color := GREEN_COLOR if tile.current_is_green() else YELLOW_COLOR
-	var style := _make_style(color)
-	style.border_color = INVALID_BORDER_COLOR
-	style.set_border_width_all(4)
-	return style
-
-
-# The style to draw an empty cell with (no tile there at all).
-static func empty_style() -> StyleBoxFlat:
+# The style for the face of a tile sunk into a board hole: just the
+# matte face color, flush with the board — no fake bottom edge or shadow
+# like `_make_style`'s, since nothing of its thickness shows.
+# `invalid` adds a red border (see `INVALID_BORDER_COLOR`).
+static func board_face_style(tile: Tile, invalid: bool) -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
-	style.bg_color = EMPTY_COLOR
-	style.border_color = _EMPTY_LIP_COLOR
-	style.border_width_top = 2
+	style.bg_color = GREEN_COLOR if tile.current_is_green() else YELLOW_COLOR
 	style.set_corner_radius_all(_CORNER_RADIUS)
+	if invalid:
+		style.border_color = INVALID_BORDER_COLOR
+		style.set_border_width_all(4)
 	return style
+
+
+# Where a tile's face goes in a cell `side` px wide (a cell = one hole):
+# the hole minus a small gap, flush with the board.
+static func face_rect(side: float) -> Rect2:
+	return Rect2(0, 0, side, side).grow(-_TILE_GAP)
+
+
+# Draws onto `canvas` an empty hole sunk into the board, whose rim is
+# `rim`. Its floor shows shifted down-right by the hole's depth, and the
+# strips between floor and rim are its two inner walls we can see — the
+# far (top) one and the left one. The near walls, and everything of the
+# floor past the rim, are hidden under the board's surface.
+static func draw_hole(canvas: CanvasItem, rim: Rect2) -> void:
+	var depth := -Oblique.UP * rim.size.x * _HOLE_DEPTH_RATIO
+	# The floor: the hole moved down-right by the depth, cut off by the rim.
+	var floor_rect := Rect2(rim.position + depth, rim.size - depth)
+	# Which piece of the paint to show there: the one at the floor's place
+	# on screen (`get_global_transform()` maps this node's coordinates to
+	# the screen's), so the floors of neighbouring holes line up like one
+	# painted board. `fposmod` is a float modulo that's never negative,
+	# wrapping around the paint if the board is bigger than it.
+	var at := canvas.get_global_transform() * floor_rect.position
+	var offset := Vector2(
+		fposmod(at.x, _PAINT_REGION.size.x - floor_rect.size.x),
+		fposmod(at.y, _PAINT_REGION.size.y - floor_rect.size.y)
+	)
+	var source := Rect2(_PAINT_REGION.position + offset, floor_rect.size)
+	canvas.draw_texture_rect_region(_PAINT, floor_rect, source, _HOLE_FLOOR_TINT)
+	# The top wall: from the rim's top edge down to the floor's, its left
+	# end slanting with the depth, its right end cut off by the rim.
+	var top_right := Vector2(rim.end.x, rim.position.y)
+	var top_wall := [rim.position, top_right, top_right + Vector2(0, depth.y), rim.position + depth]
+	Oblique.fill(canvas, top_wall, _HOLE_TOP_WALL_TINT, _PAINT)
+	# The left wall: from the rim's left edge across to the floor's.
+	var bottom_left := Vector2(rim.position.x, rim.end.y)
+	var left_wall := [
+		rim.position + depth, Vector2(floor_rect.position.x, rim.end.y), bottom_left, rim.position
+	]
+	Oblique.fill(canvas, left_wall, _HOLE_LEFT_WALL_TINT, _PAINT)
 
 
 # The letter a tile would show if flipped right now — whichever face ISN'T

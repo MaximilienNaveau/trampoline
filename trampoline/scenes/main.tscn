@@ -316,7 +316,7 @@ patch_margin_top=30
 patch_margin_right=30
 patch_margin_bottom=30
 
-[node name="Inside" type="ColorRect" parent="BoxLid/Box"]
+[node name="Inside" type="NinePatchRect" parent="BoxLid/Box"]
 layout_mode=1
 anchors_preset=15
 anchor_right=1.0
@@ -324,7 +324,8 @@ anchor_bottom=1.0
 grow_horizontal=2
 grow_vertical=2
 mouse_filter=2
-color=Color(0.18, 0.169, 0.133, 1)
+texture=ExtResource("9")
+region_rect=Rect2(40, 40, 460, 880)
 
 [node name="LidEdges" type="Control" parent="BoxLid/Box"]
 layout_mode=1

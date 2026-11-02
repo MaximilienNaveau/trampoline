@@ -1,10 +1,13 @@
 # Visualizes a Board's current state as a 13x9 grid of colored cells, and
 # accepts tiles dropped onto it from a HandView (see board_cell.gd/
 # tile_panel.gd for the actual drag-and-drop mechanics). BoardView's own
-# root IS the wood-textured frame around the grid (see board_view.tscn's
-# `theme_override_styles/panel`) — a `PanelContainer` instead of a plain
-# `Control` so it reports the grid's real size to whatever contains it
-# (see main.tscn's container-based layout), not just a zero-size point.
+# root IS the painted frame around the grid (see `frame_style`) — a
+# `PanelContainer` instead of a plain `Control` so it reports the grid's
+# real size to whatever contains it (see main.tscn's container-based
+# layout), not just a zero-size point. Like the start screen's box (the
+# board IS that box, lid off), it's drawn in "2.5D" (see oblique.gd): its
+# front and right sides show below and to the right of the frame, and
+# each cell is a hole, the tiles sunk flush into them.
 #
 # Deliberately knows nothing about GameSession, TurnManager, scoring, or
 # any other game rule: it only ever reads a `Board` (see board.gd), draws
@@ -65,6 +68,23 @@ const _MAX_CELL_SIDE := 64.0
 # share of PlayArea's 10px gap between board and hand (see main.tscn).
 const _BOTTOM_ROW_GAP := 8.0
 
+# How far the board's bottom edge sticks out from under its frame: x is
+# how wide its right side looks, y how tall its front looks. Kept inside
+# BoardView's own size (see `_ready`), so the layout makes room for it.
+const _DEPTH := Vector2(10, 20)
+# Same tints and shadow as the box's sides (see box_lid.gd): the light
+# comes from the back-left, so the front is a bit darker, the right more.
+const _FRONT_TINT := Color(0.72, 0.72, 0.72)
+const _RIGHT_TINT := Color(0.52, 0.52, 0.52)
+const _SHADOW := Color(0, 0, 0, 0.4)
+
+# The painted frame's look: the same paint as the box's lid, as a
+# StyleBoxTexture (an image stretched to fit a rectangle while keeping
+# its `texture_margin_*` borders unstretched — a "nine-patch"). `@export`
+# makes a variable settable from the editor/.tscn file, like a public
+# serialized field in Unity: its value is set in board_view.tscn.
+@export var frame_style: StyleBoxTexture
+
 # Height, in pixels, of everything on the page that ISN'T the board or
 # what's below it — the header row, the scoreboard, and the page's own
 # margins/separators — subtracted from the viewport's height in
@@ -124,6 +144,16 @@ var _cell_side: float = 0.0
 
 
 func _ready() -> void:
+	# The PanelContainer's own background ("panel" style) only reserves
+	# room around the grid, drawing nothing (StyleBoxEmpty): the frame's
+	# margins, plus the sides' room on the right and bottom. `_draw` below
+	# paints the frame and sides into that room.
+	var room := StyleBoxEmpty.new()
+	room.content_margin_left = frame_style.content_margin_left
+	room.content_margin_top = frame_style.content_margin_top
+	room.content_margin_right = frame_style.content_margin_right + _DEPTH.x
+	room.content_margin_bottom = frame_style.content_margin_bottom + _DEPTH.y
+	add_theme_stylebox_override("panel", room)
 	_build_grid()
 	# The viewport's own `size_changed` signal fires whenever the actual
 	# window/screen size changes — e.g. the player resizing the window,
@@ -140,6 +170,18 @@ func _ready() -> void:
 	_update_cell_sizes()
 
 
+# Godot calls this when this node needs redrawing (like Qt's paintEvent);
+# it sits under the children (the tray and the grid of holes). A Control
+# redraws by itself when resized, so this follows the board's size.
+func _draw() -> void:
+	# The frame's top face: everything but the room kept for the sides.
+	var top := Rect2(Vector2.ZERO, size - _DEPTH)
+	# A soft shadow on the felt, cast down-right like the sides.
+	draw_rect(Rect2(_DEPTH + Vector2(4, 4), top.size), _SHADOW)
+	Oblique.draw_sides(self, top, _DEPTH, _FRONT_TINT, _RIGHT_TINT, frame_style.texture)
+	draw_style_box(frame_style, top)
+
+
 # Creates all 117 cell nodes once, empty. GridContainer lays out its
 # children left-to-right then wraps after `columns` of them (set to 9 in
 # board_view.tscn), so simply adding them row by row, column by column,
@@ -154,7 +196,10 @@ func _build_grid() -> void:
 			panel.row = row
 			panel.col = col
 			panel.board_view = self
-			panel.add_theme_stylebox_override("panel", TileView.empty_style())
+			# The cell draws its hole itself (see board_cell.gd's `_draw`),
+			# so its own Panel background is switched off: StyleBoxEmpty
+			# draws nothing.
+			panel.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
 			# Connects this cell's own signals to methods on BoardView (see
 			# `_on_cell_tile_dropped`/`_on_cell_tile_moved` below) — the
 			# standard Godot way of reacting to a signal, same idea as a Qt
@@ -164,8 +209,16 @@ func _build_grid() -> void:
 			panel.word_moved.connect(_on_cell_word_moved)
 			panel.tile_flipped.connect(_on_cell_tile_flipped)
 
+			# The tile's face, raised above the cell; sized and placed in
+			# `_update_cell_sizes` once the cell's own size is known. It
+			# lets clicks through to the cell, which handles them.
+			var face := Panel.new()
+			face.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			panel.add_child(face)
+			panel.face = face
+
 			var label := TileView.build_letter_label()
-			panel.add_child(label)
+			face.add_child(label)
 			# Handed to the cell itself (not just kept here) so it can
 			# redraw its own text/color — needed both by `refresh()` below
 			# and by the cell itself once a drag that started there ends
@@ -175,7 +228,7 @@ func _build_grid() -> void:
 			# Same idea for the small "other face" hint badge (see
 			# tile_view.gd's build_corner_badge/update_corner_badge).
 			var corner_badge := TileView.build_corner_badge()
-			panel.add_child(corner_badge)
+			face.add_child(corner_badge)
 			panel.corner_badge = corner_badge
 
 			_grid.add_child(panel)
@@ -200,13 +253,13 @@ func _build_grid() -> void:
 # viewport's own size is the one number in this whole chain that's never
 # influenced by how big the cells last were.
 func _update_cell_sizes() -> void:
-	# The wood frame's own content margin (see board_view.tscn's
-	# StyleBoxTexture) already eats into how much of BoardView's own size
-	# the grid actually gets — read directly off the stylebox rather than
-	# hardcoding it a second time here.
-	var frame_style: StyleBox = get_theme_stylebox("panel")
-	var frame_margin_h: float = frame_style.content_margin_left + frame_style.content_margin_right
-	var frame_margin_v: float = frame_style.content_margin_top + frame_style.content_margin_bottom
+	# The frame's own content margin (plus the sides' room, see `_ready`)
+	# already eats into how much of BoardView's own size the grid actually
+	# gets — read directly off the stylebox rather than hardcoding it a
+	# second time here.
+	var room: StyleBox = get_theme_stylebox("panel")
+	var frame_margin_h: float = room.content_margin_left + room.content_margin_right
+	var frame_margin_v: float = room.content_margin_top + room.content_margin_bottom
 	var h_separation: int = _grid.get_theme_constant("h_separation")
 	var v_separation: int = _grid.get_theme_constant("v_separation")
 	var viewport_size := get_viewport_rect().size
@@ -246,10 +299,15 @@ func _update_cell_sizes() -> void:
 	# The letter and corner square scale with the cell itself, rather than
 	# staying fixed — a fixed size would look tiny on a wide screen's
 	# huge cells, or overflow a narrow screen's small ones.
+	var face := TileView.face_rect(_cell_side)
 	for panel_row in _cell_panels:
 		for panel: BoardCell in panel_row:
 			panel.custom_minimum_size = Vector2(_cell_side, _cell_side)
-			TileView.fit_to_side(panel.label, panel.corner_badge, _cell_side)
+			# The face isn't in a container, so its position and size are
+			# set directly; it then stays put until the next resize.
+			panel.face.position = face.position
+			panel.face.size = face.size
+			TileView.fit_to_side(panel.label, panel.corner_badge, face.size.x)
 	cell_size_changed.emit(_cell_side)
 
 

@@ -51,7 +51,7 @@ colours anywhere else.
 | `tile_green` | `#9CB46B` | Green face |
 | `ink` | `#363A42` | Letters on both faces, primary text on light surfaces |
 | `tile_edge` | `#C9B98A` | 1–2 px bottom edge / cork thickness under a tile |
-| `tray` | `#2E2B22` | Board bed and empty slots (slots 6% lighter: `#3A3629`) |
+| `tray` | (paint) | Board bed, separators and the inside of every hole: the same painted wood as the frame and lid (texture). A hole reads as a slot by shading alone: its far and left walls at 45-55% brightness, its floor at 72% |
 | `frame_paint` | `#5FA373` | Painted frame, secondary buttons |
 | `frame_shade` | `#3C7F5C` | Frame bevel shadow, pressed state |
 | `frame_wood` | `#9A6B3F` | Wood showing through the paint (texture only) |
@@ -108,7 +108,14 @@ Rules:
 ### Game screen = the board on the desk
 - Background `felt` (dark), so the green frame and pale tiles pop, the
   same as in the photos.
-- Board: painted frame, `tray` bed, tiles packed tight.
+- Board: the box with its lid off, in the same 2.5D view as the start
+  screen (`scripts/oblique.gd` holds the shared viewing angle): the
+  painted frame with its front and right sides, a `tray` bed, and one
+  hole per cell sunk into it (dark floor, far and left inner walls
+  showing).
+- Tiles sit in their holes, as thick as a hole is deep: once on the
+  board only the face shows, flush with the board, with a thin dark gap
+  around it. Their block shape and cork sides only show off the board.
 - Header on the felt: scores in `cream_text`; the current player highlighted
   with an orange underline, not with "(à vous de jouer)" text.
 - The hand sits below the board on a strip of the same dark tray (a

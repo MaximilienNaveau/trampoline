@@ -1,26 +1,23 @@
 [gd_scene load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://scripts/board_view.gd" id="1"]
-[ext_resource type="Texture2D" path="res://assets/textures/board_frame_wood.png" id="2"]
+[ext_resource type="Texture2D" path="res://assets/textures/box_lid.jpg" id="2"]
 
 [sub_resource type="StyleBoxTexture" id="StyleBoxTexture_frame"]
 texture = ExtResource("2")
+region_rect = Rect2(40, 40, 460, 880)
+texture_margin_left = 14.0
+texture_margin_top = 14.0
+texture_margin_right = 14.0
+texture_margin_bottom = 14.0
 content_margin_left = 14.0
 content_margin_top = 14.0
 content_margin_right = 14.0
 content_margin_bottom = 14.0
-axis_stretch_horizontal = 1
-axis_stretch_vertical = 1
-shadow_color = Color(0, 0, 0, 0.3)
-shadow_size = 6
-shadow_offset = Vector2(0, 3)
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_tray"]
-bg_color = Color(0.18, 0.169, 0.133, 1)
-corner_radius_top_left = 3
-corner_radius_top_right = 3
-corner_radius_bottom_right = 3
-corner_radius_bottom_left = 3
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_tray"]
+texture = ExtResource("2")
+region_rect = Rect2(40, 40, 460, 880)
 
 [node name="BoardView" type="PanelContainer"]
 layout_mode=3
@@ -31,13 +28,13 @@ anchor_right=0.5
 anchor_bottom=0.5
 grow_horizontal=2
 grow_vertical=2
-theme_override_styles/panel = SubResource("StyleBoxTexture_frame")
 script=ExtResource("1")
+frame_style = SubResource("StyleBoxTexture_frame")
 
 [node name="Tray" type="Panel" parent="."]
 layout_mode=2
 mouse_filter=2
-theme_override_styles/panel = SubResource("StyleBoxFlat_tray")
+theme_override_styles/panel = SubResource("StyleBoxTexture_tray")
 
 [node name="Grid" type="GridContainer" parent="."]
 layout_mode=2
