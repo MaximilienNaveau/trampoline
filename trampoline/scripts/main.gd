@@ -39,6 +39,11 @@ var _crossword_puzzle: CrosswordPuzzle
 # reading and normalizing the ~438,000-line word list takes a couple of
 # real seconds, noticeable every single time a mode is (re)started.
 var _shared_dictionary: FrenchDictionary
+# Loads that dictionary in the background, started as soon as the start
+# menu shows (see `_ready()`), so it's usually done by the time a mode is
+# picked instead of freezing the screen for those seconds then. A Thread
+# is a real OS thread, like std::thread / Python's threading.Thread.
+var _dictionary_thread := Thread.new()
 
 # Whether the turn timer (see doc/RULES.md's "3-minute soft/hard time
 # limit") is switched on right now — a player preference toggled via
@@ -186,6 +191,12 @@ func _ready() -> void:
 	# immediately instead, which is the standard fix for sluggish-feeling
 	# drags in Godot.
 	Input.set_use_accumulated_input(false)
+
+	# `start()` runs the given function on the thread; its return value is
+	# handed back by `wait_to_finish()` (see `_dictionary()`). Safe here:
+	# loading only reads a file and fills a brand-new object nothing else
+	# touches until then.
+	_dictionary_thread.start(func() -> FrenchDictionary: return FrenchDictionary.new())
 
 	# Connects BoardView's/HandView's signals, and every button's built-in
 	# `pressed` signal (every Button has one), to the methods below — see
@@ -423,8 +434,19 @@ func _on_back_to_start_menu_pressed() -> void:
 # constructor default to loading yet another copy.
 func _dictionary() -> FrenchDictionary:
 	if _shared_dictionary == null:
-		_shared_dictionary = FrenchDictionary.new()
+		# Joins the background load: returns at once if it's finished,
+		# otherwise blocks until it is (a mode picked within the first
+		# couple of seconds).
+		_shared_dictionary = _dictionary_thread.wait_to_finish()
 	return _shared_dictionary
+
+
+# Built-in callback Godot calls when this node leaves the scene tree
+# (here: the app quitting). A Thread must be joined before it's freed,
+# or Godot warns — e.g. when quitting from the menu before ever playing.
+func _exit_tree() -> void:
+	if _dictionary_thread.is_started():
+		_dictionary_thread.wait_to_finish()
 
 
 # Whether the free-play sandbox is the one currently active, rather than
