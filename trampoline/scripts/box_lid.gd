@@ -52,13 +52,9 @@ const _RIM := Color(1, 1, 1, 0.3)
 const _SHADOW := Color(0, 0, 0, 0.4)
 const _RIBBON_SIDE := Color("b8551f")
 
-# Where a point lifted 1 px above the table moves on screen: up and a
-# little left — the opposite of `_BOX_DEPTH`, which is what the box's
-# height (about 54 px, so ~0.45 px of screen per px) looks like.
-const _UP := Vector2(-0.22, -0.44)
 # Directions in the lid's "3D" world (x = right, y = toward the player,
 # z = up off the table). `_VIEW` points back at the viewer — exactly the
-# direction `_UP` flattens to nothing: a face whose outward normal points
+# direction `Oblique.UP` flattens to nothing: a face whose outward normal points
 # toward it (positive dot product) is seen, the others are hidden behind.
 const _VIEW := Vector3(0.22, 0.44, 1.0)
 # Toward the light: up, from the back-left — the same light as the
@@ -80,7 +76,7 @@ var _turn := 0.0
 # its thickness (along its top face's normal) land on screen.
 var _origin := Vector2.ZERO
 var _x_axis := Vector2.RIGHT
-var _normal := -_UP
+var _normal := -Oblique.UP
 var _angle := 0.0
 
 # The box's top face (frame + inside + lid), the lid itself, and the
@@ -201,7 +197,7 @@ func _layout() -> void:
 # for its own slanted sides, and puts it back in its current pose.
 func _place_lid() -> void:
 	var gap := 2 * (_FRAME_WIDTH + _LID_GAP)
-	_lid.size = _box.size - Vector2(gap, gap) + _UP * _LID_THICKNESS
+	_lid.size = _box.size - Vector2(gap, gap) + Oblique.UP * _LID_THICKNESS
 	_set_turn(_turn)
 
 
@@ -209,16 +205,16 @@ func _place_lid() -> void:
 # rotates by `angle` about its left edge, a line along the hinge: a point
 # `u` px along the lid's width ends up `u * cos` px to the right of the
 # hinge and `u * sin` px above the table — which on screen is `u * cos`
-# right plus `u * sin` times `_UP`. Its other axis, along the hinge,
+# right plus `u * sin` times `Oblique.UP`. Its other axis, along the hinge,
 # doesn't change. Those two axes, as the columns of a 2D transform (like
 # a 2x3 affine matrix), give the lid's whole shape.
 func _set_turn(turn: float) -> void:
 	_turn = turn
 	_angle = clampf(turn, 0.0, 1.0) * PI
-	_x_axis = Vector2(cos(_angle), 0) + sin(_angle) * _UP
+	_x_axis = Vector2(cos(_angle), 0) + sin(_angle) * Oblique.UP
 	# The top face's normal turns along with it: from straight up (on
-	# screen: `_UP`) toward the left.
-	_normal = Vector2(-sin(_angle), 0) + cos(_angle) * _UP
+	# screen: `Oblique.UP`) toward the left.
+	_normal = Vector2(-sin(_angle), 0) + cos(_angle) * Oblique.UP
 	# Hinge's resting place: the lid's top-left corner, inside the frame.
 	_origin = Vector2(_FRAME_WIDTH + _LID_GAP, _FRAME_WIDTH + _LID_GAP)
 	# Past 1, slide it left until, at 2, the turned-over lid (lying left
@@ -287,7 +283,7 @@ func _draw_lid_edges() -> void:
 	var bottom := -_LID_THICKNESS
 	# The shadow: the lid's outline dropped straight down onto the box
 	# (its x axis without the lift), under the lid's bottom face.
-	var drop := -_UP * _LID_THICKNESS + Vector2(2, 2)
+	var drop := -Oblique.UP * _LID_THICKNESS + Vector2(2, 2)
 	var flat_x := Vector2(cos(_angle), 0)
 	var shadow_corners: Array[Vector2] = [
 		Vector2.ZERO, width * flat_x, width * flat_x + Vector2(0, length), Vector2(0, length)
@@ -304,7 +300,7 @@ func _draw_lid_edges() -> void:
 		_lid_point(width, length, bottom),
 		_lid_point(0, length, bottom),
 	]
-	_draw_side(_lid_edges, front, _shade(Vector3(0, 1, 0)))
+	Oblique.fill(_lid_edges, front, _shade(Vector3(0, 1, 0)), _paint.texture)
 	# One long edge: the free one while it faces us (closed, then rising),
 	# the hinge one once the lid is nearly turned over.
 	var free_normal := Vector3(cos(_angle), 0, sin(_angle))
@@ -316,23 +312,16 @@ func _draw_lid_edges() -> void:
 		_lid_point(u, 0, bottom),
 	]
 	var normal := free_normal if u > 0 else -free_normal
-	_draw_side(_lid_edges, side, _shade(normal))
+	Oblique.fill(_lid_edges, side, _shade(normal), _paint.texture)
 
 
 # Draws, onto `canvas`, the front and right sides of a box whose top face
 # is `top` and whose bottom edge sits `depth` further down-right.
 func _draw_sides(canvas: CanvasItem, top: Rect2, depth: Vector2) -> void:
+	Oblique.draw_sides(canvas, top, depth, _FRONT_TINT, _RIGHT_TINT, _paint.texture)
 	var top_right := Vector2(top.end.x, top.position.y)
 	var bottom_right := top.end
 	var bottom_left := Vector2(top.position.x, top.end.y)
-	# Front side: a parallelogram hanging under the top face's bottom edge.
-	_draw_side(
-		canvas, [bottom_left, bottom_right, bottom_right + depth, bottom_left + depth], _FRONT_TINT
-	)
-	# Right side: a parallelogram along the top face's right edge.
-	_draw_side(
-		canvas, [top_right, top_right + depth, bottom_right + depth, bottom_right], _RIGHT_TINT
-	)
 	# The vertical edge where the two sides meet.
 	canvas.draw_line(bottom_right, bottom_right + depth, _EDGE, 1.5, true)
 	# A thin light line just outside the top face's bottom and right
@@ -345,18 +334,6 @@ func _draw_sides(canvas: CanvasItem, top: Rect2, depth: Vector2) -> void:
 		1.5,
 		true
 	)
-
-
-# Fills one side with a strip of the painted texture, darkened by `tint`
-# so the sides read as turned away from the light.
-func _draw_side(canvas: CanvasItem, corners: Array, tint: Color) -> void:
-	# `uvs` say which part of the texture lands on each corner, in 0..1
-	# texture coordinates: here a thin band through the middle of the
-	# paint, so the brush streaks run along the side.
-	var uvs := PackedVector2Array(
-		[Vector2(0.1, 0.48), Vector2(0.9, 0.48), Vector2(0.9, 0.52), Vector2(0.1, 0.52)]
-	)
-	canvas.draw_polygon(PackedVector2Array(corners), PackedColorArray([tint]), uvs, _paint.texture)
 
 
 # The inside of the box: the board's empty slots, so lifting the lid
