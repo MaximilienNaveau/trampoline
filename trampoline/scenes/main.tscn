@@ -146,6 +146,7 @@ text="Un jeu pour faire rebondir les mots"
 layout_mode=2
 theme_override_font_sizes/font_size=20
 horizontal_alignment=1
+autowrap_mode=3
 visible=false
 
 [node name="GameOverBanner" type="Label" parent="Layout/Margin/Content"]
@@ -307,6 +308,7 @@ theme_override_constants/separation=10
 
 [node name="BoardView" parent="Layout/Margin/Content/PlayArea" instance=ExtResource("2")]
 layout_mode=2
+size_flags_horizontal=4
 
 [node name="ClueMarkers" type="Control" parent="Layout/Margin/Content/PlayArea/BoardView"]
 layout_mode=2

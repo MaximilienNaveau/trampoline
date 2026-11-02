@@ -60,14 +60,36 @@ const LANDSCAPE_BOARD_WIDTH_FRACTION := 0.62
 # normal size.
 const _MAX_CELL_SIDE := 64.0
 
-# Rough estimate of everything ABOVE the board that isn't the board itself
-# — the header row, the current-player status line, and the page's own
-# margins/separators around them — subtracted from the viewport's height
-# in `_update_cell_sizes` below so a 13-row board fits on an ordinary
-# desktop screen without needing to scroll to see the bottom of it. Like
-# `PAGE_MARGIN`, a hand-tuned constant that needs keeping in sync by hand
-# if main.tscn's header area ever changes size.
-const _VERTICAL_OVERHEAD := 120.0
+# Spacing, in pixels, assumed around each row of `reserved_bottom_rows`
+# below — the hand's own 4px gap between rows (see hand_view.tscn) plus a
+# share of PlayArea's 10px gap between board and hand (see main.tscn).
+const _BOTTOM_ROW_GAP := 8.0
+
+# Height, in pixels, of everything on the page that ISN'T the board or
+# what's below it — the header row, the scoreboard, and the page's own
+# margins/separators — subtracted from the viewport's height in
+# `_update_cell_sizes` below so all 13 rows fit without scrolling. 120 is
+# a rough default; main.gd keeps it set to the real, measured value (see
+# its `_update_board_height_budget`), since the scoreboard wraps onto a
+# second line with 3-4 players. Re-fits the cells on change, same as
+# `reserved_right_width` below.
+var vertical_overhead: float = 120.0:
+	set(value):
+		if value == vertical_overhead:
+			return
+		vertical_overhead = value
+		_update_cell_sizes()
+
+# How many rows of board-sized tiles to keep room for BELOW the board
+# (the turn-based hand, in portrait — see main.gd), so the board shrinks
+# just enough for the hand to fit on screen too, rather than leaving it
+# to be scrolled to. 0 means the board alone gets the whole height.
+var reserved_bottom_rows: int = 0:
+	set(value):
+		if value == reserved_bottom_rows:
+			return
+		reserved_bottom_rows = value
+		_update_cell_sizes()
 
 # Extra width, in pixels, kept free inside the frame right of the grid —
 # room for an overlay to draw beside the rows (crossword mode's "?"
@@ -164,7 +186,7 @@ func _build_grid() -> void:
 # Resizes every cell to be as big as it can while (a) staying square, (b)
 # fitting exactly `Board.COLUMNS` of them across the viewport's current
 # width, AND (c) fitting all `Board.ROWS` of them within its current
-# height too (see `_VERTICAL_OVERHEAD` above) — instead of a fixed pixel
+# height too (see `vertical_overhead` above) — instead of a fixed pixel
 # size that would leave empty space around the board on a big screen, run
 # off the right edge on a narrow one, or spill past the bottom needing a
 # scroll to see the rest of it. Deliberately reads the VIEWPORT's own size
@@ -203,15 +225,23 @@ func _update_cell_sizes() -> void:
 	# board would still spill past the bottom of the screen on an ordinary
 	# desktop window. Capping by whichever of width/height is tighter is
 	# what actually keeps all 13 rows visible without scrolling on a big
-	# screen (see `_VERTICAL_OVERHEAD` above).
+	# screen (see `vertical_overhead` above). The rows kept free below the
+	# board (see `reserved_bottom_rows`) are the same size as a cell, so
+	# they share the height with the board's own 13 rows.
 	var available_height := (
-		viewport_size.y - _VERTICAL_OVERHEAD - frame_margin_v - v_separation * (Board.ROWS - 1)
+		viewport_size.y
+		- vertical_overhead
+		- frame_margin_v
+		- v_separation * (Board.ROWS - 1)
+		- _BOTTOM_ROW_GAP * reserved_bottom_rows
 	)
 
 	if available_width <= 0 or available_height <= 0:
 		return
 	_cell_side = min(
-		floor(available_width / Board.COLUMNS), floor(available_height / Board.ROWS), _MAX_CELL_SIDE
+		floor(available_width / Board.COLUMNS),
+		floor(available_height / (Board.ROWS + reserved_bottom_rows)),
+		_MAX_CELL_SIDE
 	)
 	# The letter and corner square scale with the cell itself, rather than
 	# staying fixed — a fixed size would look tiny on a wide screen's

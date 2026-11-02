@@ -85,6 +85,10 @@ func refresh(clues: Array[String], solved: Array[bool], row_rects: Array[Rect2])
 	_clues = clues
 	_solved = solved
 	_row_rects = row_rects
+	# BoardView's frame shrinks to fit its children (see main.tscn), so
+	# asking for the grid's width plus the lane is what keeps the "?"
+	# column inside the frame rather than hanging off its right edge.
+	custom_minimum_size.x = row_rects[0].end.x + LANE_WIDTH
 	for row in range(_markers.size()):
 		var marker := _markers[row]
 		var rect := row_rects[row]

@@ -94,6 +94,9 @@ var _save_and_restart_button: Button
 # HBoxContainer (its own two fixed-orientation convenience subclasses),
 # only on their shared base class.
 @onready var _play_area: BoxContainer = $Layout/Margin/Content/PlayArea
+# Their margin/position are what `_update_board_height_budget` measures.
+@onready var _margin: MarginContainer = $Layout/Margin
+@onready var _content: VBoxContainer = $Layout/Margin/Content
 @onready var _board_view: BoardView = $Layout/Margin/Content/PlayArea/BoardView
 @onready var _hand_view: HandView = $Layout/Margin/Content/PlayArea/HandArea/HandView
 @onready var _end_turn_button: Button = $Layout/Margin/Content/TopBar/EndTurnButton
@@ -202,6 +205,11 @@ func _ready() -> void:
 	# see `_update_play_area_orientation` below.
 	get_viewport().size_changed.connect(_update_play_area_orientation)
 	_update_play_area_orientation()
+	# `item_rect_changed` fires whenever a Control's position or size
+	# changes — here, whenever something above PlayArea (the scoreboard
+	# wrapping onto a second line, the game-over banner appearing) pushes
+	# the board down, so its height budget can follow.
+	_play_area.item_rect_changed.connect(_update_board_height_budget)
 	_hand_view.tile_returned.connect(_on_hand_tile_returned)
 	_end_turn_button.pressed.connect(_on_end_turn_pressed)
 	_handoff_play_button.pressed.connect(_on_handoff_play_pressed)
@@ -317,6 +325,30 @@ func _on_board_cell_size_changed(_side: float) -> void:
 # hood, `BoxContainer.vertical` is just normally locked once you pick one.
 func _update_play_area_orientation() -> void:
 	_play_area.vertical = _is_portrait()
+
+
+# Tells BoardView how much of the screen's height isn't its own (see its
+# `vertical_overhead`/`reserved_bottom_rows`), so the board, plus the hand
+# under it in portrait turn-based play, fits on screen without scrolling.
+# The overhead is measured from the real layout — where PlayArea starts,
+# plus the page's bottom margin — rather than guessed, since the
+# scoreboard's height depends on how many players there are. That
+# position never depends on the board's own size, so re-fitting the
+# board can't feed back into it. The ☰ menu (OptionsPanel) is left out:
+# it's only open briefly, and counting it would shrink the board while
+# it's open.
+func _update_board_height_budget() -> void:
+	var overhead := _content.position.y + _play_area.position.y
+	overhead += _margin.get_theme_constant("margin_bottom")
+	if _options_panel.visible:
+		overhead -= _options_panel.size.y + _content.get_theme_constant("separation")
+	_board_view.vertical_overhead = overhead
+	# 2 rows hold about 20 tiles on a phone — a whole hand, which starts at
+	# 9-14 tiles (see draw_plan.gd). Only in turn-based portrait: free
+	# play's palette holds all 117 tiles and scrolls anyway, and in
+	# landscape the hand sits beside the board instead of below it.
+	var hand_below := _session != null and _is_portrait()
+	_board_view.reserved_bottom_rows = 2 if hand_below else 0
 
 
 # Whether the window is at least as tall as it is wide (a phone held
@@ -701,6 +733,9 @@ func _fade_out_end_turn_banner() -> void:
 # what that means) rather than BoardView asking GameSession itself. Also
 # checks whether the game has just ended (see `_update_game_over_banner`).
 func _refresh_views() -> void:
+	# Also re-checked here, not only on PlayArea moving: starting or
+	# leaving a turn-based game changes whether the hand needs room.
+	_update_board_height_budget()
 	if _is_free_play():
 		_board_view.refresh(
 			_free_play_session.board,
@@ -769,9 +804,14 @@ func _format_scoreboard() -> String:
 			text += "   "
 		# `%d` inside a string, followed by `% [...]`, is GDScript's
 		# printf-style formatting — like Python's `"%d" % value`.
-		text += "%s : %d pts" % [_player_name(player_id), scores[player_id]]
+		var entry := "%s : %d pts" % [_player_name(player_id), scores[player_id]]
 		if not is_over and player_id == current_player_id:
-			text += " (à vous de jouer)"
+			entry += " (à vous de jouer)"
+		# Scoreboard wraps onto more lines when every player doesn't fit on
+		# one (3-4 players on a phone, see main.tscn's `autowrap_mode`) —
+		# non-breaking spaces (U+00A0) inside each player's own entry make
+		# it break only BETWEEN players, never mid-"Joueur 2 : 5 pts".
+		text += entry.replace(" ", " ")
 	return text
 
 
