@@ -23,6 +23,11 @@ var dictionary: FrenchDictionary
 # together, not any single placement. Reset every `_start_turn()`.
 var _placed_this_turn: Array[Tile] = []
 
+# Tiles in the current player's hand they've chosen to give back to the
+# bag when their turn ends, to draw others instead (see `toggle_discard`).
+# Reset every `_start_turn()`.
+var _marked_for_discard: Array[Tile] = []
+
 
 # `dictionary` can be injected (e.g. a test reusing one already-loaded
 # instance across several sessions, since loading it re-reads and
@@ -86,7 +91,30 @@ func place_tile(row: int, col: int, tile: Tile) -> bool:
 	bag.consume(player_id, tile)
 	scoring.record_placement(row, col, player_id)
 	_placed_this_turn.append(tile)
+	# A tile on the board is no longer in hand to give back.
+	_marked_for_discard.erase(tile)
 	return true
+
+
+# Marks `tile`, in the current player's hand, to be given back to the bag
+# when their turn ends — or unmarks it if it already was. Their next turn
+# then refills their hand with other tiles (see `_start_turn`). Returns
+# whether the tile is now marked; false (and does nothing) if it isn't in
+# the current player's hand.
+func toggle_discard(tile: Tile) -> bool:
+	if not bag.hand(turns.current_player_id()).has(tile):
+		return false
+	if _marked_for_discard.has(tile):
+		_marked_for_discard.erase(tile)
+		return false
+	_marked_for_discard.append(tile)
+	return true
+
+
+# Whether `tile` is currently marked to be given back (see
+# `toggle_discard`).
+func is_marked_for_discard(tile: Tile) -> bool:
+	return _marked_for_discard.has(tile)
 
 
 # Whether the tile at (row, col) can currently be picked back up — either
@@ -237,6 +265,13 @@ func end_turn() -> bool:
 		turns.add_to_player_score(player_id, scoring.claim_line_bonus(board, dictionary, row))
 	turns.add_to_player_score(player_id, scoring.claim_board_bonus(board))
 
+	# The tiles this player chose to give back go into the bag now; their
+	# hand is refilled at the start of their next turn, so the next player
+	# never sees the new tiles.
+	for tile in _marked_for_discard:
+		bag.return_tile(player_id, tile)
+	_marked_for_discard.clear()
+
 	if bag.hand(player_id).is_empty() and bag.remaining_count() == 0:
 		turns.set_player_finished(player_id, true)  # advances the turn on its own
 	else:
@@ -254,6 +289,7 @@ func _start_turn() -> void:
 	# place for anyone else, movable only as a whole word (see
 	# `_can_take_back`). The new current player starts with a clean slate.
 	_placed_this_turn.clear()
+	_marked_for_discard.clear()
 
 
 # Recomputes every player's score from scratch — the sum of their own

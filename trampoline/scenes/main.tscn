@@ -133,6 +133,13 @@ horizontal_alignment=1
 vertical_alignment=1
 visible=false
 
+[node name="SwapButton" type="Button" parent="Layout/Margin/Content/TopBar"]
+theme_type_variation=&"ToggleButton"
+visible=false
+layout_mode=2
+toggle_mode=true
+text="Échanger"
+
 [node name="EndTurnButton" type="Button" parent="Layout/Margin/Content/TopBar"]
 theme_type_variation=&"PrimaryButton"
 layout_mode=2

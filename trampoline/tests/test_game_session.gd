@@ -19,6 +19,8 @@ func _initialize() -> void:
 
 	_test_initial_draw()
 	_test_refill_at_turn_start()
+	_test_discard()
+	_test_discard_then_place()
 	_test_place_tile_from_hand()
 	_test_place_tile_not_in_hand_fails()
 	_test_place_tile_anywhere_empty_succeeds()
@@ -85,6 +87,45 @@ func _test_refill_at_turn_start() -> void:
 	session.end_turn()
 	session.end_turn()
 	_check(session.bag.hand(0).size() == 13, "after placing a word, the next turn refills to 13")
+
+
+# Tiles marked during a turn go back to the bag when it ends, and the next
+# turn's refill replaces them.
+func _test_discard() -> void:
+	var session := GameSession.new(2, _dictionary)
+	var kept: Tile = session.bag.hand(0)[0]
+	var given_back: Tile = session.bag.hand(0)[1]
+	var bag_before := session.bag.remaining_count()
+
+	_check(session.toggle_discard(given_back), "marking a hand tile succeeds")
+	_check(session.is_marked_for_discard(given_back), "...and it's marked")
+	session.toggle_discard(kept)
+	_check(not session.toggle_discard(kept), "toggling a marked tile again unmarks it")
+	_check(not session.is_marked_for_discard(kept), "...so it isn't marked any more")
+	_check(
+		not session.toggle_discard(session.bag.hand(1)[0]),
+		"the other player's tile can't be marked"
+	)
+
+	session.end_turn()
+	_check(not session.bag.hand(0).has(given_back), "the marked tile left the hand at turn end")
+	_check(session.bag.hand(0).has(kept), "...the unmarked one stayed")
+	_check(session.bag.hand(0).size() == 12, "...and the hand isn't refilled until its next turn")
+	_check(session.bag.undrawn_tiles().has(given_back), "...the tile is back in the bag")
+	_check(session.bag.remaining_count() == bag_before + 1, "...one more tile in the bag")
+
+	session.end_turn()
+	_check(session.bag.hand(0).size() == 13, "the next turn refills the hand to 13")
+
+
+# A tile marked and then placed isn't given back: it's on the board now.
+func _test_discard_then_place() -> void:
+	var session := GameSession.new(2, _dictionary)
+	var tile := Tile.new("A", "Z", true)
+	_give_hand_tile(session, 0, tile)
+	session.toggle_discard(tile)
+	session.place_tile(4, 0, tile)
+	_check(not session.is_marked_for_discard(tile), "placing a marked tile unmarks it")
 
 
 func _test_place_tile_from_hand() -> void:

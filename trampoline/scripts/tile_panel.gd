@@ -5,6 +5,10 @@
 class_name TilePanel
 extends Panel
 
+# Fired on a plain tap/click (not a drag) — HandView decides what that
+# does: flip the tile, or mark it to give back (see hand_view.gd).
+signal tapped
+
 # The tile this panel represents — set once by HandView.refresh() right
 # after creating this node.
 var tile: Tile
@@ -16,6 +20,14 @@ var tile: Tile
 # rebuild this whole panel from scratch.
 var label: Label
 var corner_badge: Panel
+
+# Whether this tile is marked to be given back to the bag at the end of
+# the turn (see game_session.gd's `toggle_discard`) — drawn dimmed. Set by
+# HandView.refresh(); `modulate` is restored to match after a drag.
+var marked := false:
+	set(value):
+		marked = value
+		modulate = _resting_color()
 
 # Remembers where a left-click started, so `_gui_input` below can tell a
 # plain click (releasing close to where it was pressed) from a drag that
@@ -55,15 +67,20 @@ func _get_drag_data(_at_position: Vector2) -> Variant:
 # not.
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_DRAG_END:
-		modulate = Color(1, 1, 1, 1)
+		modulate = _resting_color()
+
+
+# How this panel is tinted while not being dragged: normal, or dimmed
+# (half-transparent) when marked to be given back.
+func _resting_color() -> Color:
+	return Color(1, 1, 1, 0.35) if marked else Color(1, 1, 1, 1)
 
 
 # Redraws this tile's own text/color and other-face hint from `tile`'s
-# current state — needed after a flip (see `_gui_input` below). Unlike a
-# board tile, flipping a tile still in hand has no game-rule consequence
-# at all (see game_session.gd's `flip_tile`, which only ever touches board
-# tiles) — it's just choosing which face to place, so this panel handles
-# it entirely on its own, no signal to main.gd needed.
+# current state — needed after a flip (see HandView's `_on_tile_tapped`).
+# Unlike a board tile, flipping a tile still in hand has no game-rule
+# consequence at all (see game_session.gd's `flip_tile`, which only ever
+# touches board tiles) — it's just choosing which face to place.
 func refresh() -> void:
 	label.text = tile.current_letter()
 	add_theme_stylebox_override("panel", TileView.style_for_tile(tile))
@@ -79,5 +96,4 @@ func _gui_input(event: InputEvent) -> void:
 		if event.pressed:
 			_press_position = event.position
 		elif event.position.distance_to(_press_position) < 6:
-			tile.flip()
-			refresh()
+			tapped.emit()

@@ -42,8 +42,10 @@ func draw(player_id: int, count: int) -> Array[Tile]:
 	return drawn
 
 
-# Returns one tile from a player's hand back to the bag (e.g. a player
-# decides not to play a tile they drew). Does nothing if that player isn't
+# Returns one tile from a player's hand back to the bag (a player giving
+# it back to draw another, see game_session.gd's `toggle_discard`). It's
+# slipped in at a random place in the pile, not on top, so nobody can
+# tell when it will come out again. Does nothing if that player isn't
 # actually holding it.
 func return_tile(player_id: int, tile: Tile) -> void:
 	if not _hands.has(player_id):
@@ -53,7 +55,8 @@ func return_tile(player_id: int, tile: Tile) -> void:
 	if index == -1:
 		return
 	hand.remove_at(index)
-	_undrawn.append(tile)
+	# `randi_range(a, b)` is a random whole number from a to b, inclusive.
+	_undrawn.insert(randi_range(0, _undrawn.size()), tile)
 
 
 # Removes a tile from a player's hand without returning it to the bag —

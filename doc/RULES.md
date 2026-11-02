@@ -150,9 +150,13 @@ the implementation does:**
   that limit from the shared bag, as far as the bag allows — never above
   it. (A tile picked back up off the board can take a hand over the
   limit; that hand then simply draws nothing.)
-- The per-player totals in the table (58/39/29) no longer apply, nor
-  does the 117th "starter" tile: drawing is only limited by what's left
-  in the bag. A player is out of the game
+- **Giving tiles back**: during their turn a player may mark tiles in
+  their hand ("Échanger" in the game); when the turn ends those go back
+  into the bag at random places, and the next turn's refill replaces
+  them — so the next player never sees the new tiles.
+- Since tiles return to the bag, the per-player totals in the table
+  (58/39/29) no longer apply, nor does the 117th "starter" tile: drawing
+  is only limited by what's left in the bag. A player is out of the game
   once their hand and the bag are both empty.
 
 Each turn has a 3-minute soft/hard time limit to place a word (treat as a
