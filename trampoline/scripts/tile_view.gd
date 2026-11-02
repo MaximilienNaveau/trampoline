@@ -14,7 +14,11 @@ extends RefCounted
 const YELLOW_COLOR := Color("eae5a0")
 const GREEN_COLOR := Color("9cb46b")
 const LETTER_COLOR := Color("363a42")
-const EMPTY_COLOR := Color(0.88, 0.88, 0.88)
+# An empty cell: a slot sunk into the board's dark tray (see the Tray
+# node in board_view.tscn), a shade lighter than the tray itself, with a
+# darker top edge standing in for the slot's shadowed lip.
+const EMPTY_COLOR := Color("3a3629")
+const _EMPTY_LIP_COLOR := Color("1e1b15")
 
 # Jost SemiBold — a geometric sans close to the real tiles' lettering.
 # `preload` loads a resource once, when this script itself is loaded
@@ -77,7 +81,12 @@ static func invalid_style_for_tile(tile: Tile) -> StyleBoxFlat:
 
 # The style to draw an empty cell with (no tile there at all).
 static func empty_style() -> StyleBoxFlat:
-	return _make_style(EMPTY_COLOR)
+	var style := StyleBoxFlat.new()
+	style.bg_color = EMPTY_COLOR
+	style.border_color = _EMPTY_LIP_COLOR
+	style.border_width_top = 2
+	style.set_corner_radius_all(_CORNER_RADIUS)
+	return style
 
 
 # The letter a tile would show if flipped right now — whichever face ISN'T
