@@ -21,8 +21,7 @@ func _initialize() -> void:
 	_test_lone_player_cycles_back_to_themselves()
 	_test_game_completion_and_winner()
 	_test_solo_play()
-	_test_draw_for_player()
-	_test_has_more_scheduled_draws()
+	_test_refill_hand()
 
 	if _failures == 0:
 		print("\nAll checks passed.")
@@ -113,37 +112,26 @@ func _test_solo_play() -> void:
 	_check(turns.winner_id() == 0, "the only player is the winner")
 
 
-func _test_draw_for_player() -> void:
-	var pool := TilePool.new()
-
-	# 2 players: player 0 (the starter) draws 13+1=14 initially, player 1
-	# draws 13. Both draw 9 every time after.
-	var bag2 := TileBag.new(pool)
-	var turns2 := TurnManager.new(2)
-	_check(
-		turns2.draw_for_player(bag2, 0).size() == 14,
-		"2-player starter's initial draw includes the bonus tile"
-	)
-	_check(
-		turns2.draw_for_player(bag2, 1).size() == 13,
-		"2-player non-starter's initial draw has no bonus"
-	)
-	_check(
-		turns2.draw_for_player(bag2, 0).size() == 9, "subsequent draws are 9, even for the starter"
-	)
-
-	# 3 players: nobody gets a bonus tile, everyone draws 12 initially.
-	var bag3 := TileBag.new(pool)
-	var turns3 := TurnManager.new(3)
-	_check(turns3.draw_for_player(bag3, 0).size() == 12, "3-player initial draw has no bonus tile")
-
-
-func _test_has_more_scheduled_draws() -> void:
+func _test_refill_hand() -> void:
 	var pool := TilePool.new()
 	var bag := TileBag.new(pool)
-	var turns := TurnManager.new(3)  # 1 initial + 3 subsequent = 4 total draws
+	var turns := TurnManager.new(2)
+	_check(turns.refill_hand(bag, 0).size() == 13, "an empty 2-player hand fills up to 13")
+	_check(turns.refill_hand(bag, 0).is_empty(), "a full hand draws nothing")
 
+	# Play 4 tiles away: the next refill only replaces those 4.
 	for i in range(4):
-		_check(turns.has_more_scheduled_draws(0), "draw %d/4 hasn't happened yet" % (i + 1))
-		turns.draw_for_player(bag, 0)
-	_check(not turns.has_more_scheduled_draws(0), "after all 4 scheduled draws, none are left")
+		bag.consume(0, bag.hand(0)[0])
+	_check(turns.refill_hand(bag, 0).size() == 4, "a refill only tops the hand back up to 13")
+	_check(bag.hand(0).size() == 13, "...leaving exactly 13 in hand")
+
+	# A hand over the limit (a tile picked back up off the board) draws
+	# nothing, and isn't cut down either.
+	bag.give_to_hand(0, Tile.new("A", "B", true))
+	_check(turns.refill_hand(bag, 0).is_empty(), "a hand over the limit draws nothing")
+	_check(bag.hand(0).size() == 14, "...and keeps its extra tile")
+
+	# The bag running low limits the refill.
+	var small_bag := TileBag.new(pool)
+	small_bag.restore_state([Tile.new("A", "B", true), Tile.new("C", "D", true)] as Array[Tile], {})
+	_check(turns.refill_hand(small_bag, 1).size() == 2, "a refill takes what's left in the bag")

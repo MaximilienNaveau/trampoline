@@ -39,13 +39,11 @@ func _init(number_of_players: int, a_dictionary: FrenchDictionary = null) -> voi
 	scoring = Scoring.new()
 	dictionary = a_dictionary if a_dictionary != null else FrenchDictionary.new()
 
-	# Everyone is dealt their initial hand up front, like a real board
-	# game — not just whoever happens to go first. draw_for_player tracks
-	# each player's draw count independently, so calling it once per
-	# player here correctly gives each of them their OWN initial batch
-	# (see draw_plan.gd), regardless of turn order.
+	# Everyone is dealt a full hand up front, like a real board game — not
+	# just whoever happens to go first. Their first turn's refill then
+	# draws nothing, the hand being full already (see `_start_turn`).
 	for player_id in range(number_of_players):
-		turns.draw_for_player(bag, player_id)
+		turns.refill_hand(bag, player_id)
 	scoring.begin_turn(board)
 
 
@@ -239,7 +237,7 @@ func end_turn() -> bool:
 		turns.add_to_player_score(player_id, scoring.claim_line_bonus(board, dictionary, row))
 	turns.add_to_player_score(player_id, scoring.claim_board_bonus(board))
 
-	if bag.hand(player_id).is_empty() and not turns.has_more_scheduled_draws(player_id):
+	if bag.hand(player_id).is_empty() and bag.remaining_count() == 0:
 		turns.set_player_finished(player_id, true)  # advances the turn on its own
 	else:
 		turns.end_turn()
@@ -250,7 +248,7 @@ func end_turn() -> bool:
 
 
 func _start_turn() -> void:
-	turns.draw_for_player(bag, turns.current_player_id())
+	turns.refill_hand(bag, turns.current_player_id())
 	scoring.begin_turn(board)
 	# Whatever the PREVIOUS player placed is now a done deal — frozen in
 	# place for anyone else, movable only as a whole word (see

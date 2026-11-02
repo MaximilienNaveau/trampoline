@@ -13,11 +13,11 @@
 # completing 13 words. This board is fully collaborative instead — any
 # player can extend any row, so there's no per-player completion goal to
 # track. Here, "finished" means EXHAUSTED: this player has no tiles left
-# in hand and no more scheduled draws (see draw_plan.gd), so they should
-# be skipped in the turn rotation. This class doesn't detect that itself —
-# it has no knowledge of TileBag/DrawPlan — the caller (the future game
-# session/orchestrator) decides when to call `set_player_finished` based
-# on hand + draw state.
+# in hand and the bag is empty, so there's nothing left to refill their
+# hand with (see `refill_hand`) and they should be skipped in the turn
+# rotation. This class doesn't detect that itself — the caller (see
+# game_session.gd's `end_turn`) decides when to call `set_player_finished`
+# based on hand + bag state.
 #
 # Consequently, `is_game_complete()` only covers ONE of the two ways this
 # game actually ends: everyone being simultaneously exhausted (a forced
@@ -33,7 +33,6 @@ var number_of_players: int
 var _current_player_id := 0
 var _scores: Array[int] = []
 var _finished: Array[bool] = []
-var _draws_taken: Array[int] = []
 var _game_complete := false
 
 
@@ -43,7 +42,6 @@ func _init(players: int) -> void:
 	for i in range(players):
 		_scores.append(0)
 		_finished.append(false)
-		_draws_taken.append(0)
 
 
 func current_player_id() -> int:
@@ -121,30 +119,14 @@ func _all_finished() -> bool:
 	return true
 
 
-# Whether `player_id` still has at least one scheduled draw left to take
-# (see draw_plan.gd) — the initial draw counts as their first. Once this
-# is false AND their hand is empty, they have nothing left to ever
-# contribute and should be marked finished (see this file's header
-# comment) — the caller (not this class) checks their hand via TileBag.
-func has_more_scheduled_draws(player_id: int) -> bool:
-	var total_draws := 1 + DrawPlan.subsequent_draw_count(number_of_players)
-	return _draws_taken[player_id] < total_draws
-
-
-# Draws `player_id`'s next scheduled batch of tiles from `bag` (see
-# draw_plan.gd): their initial draw the first time this is called for
-# them, 9 every time after. Also hands the starter (player 0) the 117th
-# "leftover" tile from a 2- or 4-player schedule, on their very first draw.
-func draw_for_player(bag: TileBag, player_id: int) -> Array[Tile]:
-	var size: int
-	if _draws_taken[player_id] == 0:
-		size = DrawPlan.initial_draw_size(number_of_players)
-		if player_id == 0 and DrawPlan.has_starter_bonus_tile(number_of_players):
-			size += 1
-	else:
-		size = DrawPlan.subsequent_draw_size(number_of_players)
-	_draws_taken[player_id] += 1
-	return bag.draw(player_id, size)
+# Tops `player_id`'s hand back up to the most they may hold (see
+# draw_plan.gd) from `bag`, as far as the bag allows. Returns the tiles
+# drawn — none if the hand is already full (a player can hold more than
+# that after picking a tile back up off the board, see game_session.gd's
+# `remove_tile`; they then simply draw nothing).
+func refill_hand(bag: TileBag, player_id: int) -> Array[Tile]:
+	var missing := DrawPlan.hand_size(number_of_players) - bag.hand(player_id).size()
+	return bag.draw(player_id, maxi(missing, 0))
 
 
 # Exports every bit of this class's state — see save_game.gd. Plain data
@@ -155,7 +137,6 @@ func export_state() -> Dictionary:
 		"current_player_id": _current_player_id,
 		"scores": _scores,
 		"finished": _finished,
-		"draws_taken": _draws_taken,
 		"game_complete": _game_complete,
 	}
 
@@ -172,7 +153,4 @@ func restore_state(data: Dictionary) -> void:
 	_finished.clear()
 	for finished in data["finished"]:
 		_finished.append(finished)
-	_draws_taken.clear()
-	for draws in data["draws_taken"]:
-		_draws_taken.append(int(draws))
 	_game_complete = data["game_complete"]

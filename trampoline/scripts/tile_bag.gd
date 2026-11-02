@@ -74,9 +74,13 @@ func give_to_hand(player_id: int, tile: Tile) -> void:
 	_hands[player_id].append(tile)
 
 
-# The tiles a player currently holds, unplaced.
+# The tiles a player currently holds, unplaced — the live array, so a
+# player who has never drawn gets their (empty, typed) hand created here,
+# rather than a throwaway untyped `[]` that Array[Tile] would reject.
 func hand(player_id: int) -> Array[Tile]:
-	return _hands.get(player_id, [])
+	if not _hands.has(player_id):
+		_hands[player_id] = [] as Array[Tile]
+	return _hands[player_id]
 
 
 # How many tiles are left to draw from the bag.

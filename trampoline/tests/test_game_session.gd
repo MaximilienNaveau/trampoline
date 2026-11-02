@@ -18,6 +18,7 @@ func _initialize() -> void:
 	_dictionary = FrenchDictionary.new()
 
 	_test_initial_draw()
+	_test_refill_at_turn_start()
 	_test_place_tile_from_hand()
 	_test_place_tile_not_in_hand_fails()
 	_test_place_tile_anywhere_empty_succeeds()
@@ -62,10 +63,28 @@ func _give_hand_tile(session: GameSession, player_id: int, tile: Tile) -> void:
 
 func _test_initial_draw() -> void:
 	var session := GameSession.new(2, _dictionary)
-	_check(
-		session.bag.hand(0).size() == 14, "2-player starter's initial hand includes the bonus tile"
-	)
-	_check(session.bag.hand(1).size() == 13, "the non-starter's initial hand has no bonus")
+	_check(session.bag.hand(0).size() == 13, "the starter is dealt a full 13-tile hand")
+	_check(session.bag.hand(1).size() == 13, "so is the other player")
+	_check(session.bag.remaining_count() == 117 - 26, "...both drawn from the shared bag")
+
+
+# Each turn starts by topping the new current player's hand back up to the
+# limit — never beyond it, however many turns they've had.
+func _test_refill_at_turn_start() -> void:
+	var session := GameSession.new(2, _dictionary)
+	session.end_turn()
+	_check(session.bag.hand(1).size() == 13, "player 1's first turn starts with exactly 13 tiles")
+	session.end_turn()
+	_check(session.bag.hand(0).size() == 13, "a player who placed nothing still holds 13, no more")
+
+	var word := "maison"
+	for i in range(word.length()):
+		var tile := Tile.new(word[i], "Z", true)
+		_give_hand_tile(session, 0, tile)
+		session.place_tile(4, i, tile)
+	session.end_turn()
+	session.end_turn()
+	_check(session.bag.hand(0).size() == 13, "after placing a word, the next turn refills to 13")
 
 
 func _test_place_tile_from_hand() -> void:

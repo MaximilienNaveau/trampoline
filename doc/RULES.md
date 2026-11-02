@@ -138,6 +138,23 @@ Draw counts are tuned per player count so the 117 tiles divide evenly:
 | 3 | 12 | 3 draws of 9 | 39 each (117 total, exact) |
 | 4 | 11 | 2 draws of 9 | 29 each (116 total; 117th tile to whoever starts) |
 
+That table is the 2015 rules' schedule. Neither the 2015 nor the 1999
+rules text says how many tiles a player may hold, or what happens to the
+ones they don't place (the 1999 worked example ends with "lettres non
+utilisées à rejeter"). **Clarified by Maximilien (2026-11-02), and what
+the implementation does:**
+
+- **The first draw is the hand limit**: 13 tiles for 2 players, 12 for 3,
+  11 for 4 (9 in solo). Everyone is dealt a full hand at the start.
+- **Each turn starts by refilling** the current player's hand back up to
+  that limit from the shared bag, as far as the bag allows — never above
+  it. (A tile picked back up off the board can take a hand over the
+  limit; that hand then simply draws nothing.)
+- The per-player totals in the table (58/39/29) no longer apply, nor
+  does the 117th "starter" tile: drawing is only limited by what's left
+  in the bag. A player is out of the game
+  once their hand and the bag are both empty.
+
 Each turn has a 3-minute soft/hard time limit to place a word (treat as a
 real constraint to respect, not just a suggestion).
 
