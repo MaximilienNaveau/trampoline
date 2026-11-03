@@ -200,6 +200,8 @@ var _discard_tray: DiscardTray = $Layout/Margin/Content/PlayArea/HandArea/HandBa
 @onready var _handoff_screen: Panel = $HandoffScreen
 @onready var _handoff_player_name: Label = $HandoffScreen/Center/Items/PlayerName
 @onready var _handoff_play_button: Button = $HandoffScreen/Center/Items/PlayButton
+# Everyone's score, and what the last turn changed (see score_recap.gd).
+@onready var _score_recap: ScoreRecap = $HandoffScreen/Center/Items/ScoreRecap
 
 
 func _ready() -> void:
@@ -705,6 +707,8 @@ func _on_load_file_selected(path: String) -> void:
 # listing the offending word(s) (see `_format_end_turn_error` below).
 # Cleared on success, since the turn actually ended.
 func _on_end_turn_pressed() -> void:
+	# So the recap between turns can show what this turn changed.
+	_score_recap.remember_scores(_session)
 	if _session.end_turn():
 		_set_end_turn_message("")
 		_begin_turn()
@@ -744,6 +748,10 @@ func _begin_turn() -> void:
 		_restart_turn_timer()
 		return
 	_handoff_player_name.text = _player_name(_session.turns.current_player_id())
+	var names: Array[String] = []
+	for player_id in range(_session.turns.number_of_players):
+		names.append(_player_name(player_id))
+	_score_recap.show_scores(_session, names)
 	_handoff_screen.visible = true
 	# Paused while the device changes hands, so passing it around doesn't
 	# eat into the next player's 3 minutes.

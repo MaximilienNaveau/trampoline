@@ -1,4 +1,4 @@
-[gd_scene load_steps=21 format=3]
+[gd_scene load_steps=22 format=3]
 
 [ext_resource type="Script" path="res://scripts/main.gd" id="1"]
 [ext_resource type="PackedScene" path="res://scenes/board_view.tscn" id="2"]
@@ -16,6 +16,7 @@
 [ext_resource type="Script" path="res://scripts/discard_tray.gd" id="14"]
 [ext_resource type="Script" path="res://scripts/how_to_play_view.gd" id="15"]
 [ext_resource type="Script" path="res://scripts/game_clock.gd" id="16"]
+[ext_resource type="Script" path="res://scripts/score_recap.gd" id="17"]
 
 [sub_resource type="StyleBoxFlat" id="EndTurnBannerStyle"]
 bg_color = Color(0.75, 0.16, 0.16, 1)
@@ -340,6 +341,15 @@ custom_minimum_size=Vector2(160, 52)
 layout_mode=2
 size_flags_horizontal=4
 text="C'est moi !"
+
+[node name="Gap" type="Control" parent="HandoffScreen/Center/Items"]
+custom_minimum_size=Vector2(0, 24)
+layout_mode=2
+
+[node name="ScoreRecap" type="VBoxContainer" parent="HandoffScreen/Center/Items"]
+layout_mode=2
+theme_override_constants/separation=10
+script=ExtResource("17")
 
 [node name="BoxLid" type="Control" parent="."]
 layout_mode=1
