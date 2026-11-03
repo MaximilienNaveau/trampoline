@@ -200,6 +200,14 @@ var _discard_tray: DiscardTray = $Layout/Margin/Content/PlayArea/HandArea/HandBa
 # press "C'est moi !". A `Panel` also swallows every click/touch that lands on
 # it, so nothing underneath can be dragged while it's up.
 @onready var _handoff_screen: Panel = $HandoffScreen
+# An invisible full-screen Control, up from "Fin du tour" until the next
+# turn starts: a Control's default `mouse_filter` (STOP) swallows every
+# click/touch landing on it, so nothing under it can be changed while the
+# turn's points are counted (see `_on_end_turn_pressed`). Declared just
+# before HandoffScreen in main.tscn, which then takes over. It also takes
+# the keyboard focus (`focus_mode` ALL in main.tscn), so Enter/Space can't
+# press a button under it either.
+@onready var _input_blocker: Control = $InputBlocker
 @onready var _handoff_player_name: Label = $HandoffScreen/Center/Items/PlayerName
 @onready var _handoff_play_button: Button = $HandoffScreen/Center/Items/PlayButton
 # Everyone's score, and what the last turn changed (see score_recap.gd).
@@ -630,11 +638,13 @@ func _process(_delta: float) -> void:
 
 
 # Whether the hour is ticking: only while someone is actually playing a
-# turn — not on the handoff screen ("Au tour de …"), in a menu or dialog, in
-# "Comment jouer", or with the box closed (see game_clock.gd).
+# turn — not while its points are counted, on the handoff screen ("Au
+# tour de …"), in a menu or dialog, in "Comment jouer", or with the box
+# closed (see game_clock.gd).
 func _is_play_clock_running() -> bool:
 	return (
 		not _handoff_screen.visible
+		and not _input_blocker.visible
 		and not _options_panel.visible
 		and not _how_to_play.visible
 		and not _box_lid.visible
@@ -716,18 +726,17 @@ func _on_end_turn_pressed() -> void:
 	# So the recap between turns can show what this turn changed.
 	_score_recap.remember_scores(_session)
 	# The turn's points float into the score BEFORE it ends: once it has,
-	# the next player's hand would show (see `_begin_turn`).
-	var session := _session
-	_end_turn_button.disabled = true
+	# the next player's hand would show (see `_begin_turn`). Nothing can
+	# change in the meantime (see `_input_blocker`), so the turn checked
+	# above still ends fine; then the handoff screen covers everything
+	# until the next player presses "C'est moi !".
+	_input_blocker.visible = true
+	_input_blocker.grab_focus()
 	await _scoreboard.play_turn_end(_session.turn_points(), _session.turn_bonuses())
-	# Meanwhile, the player may have left for the menu or loaded a game.
-	if session != _session:
-		return
-	if _session.end_turn():
-		_set_end_turn_message("")
-		_begin_turn()
-	else:
-		_set_end_turn_message(_format_end_turn_error())
+	_input_blocker.visible = false
+	_session.end_turn()
+	_set_end_turn_message("")
+	_begin_turn()
 	_refresh_views()
 
 

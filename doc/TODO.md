@@ -36,6 +36,9 @@ hand, then a shared win.
       (+10 line, +30/+50 full word, +30 board) pop up separately.
 - [x] `GameSession`: a way to ask "what would this turn score right now"
       without ending it (tested).
+- [x] Nothing can be changed from "Fin du tour" until the next player
+      presses "C'est moi !" (clicks, touches and keys are blocked while
+      the points are counted).
 - [x] Fixed on the way: a bonus was lost again at the next turn (scores
       were recomputed from the words alone).
 
