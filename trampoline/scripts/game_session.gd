@@ -6,12 +6,25 @@
 class_name GameSession
 extends RefCounted
 
+# How long a game lasts (see doc/RULES.md's "End of the game"): one hour
+# of actual play. Once it's up, the current round is finished — every
+# player gets the same number of turns — and the game ends.
+const TIME_LIMIT_SECONDS := 3600.0
+
 var board: Board
 var pool: TilePool
 var bag: TileBag
 var turns: TurnManager
 var scoring: Scoring
 var dictionary: FrenchDictionary
+
+# Seconds of actual play so far — only counted while someone is really
+# playing (the caller decides, see main.gd's `_process`), and saved with
+# the game (see save_game.gd).
+var play_time := 0.0
+# Whether the game ended because the hour ran out (see `end_turn`) —
+# saved with the game too.
+var ended_by_time := false
 
 # Tiles the current player has placed since their turn began — these are
 # still "in progress" and can be freely taken back or relocated (see
@@ -56,22 +69,57 @@ func _init(number_of_players: int, a_dictionary: FrenchDictionary = null) -> voi
 # Whether the game has ended, either way (see turn_manager.gd's header
 # comment): every player exhausted, or the board itself fully settled.
 func is_game_over() -> bool:
-	return turns.is_game_complete() or board.is_complete()
+	return turns.is_game_complete() or board.is_complete() or ended_by_time
 
 
-# The player with the highest score once the game is over, or -1 while
-# it's still in progress. Doesn't reuse TurnManager.winner_id() — that one
-# only looks at TurnManager's OWN "everyone exhausted" flag, which stays
-# false if the game instead ended because the board filled up.
-func winner_id() -> int:
+# Counts `seconds` more of actual play towards the hour (see
+# TIME_LIMIT_SECONDS). Does nothing once the game is over.
+func add_play_time(seconds: float) -> void:
 	if not is_game_over():
-		return -1
-	var scores := turns.all_player_scores()
-	var best := 0
-	for player_id in range(1, scores.size()):
-		if scores[player_id] > scores[best]:
-			best = player_id
-	return best
+		play_time += seconds
+
+
+# Seconds of play left before the last round starts (0 once it has).
+func remaining_time() -> float:
+	return maxf(TIME_LIMIT_SECONDS - play_time, 0.0)
+
+
+# Whether the hour is up and the current round is the last one.
+func is_last_round() -> bool:
+	return play_time >= TIME_LIMIT_SECONDS and not is_game_over()
+
+
+# Whoever won once the game is over (empty while it's still in progress),
+# in player order: the highest score; on equal scores, whoever has the
+# fewest tiles left in hand; if that's equal too, they all win (see
+# doc/RULES.md's "End of the game"). Doesn't reuse TurnManager.winner_id()
+# — that one only looks at TurnManager's OWN "everyone exhausted" flag,
+# which stays false if the game ended another way.
+func winner_ids() -> Array[int]:
+	var winners: Array[int] = []
+	if not is_game_over():
+		return winners
+	for player_id in range(turns.number_of_players):
+		var order := 1 if winners.is_empty() else _compare_players(player_id, winners[0])
+		if order > 0:
+			winners.clear()
+		if order >= 0:
+			winners.append(player_id)
+	return winners
+
+
+# Whether `a` finished ahead of `b` (1), behind (-1), or level (0): by
+# score, then by fewest tiles left in hand.
+func _compare_players(a: int, b: int) -> int:
+	var score_a := turns.player_score(a)
+	var score_b := turns.player_score(b)
+	if score_a != score_b:
+		return 1 if score_a > score_b else -1
+	var tiles_a := bag.hand(a).size()
+	var tiles_b := bag.hand(b).size()
+	if tiles_a != tiles_b:
+		return 1 if tiles_a < tiles_b else -1
+	return 0
 
 
 # Places one of the current player's own hand tiles at (row, col), as long
@@ -282,6 +330,11 @@ func end_turn() -> bool:
 		turns.set_player_finished(player_id, true)  # advances the turn on its own
 	else:
 		turns.end_turn()
+
+	# Once the hour is up, the game ends when the round does: when play
+	# wraps back around (the next player comes before, or is, this one).
+	if play_time >= TIME_LIMIT_SECONDS and turns.current_player_id() <= player_id:
+		ended_by_time = true
 
 	if not is_game_over():
 		_start_turn()

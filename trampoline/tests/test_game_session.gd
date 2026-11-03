@@ -18,6 +18,9 @@ func _initialize() -> void:
 	_dictionary = FrenchDictionary.new()
 
 	_test_initial_draw()
+	_test_time_limit_finishes_the_round()
+	_test_time_limit_solo()
+	_test_tie_break_on_tiles_left()
 	_test_refill_at_turn_start()
 	_test_discard()
 	_test_discard_then_place()
@@ -68,6 +71,46 @@ func _test_initial_draw() -> void:
 	_check(session.bag.hand(0).size() == 13, "the starter is dealt a full 13-tile hand")
 	_check(session.bag.hand(1).size() == 13, "so is the other player")
 	_check(session.bag.remaining_count() == 117 - 26, "...both drawn from the shared bag")
+
+
+# Once the hour is up, the game only ends when the round does: the
+# players after the current one still get their turn.
+func _test_time_limit_finishes_the_round() -> void:
+	var session := GameSession.new(3, _dictionary)
+	session.end_turn()  # player 0 -> 1
+	session.add_play_time(GameSession.TIME_LIMIT_SECONDS)
+	_check(session.is_last_round(), "the hour being up starts the last round")
+	_check(not session.is_game_over(), "...but the game isn't over yet")
+	session.end_turn()  # player 1 -> 2
+	_check(not session.is_game_over(), "player 2 still gets their turn")
+	session.end_turn()  # player 2 -> back to 0
+	_check(session.is_game_over(), "the game ends once the round is over")
+	_check(session.ended_by_time, "...because time ran out")
+	session.add_play_time(10.0)
+	_check(
+		session.play_time == GameSession.TIME_LIMIT_SECONDS,
+		"no more play time is counted after the end"
+	)
+
+
+# Solo, a round is a single turn: it ends with the turn time ran out in.
+func _test_time_limit_solo() -> void:
+	var session := GameSession.new(1, _dictionary)
+	session.add_play_time(GameSession.TIME_LIMIT_SECONDS + 5.0)
+	_check(not session.is_game_over(), "solo: the current turn can still be finished")
+	session.end_turn()
+	_check(session.is_game_over(), "solo: the game ends with that turn")
+
+
+# Equal scores: fewest tiles left in hand wins; equal again, both win.
+func _test_tie_break_on_tiles_left() -> void:
+	var session := GameSession.new(2, _dictionary)
+	session.turns.set_player_score(0, 40)
+	session.turns.set_player_score(1, 40)
+	session.ended_by_time = true
+	_check(session.winner_ids() == ([0, 1] as Array[int]), "same score, same hand size: both win")
+	session.bag.consume(1, session.bag.hand(1)[0])
+	_check(session.winner_ids() == ([1] as Array[int]), "same score: fewer tiles left wins")
 
 
 # Each turn starts by topping the new current player's hand back up to the
@@ -265,7 +308,7 @@ func _test_game_over_via_exhaustion() -> void:
 	session.turns.set_player_finished(0, true)
 	session.turns.set_player_finished(1, true)
 	_check(session.is_game_over(), "the game is over once every player is exhausted")
-	_check(session.winner_id() == 0, "the higher scorer wins")
+	_check(session.winner_ids() == ([0] as Array[int]), "the higher scorer wins")
 
 
 func _test_game_over_via_board_completion() -> void:

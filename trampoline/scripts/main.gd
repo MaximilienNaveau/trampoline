@@ -952,10 +952,18 @@ func _update_game_over_banner() -> void:
 		_set_status_text(_game_over_banner, "")
 		_end_turn_button.disabled = false
 		return
-	var winner_id := _session.winner_id()
-	var winner_score := _session.turns.player_score(winner_id)
-	_set_status_text(
-		_game_over_banner,
-		"Partie terminée ! %s gagne avec %d points." % [_player_name(winner_id), winner_score]
+	var winners := _session.winner_ids()
+	var names: Array[String] = []
+	for player_id in winners:
+		names.append(_player_name(player_id))
+	var score := _session.turns.player_score(winners[0])
+	var ending := "Temps écoulé ! " if _session.ended_by_time else "Partie terminée ! "
+	# One winner: "Alice gagne"; a tie: "Alice et Bruno gagnent" (see
+	# GameSession.winner_ids for how ties are broken first).
+	var who := (
+		"%s gagne" % names[0]
+		if names.size() == 1
+		else "%s et %s gagnent" % [", ".join(names.slice(0, -1)), names[-1]]
 	)
+	_set_status_text(_game_over_banner, ending + "%s avec %d points." % [who, score])
 	_end_turn_button.disabled = true

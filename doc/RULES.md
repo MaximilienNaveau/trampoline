@@ -187,6 +187,31 @@ invalid dictionary word, a broken turn is flagged live (the offending
 tiles are highlighted) and blocks ending the turn, rather than being
 silently rejected the moment it happens.
 
+## End of the game
+
+The 2015 rules' only end condition is the board itself: « La partie se
+termine avec la pose de la 117ème lettre. » They also say a word must be
+placed every turn (« au terme [des 3 minutes] un mot doit être placé »),
+and never say who wins. The 1999 text adds « Une partie dure au maximum
+1 heure ! ». **Clarified by Maximilien (2026-11-03), and what the
+implementation does** (turn-based games only, solo included; free play
+and crossword have no time limit):
+
+- **Passing is allowed, as often as a player likes**, with or without
+  giving tiles back: another player's word can unblock them later. A pass
+  simply scores nothing. Nobody is ever eliminated.
+- **The game lasts one hour of actual play.** The clock only runs while
+  someone is playing a turn — not on the screen between two players'
+  turns, in menus or dialogs, or while the app is in the background — and
+  is saved with the game. The header shows the time left, discreetly, then
+  in orange during the last 5 minutes.
+- **When the hour is up, the current round is finished** ("Dernier
+  tour"), so that every player has had the same number of turns, then the
+  game ends. (Solo, a round is one turn.)
+- The game also ends as soon as the board is complete, as in the rules.
+- **The best score wins.** On equal scores, whoever has the fewest tiles
+  left in hand wins; if that's equal too, they all win.
+
 ## Word validation
 
 Any word in a standard dictionary is legal, including proper nouns,

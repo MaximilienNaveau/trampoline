@@ -61,6 +61,8 @@ static func save(session: GameSession, path: String) -> bool:
 		"hands": hands_data,
 		"turns": session.turns.export_state(),
 		"scoring": session.scoring.export_state(),
+		"play_time": session.play_time,
+		"ended_by_time": session.ended_by_time,
 	}
 
 	var file := FileAccess.open(path, FileAccess.WRITE)
@@ -115,6 +117,9 @@ static func load(path: String, dictionary: FrenchDictionary = null) -> GameSessi
 
 	session.turns.restore_state(data["turns"])
 	session.scoring.restore_state(data["scoring"])
+	# Saves from before the one-hour limit have neither: no time played.
+	session.play_time = data.get("play_time", 0.0)
+	session.ended_by_time = data.get("ended_by_time", false)
 
 	return session
 
