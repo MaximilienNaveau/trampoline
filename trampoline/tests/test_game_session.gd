@@ -33,6 +33,7 @@ func _initialize() -> void:
 	_test_invalid_cells_clears_once_the_offending_tile_is_taken_back()
 	_test_can_end_turn_blocks_bad_word()
 	_test_end_turn_scores_and_advances()
+	_test_bonus_is_kept_on_later_turns()
 	_test_game_over_via_exhaustion()
 	_test_game_over_via_board_completion()
 	_test_remove_tile()
@@ -299,6 +300,22 @@ func _test_end_turn_scores_and_advances() -> void:
 	_check(session.end_turn(), "end_turn() succeeds")
 	_check(session.turns.player_score(0) == 21, "player 0 scores 1+2+3+4+5+6 for their own word")
 	_check(session.turns.current_player_id() == 1, "play moves on to player 1")
+
+
+# A bonus is paid once, then must stay in the score: later turns
+# recompute the words' points, not the bonuses already won.
+func _test_bonus_is_kept_on_later_turns() -> void:
+	var session := GameSession.new(2, _dictionary)
+	var word := "personnes"
+	for i in range(word.length()):
+		var tile := Tile.new(word[i], "Z", true)
+		_give_hand_tile(session, 0, tile)
+		session.place_tile(4, i, tile)
+	session.end_turn()
+	# 1+2+…+9 for the letters, +50 for a full yellow word in one turn.
+	_check(session.turns.player_score(0) == 95, "a full yellow word scores 45 + 50")
+	session.end_turn()  # player 1 passes
+	_check(session.turns.player_score(0) == 95, "...and keeps its bonus on the next turn")
 
 
 func _test_game_over_via_exhaustion() -> void:

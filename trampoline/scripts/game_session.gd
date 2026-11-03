@@ -25,6 +25,12 @@ var play_time := 0.0
 # Whether the game ended because the hour ran out (see `end_turn`) —
 # saved with the game too.
 var ended_by_time := false
+# Bonus points each player has won so far (line, full word, full board —
+# see scoring.gd), indexed by player id. Kept apart from the words'
+# points, which are recomputed from the board after every turn (see
+# `_recompute_all_scores`), so a bonus won once stays won. Saved with the
+# game (see save_game.gd).
+var bonus_points: Array[int] = []
 
 # Tiles the current player has placed since their turn began — these are
 # still "in progress" and can be freely taken back or relocated (see
@@ -63,6 +69,7 @@ func _init(number_of_players: int, a_dictionary: FrenchDictionary = null) -> voi
 	# draws nothing, the hand being full already (see `_start_turn`).
 	for player_id in range(number_of_players):
 		turns.refill_hand(bag, player_id)
+		bonus_points.append(0)
 	scoring.begin_turn(board)
 
 
@@ -314,10 +321,10 @@ func end_turn() -> bool:
 		return false
 
 	var player_id := turns.current_player_id()
-	_recompute_all_scores()
 	for row in range(Board.ROWS):
-		turns.add_to_player_score(player_id, scoring.claim_line_bonus(board, dictionary, row))
-	turns.add_to_player_score(player_id, scoring.claim_board_bonus(board))
+		bonus_points[player_id] += scoring.claim_line_bonus(board, dictionary, row)
+	bonus_points[player_id] += scoring.claim_board_bonus(board)
+	_recompute_all_scores()
 
 	# The tiles this player chose to give back go into the bag now; their
 	# hand is refilled at the start of their next turn, so the next player
@@ -354,8 +361,9 @@ func _start_turn() -> void:
 # Recomputes every player's score from scratch — the sum of their own
 # share of every word currently on the board (see
 # Scoring.player_word_score), across every row and every segment within
-# it. Simpler and less error-prone than incrementally patching scores as
-# the board changes, at the cost of redoing the sum each time.
+# it, plus the bonuses they've won (see `bonus_points`). Simpler and less
+# error-prone than incrementally patching scores as the board changes, at
+# the cost of redoing the sum each time.
 func _recompute_all_scores() -> void:
 	for player_id in range(turns.number_of_players):
 		var total := 0
@@ -363,4 +371,4 @@ func _recompute_all_scores() -> void:
 			for segment in board.segments_in_row(row):
 				var col: int = segment[0]
 				total += scoring.player_word_score(board, dictionary, row, col, player_id)
-		turns.set_player_score(player_id, total)
+		turns.set_player_score(player_id, total + bonus_points[player_id])

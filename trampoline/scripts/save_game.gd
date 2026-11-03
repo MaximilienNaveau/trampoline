@@ -63,6 +63,7 @@ static func save(session: GameSession, path: String) -> bool:
 		"scoring": session.scoring.export_state(),
 		"play_time": session.play_time,
 		"ended_by_time": session.ended_by_time,
+		"bonus_points": session.bonus_points,
 	}
 
 	var file := FileAccess.open(path, FileAccess.WRITE)
@@ -120,6 +121,11 @@ static func load(path: String, dictionary: FrenchDictionary = null) -> GameSessi
 	# Saves from before the one-hour limit have neither: no time played.
 	session.play_time = data.get("play_time", 0.0)
 	session.ended_by_time = data.get("ended_by_time", false)
+	# JSON reads every number back as a float, hence `int()`. Older saves
+	# have no bonuses: the session's own zeros are kept.
+	var bonuses: Array = data.get("bonus_points", [])
+	for player_id in range(bonuses.size()):
+		session.bonus_points[player_id] = int(bonuses[player_id])
 
 	return session
 
