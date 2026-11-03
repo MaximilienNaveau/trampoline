@@ -1,4 +1,4 @@
-[gd_scene load_steps=20 format=3]
+[gd_scene load_steps=21 format=3]
 
 [ext_resource type="Script" path="res://scripts/main.gd" id="1"]
 [ext_resource type="PackedScene" path="res://scenes/board_view.tscn" id="2"]
@@ -15,6 +15,7 @@
 [ext_resource type="Texture2D" path="res://assets/textures/lid_underside.jpg" id="13"]
 [ext_resource type="Script" path="res://scripts/discard_tray.gd" id="14"]
 [ext_resource type="Script" path="res://scripts/how_to_play_view.gd" id="15"]
+[ext_resource type="Script" path="res://scripts/game_clock.gd" id="16"]
 
 [sub_resource type="StyleBoxFlat" id="EndTurnBannerStyle"]
 bg_color = Color(0.75, 0.16, 0.16, 1)
@@ -137,6 +138,12 @@ theme_override_constants/separation=10
 [node name="OptionsButton" type="Button" parent="Layout/Margin/Content/TopBar"]
 layout_mode=2
 text="☰"
+
+[node name="GameClock" type="Label" parent="Layout/Margin/Content/TopBar"]
+visible=false
+layout_mode=2
+vertical_alignment=1
+script=ExtResource("16")
 
 [node name="TopBarSpacer" type="Control" parent="Layout/Margin/Content/TopBar"]
 layout_mode=2

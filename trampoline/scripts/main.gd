@@ -136,6 +136,8 @@ var _discard_tray: DiscardTray = $Layout/Margin/Content/PlayArea/HandArea/HandBa
 @onready var _options_panel: PanelContainer = $Layout/Margin/Content/OptionsPanel
 @onready var _timer_toggle: CheckButton = $Layout/Margin/Content/OptionsPanel/MenuItems/TimerToggle
 @onready var _turn_timer_label: Label = $Layout/Margin/Content/TopBar/TurnTimerLabel
+# The game's one-hour clock in the header (see game_clock.gd).
+@onready var _game_clock: GameClock = $Layout/Margin/Content/TopBar/GameClock
 @onready var _turn_timer: Timer = $TurnTimer
 @onready var _save_file_dialog: FileDialog = $SaveFileDialog
 @onready var _load_file_dialog: FileDialog = $LoadFileDialog
@@ -248,6 +250,7 @@ func _ready() -> void:
 	_load_button.pressed.connect(_on_load_pressed)
 	_new_game_button.pressed.connect(_on_new_game_pressed)
 	_how_to_play_button.pressed.connect(_how_to_play.open)
+	_game_clock.is_running = _is_play_clock_running
 	_how_to_play_menu_button.pressed.connect(_on_how_to_play_menu_pressed)
 	_options_button.pressed.connect(_on_options_pressed)
 	_timer_toggle.toggled.connect(_on_timer_toggle_toggled)
@@ -622,6 +625,21 @@ func _process(_delta: float) -> void:
 		_turn_timer_label.text = "Temps écoulé !"
 
 
+# Whether the hour is ticking: only while someone is actually playing a
+# turn — not on the handoff screen ("Au tour de …"), in a menu or dialog, in
+# "Comment jouer", or with the box closed (see game_clock.gd).
+func _is_play_clock_running() -> bool:
+	return (
+		not _handoff_screen.visible
+		and not _options_panel.visible
+		and not _how_to_play.visible
+		and not _box_lid.visible
+		and not _save_file_dialog.visible
+		and not _load_file_dialog.visible
+		and not _new_game_confirm_dialog.visible
+	)
+
+
 # Called when the Save button is pressed — opens the save FileDialog (see
 # scenes/main.tscn) rather than saving straight away, so the player picks
 # where. The actual write happens in `_on_save_file_selected` once they
@@ -804,6 +822,8 @@ func _refresh_views() -> void:
 	# Also re-checked here, not only on PlayArea moving: starting or
 	# leaving a turn-based game changes whether the hand needs room.
 	_update_board_height_budget()
+	# Only a turn-based game is timed; free play has no time limit.
+	_game_clock.session = null if _is_free_play() else _session
 	if _is_free_play():
 		_board_view.refresh(
 			_free_play_session.board,
@@ -941,6 +961,7 @@ func _return_to_start_menu() -> void:
 	_set_status_text(_scoreboard, "")
 	_turn_timer.stop()
 	_turn_timer_label.visible = false
+	_game_clock.session = null
 
 
 # Shows a winner announcement once the game is over (see
