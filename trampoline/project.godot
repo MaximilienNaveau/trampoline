@@ -34,3 +34,7 @@ window/handheld/orientation="portrait"
 
 renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
+; Phones decode ETC2/ASTC compressed textures, not the desktop S3TC/BPTC
+; formats: also import every texture that way, or the Android export
+; refuses to run (see `nix build .#android` in flake.nix).
+textures/vram_compression/import_etc2_astc=true
