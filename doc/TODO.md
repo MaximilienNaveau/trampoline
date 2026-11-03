@@ -28,13 +28,16 @@ hand, then a shared win.
       (not decided).
 
 ### 2. Score feedback during the turn
-- [ ] A live "+N" next to the current player's score while they build
+- [x] A live "+N" next to the current player's score while they build
       their turn (positive or negative: green letters cost −5), updated on
-      every placement, move, flip or take-back.
-- [ ] When the turn ends, the "+N" floats into the score, and bonuses
+      every placement, move, flip or take-back, with any bonus it would
+      win ("bonus +50").
+- [x] When the turn ends, the "+N" floats into the score, and bonuses
       (+10 line, +30/+50 full word, +30 board) pop up separately.
-- [ ] `GameSession`: a way to ask "what would this turn score right now"
+- [x] `GameSession`: a way to ask "what would this turn score right now"
       without ending it (tested).
+- [x] Fixed on the way: a bonus was lost again at the next turn (scores
+      were recomputed from the words alone).
 
 ### 3. Android build
 - [ ] Android export preset (portrait, icon, package name), committed.
@@ -76,9 +79,9 @@ From `ART_DIRECTION.md` → "Motion" (each ≤ 250 ms, never blocking input):
 - [ ] Buttons in Jost (the theme still uses Baloo 2), per the art
       direction.
 - [ ] "☰" replaced by a small drawn icon.
-- [ ] Scoreboard: the current player underlined in orange instead of
-      "(à vous de jouer)"; scores easier to read at a glance (one chip per
-      player?).
+- [x] Scoreboard: the current player underlined in orange instead of
+      "(à vous de jouer)".
+- [ ] Scores easier to read at a glance (one chip per player?).
 
 ### 8. End of game
 - [ ] A proper end screen instead of the text banner: final scores

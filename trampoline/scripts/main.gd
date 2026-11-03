@@ -109,7 +109,9 @@ var _save_and_restart_button: Button
 @onready
 var _discard_tray: DiscardTray = $Layout/Margin/Content/PlayArea/HandArea/HandBar/DiscardTray
 @onready var _end_turn_button: Button = $Layout/Margin/Content/TopBar/EndTurnButton
-@onready var _scoreboard: Label = $Layout/Margin/Content/Scoreboard
+# The scores, and the current turn's points as they build up (see
+# scoreboard.gd).
+@onready var _scoreboard: Scoreboard = $Layout/Margin/Content/Scoreboard
 @onready var _game_over_banner: Label = $Layout/Margin/Content/GameOverBanner
 # A floating notification, not part of the page's normal top-to-bottom
 # flow — declared as a direct child of Main in main.tscn (a sibling of
@@ -707,8 +709,20 @@ func _on_load_file_selected(path: String) -> void:
 # listing the offending word(s) (see `_format_end_turn_error` below).
 # Cleared on success, since the turn actually ended.
 func _on_end_turn_pressed() -> void:
+	if not _session.can_end_turn():
+		_set_end_turn_message(_format_end_turn_error())
+		_refresh_views()
+		return
 	# So the recap between turns can show what this turn changed.
 	_score_recap.remember_scores(_session)
+	# The turn's points float into the score BEFORE it ends: once it has,
+	# the next player's hand would show (see `_begin_turn`).
+	var session := _session
+	_end_turn_button.disabled = true
+	await _scoreboard.play_turn_end(_session.turn_points(), _session.turn_bonuses())
+	# Meanwhile, the player may have left for the menu or loaded a game.
+	if session != _session:
+		return
 	if _session.end_turn():
 		_set_end_turn_message("")
 		_begin_turn()
@@ -748,10 +762,7 @@ func _begin_turn() -> void:
 		_restart_turn_timer()
 		return
 	_handoff_player_name.text = _player_name(_session.turns.current_player_id())
-	var names: Array[String] = []
-	for player_id in range(_session.turns.number_of_players):
-		names.append(_player_name(player_id))
-	_score_recap.show_scores(_session, names)
+	_score_recap.show_scores(_session, _all_player_names())
 	_handoff_screen.visible = true
 	# Paused while the device changes hands, so passing it around doesn't
 	# eat into the next player's 3 minutes.
@@ -766,7 +777,7 @@ func _on_handoff_play_pressed() -> void:
 
 
 # Sets a status label's text AND hides it whenever that text is empty —
-# used for `_scoreboard`/`_game_over_banner`, which spend most of their
+# used for `_game_over_banner`, which spends most of their
 # time with nothing to say. A `Label` still reserves its own line height in
 # `Content`'s VBoxContainer even while showing an empty string (only
 # `visible=false` actually removes it), so setting `.text` alone left a
@@ -839,7 +850,7 @@ func _refresh_views() -> void:
 			_free_play_session.can_place_here
 		)
 		_palette_view.refresh(_free_play_session.available_tiles(), _board_view.cell_side())
-		_set_status_text(_scoreboard, "Score : %d" % _free_play_session.current_score())
+		_scoreboard.show_score(_free_play_session.current_score())
 		# Clues as a list beside the board in landscape, where it fits; as
 		# "?" bubbles on the board itself in portrait, where a list would
 		# push the palette off-screen.
@@ -876,7 +887,7 @@ func _refresh_views() -> void:
 			kept.append(tile)
 	_hand_view.refresh(kept, _board_view.cell_side())
 	_discard_tray.refresh(marked, _board_view.cell_side())
-	_set_status_text(_scoreboard, _format_scoreboard())
+	_scoreboard.show_players(_session, _all_player_names())
 	_update_game_over_banner()
 
 
@@ -889,32 +900,12 @@ func _player_name(player_id: int) -> String:
 	return "Joueur %d" % (player_id + 1)
 
 
-# Builds a one-line summary like "Joueur 1 : 12 pts   Joueur 2 : 5 pts (à
-# vous de jouer)" — plain string formatting, not worth its own view class
-# the way BoardView/HandView are (those turn game state into colors,
-# positions, and drag-and-drop; this just turns numbers into text). Once
-# the game is over, nobody's "up next" anymore, so that last bit is
-# dropped (see `_update_game_over_banner` for the actual game-over
-# announcement).
-func _format_scoreboard() -> String:
-	var scores := _session.turns.all_player_scores()
-	var current_player_id := _session.turns.current_player_id()
-	var is_over := _session.is_game_over()
-	var text := ""
-	for player_id in range(scores.size()):
-		if player_id > 0:
-			text += "   "
-		# `%d` inside a string, followed by `% [...]`, is GDScript's
-		# printf-style formatting — like Python's `"%d" % value`.
-		var entry := "%s : %d pts" % [_player_name(player_id), scores[player_id]]
-		if not is_over and player_id == current_player_id:
-			entry += " (à vous de jouer)"
-		# Scoreboard wraps onto more lines when every player doesn't fit on
-		# one (3-4 players on a phone, see main.tscn's `autowrap_mode`) —
-		# non-breaking spaces (U+00A0) inside each player's own entry make
-		# it break only BETWEEN players, never mid-"Joueur 2 : 5 pts".
-		text += entry.replace(" ", " ")
-	return text
+# Every player's name, in player order (see `_player_name`).
+func _all_player_names() -> Array[String]:
+	var names: Array[String] = []
+	for player_id in range(_session.turns.number_of_players):
+		names.append(_player_name(player_id))
+	return names
 
 
 # Builds the message shown by `_end_turn_banner` after a refused
@@ -967,7 +958,7 @@ func _return_to_start_menu() -> void:
 	_player_names = []
 	_set_end_turn_message("")
 	_set_status_text(_game_over_banner, "")
-	_set_status_text(_scoreboard, "")
+	_scoreboard.hide_scores()
 	_turn_timer.stop()
 	_turn_timer_label.visible = false
 	_game_clock.session = null
