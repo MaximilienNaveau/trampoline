@@ -15,7 +15,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  export-desktop-mobile-web:
+  export-desktop-web:
     name: Export ${{ matrix.preset }}
     runs-on: ubuntu-latest
     container: barichello/godot-ci:4.7.1-stable
@@ -29,9 +29,6 @@ jobs:
           - preset: Linux
             artifact_name: linux-build
             build_dir: build/linux
-          - preset: Android
-            artifact_name: android-build
-            build_dir: build/android
           - preset: macOS
             artifact_name: macos-build
             build_dir: build/macos
@@ -59,6 +56,32 @@ jobs:
         with:
           name: ${{ matrix.artifact_name }}
           path: trampoline/${{ matrix.build_dir }}
+
+  # Built with the flake's own `nix build .#android` (see flake.nix), the
+  # same command as locally, so there's one recipe for both. Signed with
+  # the project's debug key (trampoline/keys/): fine to install by hand,
+  # not for a store.
+  export-android:
+    name: Export Android
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: trampoline
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@main
+
+      - name: Build the APK
+        run: nix build .#android -L
+
+      - name: Upload Android artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: android-build
+          path: trampoline/result/trampoline.apk
 
   export-ios:
     name: Export iOS (unsigned Xcode project)
@@ -109,7 +132,7 @@ jobs:
 
   release:
     name: Publish release
-    needs: [export-desktop-mobile-web, export-ios]
+    needs: [export-desktop-web, export-android, export-ios]
     runs-on: ubuntu-latest
     permissions:
       contents: write

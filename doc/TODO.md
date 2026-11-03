@@ -43,10 +43,15 @@ hand, then a shared win.
       were recomputed from the words alone).
 
 ### 3. Android build
-- [ ] Android export preset (portrait, icon, package name), committed.
-- [ ] A reproducible APK build: locally via the Nix flake
-      (`nix run .#android` or similar: Godot export templates + Android
-      SDK), and/or in CI (GitHub Actions, on tags), uploading the APK.
+- [x] Android export preset (portrait, icon, package name), committed;
+      fixed so it actually exports (no Gradle build, ETC2/ASTC textures,
+      the dictionary included — it was missing from every export).
+- [x] A reproducible APK build: `nix build .#android` from `trampoline/`
+      (Godot export templates + Android SDK from nixpkgs, in the Nix
+      sandbox), also used by the release workflow on tags. Signed with a
+      committed debug key (`trampoline/keys/`).
+- [ ] A release signing key, kept out of the repo (GitHub secrets), for
+      a store release.
 - [ ] Test on a real phone: touch drag and drop, flipping, the tray's
       sideways scroll, performance, the screen fitting with no scrolling.
 - [ ] Replace the save/load file dialogs on Android: automatic save after
