@@ -90,15 +90,13 @@ func player_word_score(
 	return total
 
 
-# Whether to award a line-completion bonus for `row` right now: only once
-# per row, ever, and only once it holds exactly one word (not zero, not
-# two — see board.gd) that's a dictionary-valid 9 letters. Returns the
-# bonus amount, or 0 if it isn't earned yet (or was already claimed). See
+# The line-completion bonus `row` would earn right now: only once per
+# row, ever, and only once it holds exactly one word (not zero, not two —
+# see board.gd) that's a dictionary-valid 9 letters. Returns the bonus
+# amount, or 0 if it isn't earned yet (or was already claimed). See
 # `_filled_count_at_turn_start` above for which of the two distinct
-# bonuses this pays out. Unlike `player_word_score`, this isn't split per
-# player — it's a lump sum for whoever completes the row; the caller (not
-# this class) knows who that is.
-func claim_line_bonus(board: Board, dictionary: FrenchDictionary, row: int) -> int:
+# bonuses this is. Only looks: `claim_line_bonus` actually pays it out.
+func line_bonus(board: Board, dictionary: FrenchDictionary, row: int) -> int:
 	if _line_bonus_claimed[row]:
 		return 0
 
@@ -114,7 +112,6 @@ func claim_line_bonus(board: Board, dictionary: FrenchDictionary, row: int) -> i
 	if not is_finished_valid_word:
 		return 0
 
-	_line_bonus_claimed[row] = true
 	if _filled_count_at_turn_start[row] > 0:
 		return LINE_COMPLETION_BONUS
 	if _all_green_letter_count(board, row, columns) == 0:
@@ -122,16 +119,34 @@ func claim_line_bonus(board: Board, dictionary: FrenchDictionary, row: int) -> i
 	return MIXED_COLOR_WORD_BONUS
 
 
-# Whether to award the whole-board completion bonus right now: only once,
-# ever, and only once every row is finished (see `Board.is_complete` — a
-# row counts even if it was deliberately shortened, not just at 9
+# Pays out `line_bonus` and marks it claimed, so `row` never pays again.
+# Unlike `player_word_score`, this isn't split per player — it's a lump
+# sum for whoever completes the row; the caller (not this class) knows who
+# that is.
+func claim_line_bonus(board: Board, dictionary: FrenchDictionary, row: int) -> int:
+	var bonus := line_bonus(board, dictionary, row)
+	if bonus > 0:
+		_line_bonus_claimed[row] = true
+	return bonus
+
+
+# The whole-board completion bonus the board would earn right now: only
+# once, ever, and only once every row is finished (see `Board.is_complete`
+# — a row counts even if it was deliberately shortened, not just at 9
 # letters). Returns the bonus amount, or 0 if not earned yet (or already
-# claimed).
-func claim_board_bonus(board: Board) -> int:
+# claimed). Only looks: `claim_board_bonus` pays it out.
+func board_bonus(board: Board) -> int:
 	if _board_bonus_claimed or not board.is_complete():
 		return 0
-	_board_bonus_claimed = true
 	return BOARD_COMPLETION_BONUS
+
+
+# Pays out `board_bonus` and marks it claimed.
+func claim_board_bonus(board: Board) -> int:
+	var bonus := board_bonus(board)
+	if bonus > 0:
+		_board_bonus_claimed = true
+	return bonus
 
 
 # The position score/owner recorded for `(row, col)` — exposed so

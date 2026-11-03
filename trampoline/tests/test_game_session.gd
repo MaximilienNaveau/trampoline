@@ -34,6 +34,7 @@ func _initialize() -> void:
 	_test_can_end_turn_blocks_bad_word()
 	_test_end_turn_scores_and_advances()
 	_test_bonus_is_kept_on_later_turns()
+	_test_turn_points_preview()
 	_test_game_over_via_exhaustion()
 	_test_game_over_via_board_completion()
 	_test_remove_tile()
@@ -42,7 +43,6 @@ func _initialize() -> void:
 	_test_move_own_tile()
 	_test_move_own_tile_refuses_frozen_tile()
 	_test_move_own_tile_to_a_different_row_is_flagged_invalid()
-	_test_move_word()
 	_test_move_word_by_grabbed_tile_from_the_start()
 	_test_move_word_by_grabbed_tile_from_the_middle()
 	_test_move_word_by_grabbed_tile_refuses_illegal_destination()
@@ -142,10 +142,10 @@ func _test_discard() -> void:
 	var bag_before := session.bag.remaining_count()
 
 	_check(session.set_marked_for_discard(given_back, true), "marking a hand tile succeeds")
-	_check(session.is_marked_for_discard(given_back), "...and it's marked")
+	_check(session.marked_for_discard().has(given_back), "...and it's marked")
 	session.set_marked_for_discard(kept, true)
 	session.set_marked_for_discard(kept, false)
-	_check(not session.is_marked_for_discard(kept), "a tile can be unmarked again")
+	_check(not session.marked_for_discard().has(kept), "a tile can be unmarked again")
 	_check(
 		session.marked_for_discard().size() == 1 and session.marked_for_discard()[0] == given_back,
 		"the marked list holds just that tile"
@@ -173,7 +173,7 @@ func _test_discard_then_place() -> void:
 	_give_hand_tile(session, 0, tile)
 	session.set_marked_for_discard(tile, true)
 	session.place_tile(4, 0, tile)
-	_check(not session.is_marked_for_discard(tile), "placing a marked tile unmarks it")
+	_check(not session.marked_for_discard().has(tile), "placing a marked tile unmarks it")
 
 
 func _test_place_tile_from_hand() -> void:
@@ -316,6 +316,29 @@ func _test_bonus_is_kept_on_later_turns() -> void:
 	_check(session.turns.player_score(0) == 95, "a full yellow word scores 45 + 50")
 	session.end_turn()  # player 1 passes
 	_check(session.turns.player_score(0) == 95, "...and keeps its bonus on the next turn")
+
+
+# `turn_points`/`turn_bonuses` say what ending the turn now would earn,
+# without ending it.
+func _test_turn_points_preview() -> void:
+	var session := GameSession.new(2, _dictionary)
+	_check(session.turn_points() == 0, "nothing placed: +0")
+	var word := "personnes"
+	for i in range(word.length()):
+		var tile := Tile.new(word[i], "Z", true)
+		_give_hand_tile(session, 0, tile)
+		session.place_tile(4, i, tile)
+	_check(session.turn_points() == 45, "a 9-letter word: +45 so far")
+	_check(session.turn_bonuses() == ([50] as Array[int]), "...and a +50 bonus")
+	_check(session.turns.player_score(0) == 0, "...without touching the score yet")
+	session.flip_tile(4, 8)
+	_check(session.turn_points() == 0, "flipped to a non-word: back to +0")
+	_check(session.turn_bonuses().is_empty(), "...and no bonus")
+	session.flip_tile(4, 8)
+	session.end_turn()
+	_check(session.turns.player_score(0) == 95, "ending the turn pays what was shown")
+	session.end_turn()
+	_check(session.turn_points() == 0, "player 0's next turn starts at +0")
 
 
 func _test_game_over_via_exhaustion() -> void:
@@ -467,24 +490,7 @@ func _test_move_own_tile_to_a_different_row_is_flagged_invalid() -> void:
 	_check(not session.can_end_turn(), "...but leaves the turn spread across two rows, blocked")
 
 
-func _test_move_word() -> void:
-	var session := GameSession.new(1, _dictionary)
-	var tiles: Array[Tile] = []
-	for letter in ["C", "A", "T"]:
-		var tile := Tile.new(letter, "Z", true)
-		_give_hand_tile(session, 0, tile)
-		tiles.append(tile)
-	session.place_tile(6, 2, tiles[0])
-	session.place_tile(6, 3, tiles[1])
-	session.place_tile(6, 4, tiles[2])
-
-	_check(session.move_word(6, 2, 6, 0), "relocating the word succeeds")
-	_check(session.board.word_at(6, 0) == "CAT", "the word reads correctly at its new position")
-	_check(session.board.is_empty(6, 3) and session.board.is_empty(6, 4), "the old cells are empty")
-
-
-# Dragging by the word's OWN first letter should behave exactly like
-# move_word — no offset to correct for.
+# Dragging by the word's OWN first letter: no offset to correct for.
 func _test_move_word_by_grabbed_tile_from_the_start() -> void:
 	var session := GameSession.new(1, _dictionary)
 	var tiles: Array[Tile] = []

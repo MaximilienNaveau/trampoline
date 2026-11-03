@@ -870,11 +870,12 @@ func _refresh_views() -> void:
 	# The hand shows the tiles the player keeps; the tray beside it, the
 	# ones marked to give back.
 	var kept: Array[Tile] = []
+	var marked := _session.marked_for_discard()
 	for tile in _session.bag.hand(_session.turns.current_player_id()):
-		if not _session.is_marked_for_discard(tile):
+		if not marked.has(tile):
 			kept.append(tile)
 	_hand_view.refresh(kept, _board_view.cell_side())
-	_discard_tray.refresh(_session.marked_for_discard(), _board_view.cell_side())
+	_discard_tray.refresh(marked, _board_view.cell_side())
 	_set_status_text(_scoreboard, _format_scoreboard())
 	_update_game_over_banner()
 
