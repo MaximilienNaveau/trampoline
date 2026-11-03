@@ -320,7 +320,7 @@ theme_override_constants/separation=16
 [node name="Prompt" type="Label" parent="HandoffScreen/Center/Items"]
 layout_mode=2
 horizontal_alignment=1
-text="Passez le téléphone à"
+text="Au tour de"
 
 [node name="PlayerName" type="Label" parent="HandoffScreen/Center/Items"]
 layout_mode=2
@@ -332,7 +332,7 @@ theme_type_variation=&"PrimaryButton"
 custom_minimum_size=Vector2(160, 52)
 layout_mode=2
 size_flags_horizontal=4
-text="Jouer"
+text="C'est moi !"
 
 [node name="BoxLid" type="Control" parent="."]
 layout_mode=1

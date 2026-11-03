@@ -185,15 +185,15 @@ var _discard_tray: DiscardTray = $Layout/Margin/Content/PlayArea/HandArea/HandBa
 # The start screen: the closed game box, with the menu on a card on its
 # lid (see box_lid.gd). Choosing a mode sets the game up underneath
 # FIRST, then slides the lid away to reveal it — in multiplayer, that
-# reveals the pass-the-phone screen (see `_begin_turn`), drawn under the
-# lid in main.tscn, so player 1's tiles still stay hidden until "Jouer".
+# reveals the handoff screen ("Au tour de …") (see `_begin_turn`), drawn under the
+# lid in main.tscn, so player 1's tiles still stay hidden until "C'est moi !".
 @onready var _box_lid: BoxLid = $BoxLid
-# The "pass the phone" screen shown between two players' turns (see
+# The handoff screen ("Au tour de Alice", "C'est moi !") shown between two players' turns (see
 # `_begin_turn` below). Like EndTurnMessage, it's a direct child of Main,
 # declared AFTER Layout in main.tscn so it draws over the whole page —
 # board and hand included — and, being a fully opaque `Panel` (same theme
 # background as `Background`), hides the next player's tiles until they
-# press "Jouer". A `Panel` also swallows every click/touch that lands on
+# press "C'est moi !". A `Panel` also swallows every click/touch that lands on
 # it, so nothing underneath can be dragged while it's up.
 @onready var _handoff_screen: Panel = $HandoffScreen
 @onready var _handoff_player_name: Label = $HandoffScreen/Center/Items/PlayerName
@@ -715,10 +715,10 @@ func _on_tile_unmarked_for_discard(tile: Tile) -> void:
 	_refresh_views()
 
 
-# Starts whoever's turn it now is. With 2+ players sharing one phone, the
+# Starts whoever's turn it now is. With 2+ players sharing one device, the
 # next player's hand must stay hidden from the one who just played, so
 # this first covers the screen with HandoffScreen showing who's up next —
-# the real turn (and its timer) only starts once they press "Jouer" (see
+# the real turn (and its timer) only starts once they press "C'est moi !" (see
 # `_on_handoff_play_pressed`). Solo play, and a game that just ended,
 # have nobody to hand over to, so they skip straight to the timer.
 func _begin_turn() -> void:
@@ -727,13 +727,13 @@ func _begin_turn() -> void:
 		return
 	_handoff_player_name.text = _player_name(_session.turns.current_player_id())
 	_handoff_screen.visible = true
-	# Paused while the phone changes hands, so passing it around doesn't
+	# Paused while the device changes hands, so passing it around doesn't
 	# eat into the next player's 3 minutes.
 	_turn_timer.stop()
 
 
-# Called when HandoffScreen's "Jouer" button is pressed — the next player
-# now holds the phone, so reveal their hand and start their clock.
+# Called when HandoffScreen's "C'est moi !" button is pressed — the next player
+# is at the screen, so reveal their hand and start their clock.
 func _on_handoff_play_pressed() -> void:
 	_handoff_screen.visible = false
 	_restart_turn_timer()
