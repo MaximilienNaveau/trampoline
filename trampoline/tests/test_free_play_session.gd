@@ -23,6 +23,7 @@ func _initialize() -> void:
 	_test_place_tile_on_a_tile_swaps()
 	_test_move_tile_into_empty_cell()
 	_test_move_tile_onto_a_tile_swaps()
+	_test_move_tiles_together()
 	_test_flip_tile()
 	_test_flip_tile_refuses_empty_cell()
 	_test_current_score_zero_initially()
@@ -98,6 +99,16 @@ func _test_move_tile_onto_a_tile_swaps() -> void:
 	_check(session.board.tile_at(0, 0) == moving, "the moved tile takes the cell")
 	_check(session.board.is_empty(0, 4), "...leaving its own")
 	_check(session.available_tiles().has(under), "the tile it landed on is available again")
+
+
+func _test_move_tiles_together() -> void:
+	var session := FreePlaySession.new(_dictionary)
+	session.place_tile(0, 0, session.pool.tiles[0])
+	session.place_tile(1, 0, session.pool.tiles[1])
+	var cells: Array[Vector2i] = [Vector2i(0, 0), Vector2i(0, 1)]
+	session.move_tiles(cells, Vector2i(2, 3))
+	_check(session.board.tile_at(3, 2) == session.pool.tiles[0], "the first tile moved")
+	_check(session.board.tile_at(4, 2) == session.pool.tiles[1], "...and the second with it")
 
 
 func _test_flip_tile() -> void:

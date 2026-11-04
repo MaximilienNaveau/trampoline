@@ -79,6 +79,12 @@ func move_tile(from_row: int, from_col: int, to_row: int, to_col: int) -> void:
 	place_tile(to_row, to_col, board.remove(from_row, from_col))
 
 
+# Moves the tiles in `cells` (`Vector2i(col, row)`) together by `offset`,
+# as in a game (see block_move.gd).
+func move_tiles(cells: Array[Vector2i], offset: Vector2i) -> void:
+	BlockMove.move(board, cells, offset)
+
+
 # Flips the tile at (row, col) in place, revealing its other face — same
 # as GameSession.flip_tile, and for the same reason scoring needs no
 # separate bookkeeping here either: Scoring always reads a tile's CURRENT

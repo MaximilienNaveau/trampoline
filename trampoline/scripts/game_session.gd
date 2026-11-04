@@ -1,6 +1,6 @@
 # Ties every other piece together into an actual playable turn loop:
 # Board + TileBag + TurnManager + Scoring + FrenchDictionary +
-# WordChallenge. The equivalent of the Unity
+# BlockMove + WordChallenge. The equivalent of the Unity
 # project's GameControllerMultiplayer, but for the current design (see
 # doc/RULES.md and this project's other scripts for the individual rules).
 class_name GameSession
@@ -200,6 +200,13 @@ func move_tile(from_row: int, from_col: int, to_row: int, to_col: int) -> bool:
 		_take_into_hand(displaced)
 	board.place(to_row, to_col, board.remove(from_row, from_col))
 	return true
+
+
+# Moves the tiles in `cells` (`Vector2i(col, row)`) together by `offset`
+# columns and rows — see block_move.gd. Returns false and does nothing if
+# the block would land off the board or on other tiles.
+func move_tiles(cells: Array[Vector2i], offset: Vector2i) -> bool:
+	return BlockMove.move(board, cells, offset)
 
 
 # `tile`, just taken off the board, goes into the current player's hand.

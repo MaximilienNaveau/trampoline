@@ -235,6 +235,7 @@ func _ready() -> void:
 	# board_cell.gd's header comment for what a signal/connection is.
 	_board_view.tile_dropped.connect(_on_board_tile_dropped)
 	_board_view.tile_moved.connect(_on_board_tile_moved)
+	_board_view.tiles_moved.connect(_on_board_tiles_moved)
 	_board_view.tile_flipped.connect(_on_board_tile_flipped)
 	# Keeps the free-play palette's (and the turn-based hand's) own tile
 	# size in sync with the board's, which BoardView already recomputes on
@@ -325,6 +326,17 @@ func _on_board_tile_moved(from_row: int, from_col: int, to_row: int, to_col: int
 		_free_play_session.move_tile(from_row, from_col, to_row, to_col)
 	else:
 		_session.move_tile(from_row, from_col, to_row, to_col)
+	_refresh_views()
+
+
+# Called whenever the selected tiles are dragged together (see
+# board_view.gd's selection box): `cells` all move by `offset` (see
+# block_move.gd).
+func _on_board_tiles_moved(cells: Array[Vector2i], offset: Vector2i) -> void:
+	if _is_free_play():
+		_free_play_session.move_tiles(cells, offset)
+	else:
+		_session.move_tiles(cells, offset)
 	_refresh_views()
 
 

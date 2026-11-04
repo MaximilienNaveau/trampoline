@@ -280,7 +280,23 @@ static func build_drag_preview(tile: Tile, tile_size: Vector2) -> Control:
 	return root
 
 
-# The actual colored, lettered rectangle the preview builder above
+# Same idea, but for several tiles dragged together (see BoardCell's block
+# drag): each of `tiles` drawn `offsets[i]` cells (columns, rows) away from
+# the one under the cursor, as they sit on the board.
+static func build_block_drag_preview(
+	tiles: Array[Tile], offsets: Array[Vector2i], tile_size: Vector2
+) -> Control:
+	var root := Control.new()
+	for i in range(tiles.size()):
+		var visual := build_tile_visual(tiles[i], tile_size)
+		# `Vector2(offsets[i])` turns the whole-number cell offset into a
+		# float one, to scale by the tile's size in pixels.
+		visual.position = Vector2(offsets[i]) * tile_size - tile_size / 2
+		root.add_child(visual)
+	return root
+
+
+# The actual colored, lettered rectangle both preview builders above
 # position (and the "Comment jouer" cards, see how_to_play_view.gd) —
 # meant for a parent that isn't a container, so nothing runs a layout pass
 # on it: setting only `custom_minimum_size` (a mere size *request* for a

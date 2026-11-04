@@ -205,7 +205,9 @@ vidée de son contenu"*. **Decided by Maximilien (2026-11-04), and what the
 game does:**
 
 - **Any tile on the board may be moved during a turn**, whoever placed it
-  and whenever.
+  and whenever: dragged alone, or several together (a drag across empty
+  cells draws a dotted box; the tiles under it move as one block, keeping
+  their shape).
 - **Swapping**: a tile dropped on another takes its place; the one it
   landed on goes into the player's hand, and they're holding it at once,
   to drop wherever they tap next (left in the hand if that's nowhere

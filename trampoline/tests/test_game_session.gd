@@ -45,6 +45,8 @@ func _initialize() -> void:
 	_test_move_tile()
 	_test_move_tile_onto_a_tile_swaps()
 	_test_move_tile_to_a_different_row_is_flagged_invalid()
+	_test_move_tiles_scores_the_board_difference()
+	_test_move_tiles_into_a_non_word()
 	_test_flip_tile()
 	_test_flip_earlier_tile()
 	_test_flip_tile_refuses_empty_cell()
@@ -514,6 +516,40 @@ func _test_move_tile_to_a_different_row_is_flagged_invalid() -> void:
 	_check(session.move_tile(10, 2, 6, 0), "moving to a different row succeeds")
 	_check(session.board.tile_at(6, 0) == tiles[0], "the tile is now at its new position")
 	_check(not session.can_end_turn(), "...but leaves the turn spread across two rows, blocked")
+
+
+# PAR and TOUT, then TOUT moved as a block right after PAR: PARTOUT is
+# worth 1+…+7 = 28, against 6 + 10 before, so the turn shows +12. TOUT's
+# old cells are now empty, though: the turn can't end like this.
+func _test_move_tiles_scores_the_board_difference() -> void:
+	var session := GameSession.new(2, _dictionary)
+	_play_word(session, 0, 0, "PAR")
+	_play_word(session, 1, 0, "TOUT")
+	var cells: Array[Vector2i] = [Vector2i(0, 1), Vector2i(1, 1), Vector2i(2, 1), Vector2i(3, 1)]
+	_check(session.move_tiles(cells, Vector2i(3, -1)), "TOUT moves as one block")
+	_check(session.board.word_at(0, 0) == "PARTOUT", "...right after PAR")
+	_check(session.turn_points() == 28 - 16, "the turn shows what the board gained: +12")
+	_check(session.emptied_cells().size() == 4, "TOUT's old cells must be filled again")
+	_check(not session.can_end_turn(), "...so the turn can't end yet")
+
+
+# Like Maximilien's POTER + TAXI: a word moved right after another, into
+# something that isn't a word (AXE, already in POTER's row, so that the
+# move empties no cell — POTERAXE). Both words' worth is gone from the
+# board, and the turn can't end; moved back, all is as it was.
+func _test_move_tiles_into_a_non_word() -> void:
+	var session := GameSession.new(2, _dictionary)
+	_play_word(session, 2, 0, "POTER")
+	_play_word(session, 2, 6, "AXE")
+	var cells: Array[Vector2i] = [Vector2i(6, 2), Vector2i(7, 2), Vector2i(8, 2)]
+	session.move_tiles(cells, Vector2i(-1, 0))
+	_check(session.board.word_at(2, 0) == "POTERAXE", "AXE lands right after POTER")
+	_check(session.turn_points() == -(15 + 6), "POTERAXE is worth nothing: -21")
+	_check(not session.can_end_turn(), "...and blocks the end of the turn")
+	var moved: Array[Vector2i] = [Vector2i(5, 2), Vector2i(6, 2), Vector2i(7, 2)]
+	session.move_tiles(moved, Vector2i(1, 0))
+	_check(session.turn_points() == 0, "moved back: +0")
+	_check(session.can_end_turn(), "...and the turn can end")
 
 
 func _test_flip_tile() -> void:

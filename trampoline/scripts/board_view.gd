@@ -11,10 +11,17 @@
 #
 # Deliberately knows nothing about GameSession, TurnManager, scoring, or
 # any other game rule: it only ever reads a `Board` (see board.gd), draws
-# whatever's there. It never places/moves a tile itself — that's main.gd's
-# job, listening for the signals below. It also never watches the board
-# for changes on its own — whoever owns this node calls `refresh(board, …)`
-# after the board changes (placing/removing/flipping/moving a tile).
+# whatever's there, and asks BlockMove (a stateless rule-checker, not a
+# mutator) whether a block of tiles would fit where it's dropped. It never
+# places/moves a tile itself — that's main.gd's job, listening for the
+# signals below. It also never watches the board for changes on its own —
+# whoever owns this node calls `refresh(board, …)` after the board changes
+# (placing/removing/flipping/moving a tile).
+#
+# What it does keep is the player's selection: dragging across empty
+# cells draws a dotted box, and the tiles under it are selected (see
+# `begin_box`); dragging any of them then moves them all (see
+# board_cell.gd's `_get_drag_data`).
 class_name BoardView
 extends PanelContainer
 
@@ -26,6 +33,7 @@ extends PanelContainer
 # know about.
 signal tile_dropped(row: int, col: int, tile: Tile)
 signal tile_moved(from_row: int, from_col: int, to_row: int, to_col: int)
+signal tiles_moved(cells: Array[Vector2i], offset: Vector2i)
 signal tile_flipped(row: int, col: int)
 
 # Fires whenever `_update_cell_sizes` below recomputes `_cell_side` — lets
@@ -74,11 +82,18 @@ const _DEPTH := Vector2(10, 20)
 const _FRONT_TINT := Color(0.72, 0.72, 0.72)
 const _RIGHT_TINT := Color(0.52, 0.52, 0.52)
 const _SHADOW := Color(0, 0, 0, 0.4)
+# The selection box: dotted, in the letters' ink (see tile_view.gd).
+const _BOX_COLOR := TileView.LETTER_COLOR
+const _BOX_LINE_WIDTH := 2.0
+const _BOX_DASH := 6.0
 # Red frames round what stops the turn from ending: words that aren't
 # words, and emptied cells (see `refresh`) — doc/ART_DIRECTION.md's
 # `error` red.
 const _ERROR_COLOR := Color("c8463c")
 const _ERROR_LINE_WIDTH := 3.0
+# How far (px) a press must move before it draws a box rather than being a
+# tap (which clears the selection instead).
+const _BOX_THRESHOLD := 6.0
 
 # The painted frame's look: the same paint as the box's lid, as a
 # StyleBoxTexture (an image stretched to fit a rectangle while keeping
@@ -126,6 +141,10 @@ var reserved_right_width: float = 0.0:
 		reserved_right_width = value
 		_update_cell_sizes()
 
+# The selected tiles' cells, `Vector2i(col, row)` (see this file's header
+# comment). Read by the cells, to drag them all together.
+var selection: Array[Vector2i] = []
+
 # One cell per board square, indexed [row][col] — built once in _ready()
 # and reused by refresh(), rather than destroying and recreating 117 nodes
 # every time the board changes.
@@ -137,11 +156,16 @@ var _cell_panels: Array = []
 # matching its own tiles to the board's.
 var _cell_side: float = 0.0
 
+# The box being drawn, in `_overlay`'s coordinates: where the press
+# started and where it is now. `_boxing` while the press lasts.
+var _box_from := Vector2.ZERO
+var _box_to := Vector2.ZERO
+var _boxing := false
 # What to frame in red (see `refresh`): each invalid word's cells, and the
 # emptied cells, as lists of `Vector2i(col, row)` per frame.
 var _error_frames: Array = []
-# A plain Control laid over the grid, for the frames to be drawn over the
-# tiles (`_draw` itself paints under them).
+# A plain Control laid over the grid, for the box and the frames to be
+# drawn over the tiles (`_draw` itself paints under them).
 var _overlay: Control
 
 # `@onready` runs this line once this node's children actually exist
@@ -211,6 +235,7 @@ func _build_grid() -> void:
 			var panel := BoardCell.new()
 			panel.row = row
 			panel.col = col
+			panel.board_view = self
 			# The cell draws its hole itself (see board_cell.gd's `_draw`),
 			# so its own Panel background is switched off: StyleBoxEmpty
 			# draws nothing.
@@ -221,6 +246,7 @@ func _build_grid() -> void:
 			# slot or a C callback registered against a function pointer.
 			panel.tile_dropped.connect(_on_cell_tile_dropped)
 			panel.tile_moved.connect(_on_cell_tile_moved)
+			panel.tiles_moved.connect(_on_cell_tiles_moved)
 			panel.tile_flipped.connect(_on_cell_tile_flipped)
 
 			# The tile's face, raised above the cell; sized and placed in
@@ -391,13 +417,58 @@ func refresh(
 		_error_frames.append(cells)
 	for cell in emptied_cells:
 		_error_frames.append([cell])
+	# A selected tile that has left its cell (taken back, moved alone) is
+	# no longer selected. `filter` keeps the items its function returns
+	# true for, like Python's filter(); `func(cell): …` is a lambda;
+	# `assign` copies the result into the typed array.
+	selection.assign(selection.filter(func(cell): return not board.is_empty(cell.y, cell.x)))
 	_overlay.queue_redraw()
 
 
-# Draws on `_overlay`: the red frames (see `refresh`).
+# Starts the dotted box at `at`, in the grid's coordinates (which are
+# `_overlay`'s too): called by the empty cell just pressed (see
+# board_cell.gd's `_gui_input`).
+func begin_box(at: Vector2) -> void:
+	_box_from = at
+	_box_to = at
+	_boxing = true
+
+
+# Stretches the box to `at`, while the press lasts.
+func drag_box(at: Vector2) -> void:
+	_box_to = at
+	_overlay.queue_redraw()
+
+
+# Ends the box: the tiles under it become the selection. A tap (the
+# pointer barely moved) clears the selection instead.
+func end_box(board: Board) -> void:
+	_boxing = false
+	selection.clear()
+	# `abs()` turns a box drawn up or leftwards into one with a positive
+	# size, which `intersects` needs.
+	var box := Rect2(_box_from, _box_to - _box_from).abs()
+	if _box_from.distance_to(_box_to) >= _BOX_THRESHOLD:
+		for row in range(Board.ROWS):
+			for col in range(Board.COLUMNS):
+				if not board.is_empty(row, col) and box.intersects(_cell_rect(col, row, 1)):
+					selection.append(Vector2i(col, row))
+	_overlay.queue_redraw()
+
+
+# Draws on `_overlay`: the red frames (see `refresh`), then the box being
+# drawn, or the one round the selection.
 func _draw_overlay() -> void:
 	for cells in _error_frames:
 		_frame(cells, _ERROR_COLOR, _ERROR_LINE_WIDTH)
+	if _boxing:
+		_dotted_rect(Rect2(_box_from, _box_to - _box_from).abs())
+	elif not selection.is_empty():
+		# The smallest box round every selected cell.
+		var box := _cell_rect(selection[0].x, selection[0].y, 1)
+		for cell in selection:
+			box = box.merge(_cell_rect(cell.x, cell.y, 1))
+		_dotted_rect(box.grow(_BOX_LINE_WIDTH))
 
 
 # A frame round `cells` (side by side on one row), inside their edges.
@@ -406,6 +477,15 @@ func _draw_overlay() -> void:
 func _frame(cells: Array, color: Color, width: float) -> void:
 	var rect := _cell_rect(cells[0].x, cells[0].y, cells.size())
 	_overlay.draw_rect(rect.grow(-width / 2.0), color, false, width)
+
+
+# `rect`'s outline in dashes.
+func _dotted_rect(rect: Rect2) -> void:
+	var corners := [rect.position, Vector2(rect.end.x, rect.position.y), rect.end]
+	corners.append(Vector2(rect.position.x, rect.end.y))
+	for i in range(4):
+		var to: Vector2 = corners[(i + 1) % 4]
+		_overlay.draw_dashed_line(corners[i], to, _BOX_COLOR, _BOX_LINE_WIDTH, _BOX_DASH)
 
 
 # The rectangle of `count` cells side by side from `(col, row)`, in the
@@ -418,6 +498,13 @@ func _cell_rect(col: int, row: int, count: int) -> Rect2:
 	return rect
 
 
+# Looks up the single cell at (row, col) — used by BoardCell itself (see
+# board_cell.gd's `_get_drag_data`) to reach and hide the other selected
+# cells being dragged, not just the one actually grabbed.
+func get_cell(row: int, col: int) -> BoardCell:
+	return _cell_panels[row][col]
+
+
 # Forwards one cell's drop straight to this view's own single signal (see
 # the header comment above `tile_dropped`'s declaration).
 func _on_cell_tile_dropped(row: int, col: int, tile: Tile) -> void:
@@ -427,6 +514,16 @@ func _on_cell_tile_dropped(row: int, col: int, tile: Tile) -> void:
 # Same idea, for a tile moved from one board cell to another.
 func _on_cell_tile_moved(from_row: int, from_col: int, to_row: int, to_col: int) -> void:
 	tile_moved.emit(from_row, from_col, to_row, to_col)
+
+
+# Same idea, for the selected tiles dragged together. The selection
+# follows them, so the block can be nudged again.
+func _on_cell_tiles_moved(cells: Array[Vector2i], offset: Vector2i) -> void:
+	tiles_moved.emit(cells, offset)
+	selection.clear()
+	for cell in cells:
+		selection.append(cell + offset)
+	_overlay.queue_redraw()
 
 
 # Same idea, for a cell clicked (not dragged) to flip its tile in place.
