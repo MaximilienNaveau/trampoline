@@ -275,7 +275,7 @@ func _ready() -> void:
 	# the same way `file_selected` fires when one WAS picked.
 	_save_file_dialog.canceled.connect(_on_save_file_dialog_canceled)
 	# `confirmed` fires when the dialog's own built-in OK button (relabeled
-	# "Recommencer" — see scenes/main.tscn) is pressed.
+	# "Quitter" — see scenes/main.tscn) is pressed.
 	_new_game_confirm_dialog.confirmed.connect(_start_new_game)
 	# `add_button` is how a ConfirmationDialog gets a THIRD button beyond
 	# its built-in OK/Cancel — it returns the new Button itself, the same
@@ -541,11 +541,11 @@ func _on_crossword_chosen(puzzle_index: int) -> void:
 	_box_lid.open()
 
 
-# Called when the New Game button is pressed — asks first, rather than
+# Called when "Quitter la partie" is pressed — asks first, rather than
 # abandoning the current session outright (see `_start_new_game`,
 # `_on_save_and_restart_pressed`, and NewGameConfirmDialog in
-# scenes/main.tscn for the actual 3-way choice: restart without saving,
-# save first then restart, or cancel and keep playing). Closes the "☰"
+# scenes/main.tscn for the actual 3-way choice: quit without saving,
+# save first then quit, or cancel and keep playing). Closes the "☰"
 # dropdown first — otherwise it would stay open, floating over the
 # confirmation dialog.
 func _on_new_game_pressed() -> void:
@@ -557,7 +557,7 @@ func _on_new_game_pressed() -> void:
 # the player chose "Sauvegarder d'abord" first — see
 # `_on_save_and_restart_pressed`) and goes back to `StartMenu`. Connected
 # to NewGameConfirmDialog's `confirmed` signal (its built-in OK button,
-# relabeled "Recommencer" in scenes/main.tscn).
+# relabeled "Quitter" in scenes/main.tscn).
 func _start_new_game() -> void:
 	_session = null
 	_free_play_session = null

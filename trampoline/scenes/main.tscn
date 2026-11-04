@@ -183,7 +183,7 @@ text="Charger"
 
 [node name="NewGameButton" type="Button" parent="Layout/Margin/Content/OptionsPanel/MenuItems"]
 layout_mode=2
-text="Nouvelle partie"
+text="Quitter la partie"
 
 [node name="HowToPlayMenuButton" type="Button" parent="Layout/Margin/Content/OptionsPanel/MenuItems"]
 unique_name_in_owner=true
@@ -298,13 +298,13 @@ access=1
 filters=PackedStringArray("*.json ; Fichier de sauvegarde")
 
 [node name="NewGameConfirmDialog" type="ConfirmationDialog" parent="."]
-title="Nouvelle partie"
+title="Quitter la partie"
 initial_position=2
 size=Vector2i(320, 170)
 dialog_autowrap=true
-ok_button_text="Recommencer"
+ok_button_text="Quitter"
 cancel_button_text="Annuler"
-dialog_text="Commencer une nouvelle partie ? La partie actuelle sera perdue si elle n'est pas sauvegardée."
+dialog_text="Quitter la partie et revenir au menu ? Elle sera perdue si elle n'est pas sauvegardée."
 
 [node name="InputBlocker" type="Control" parent="."]
 layout_mode=1
