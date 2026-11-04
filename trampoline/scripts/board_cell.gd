@@ -64,10 +64,6 @@ var _press_position: Vector2 = Vector2.ZERO
 # Whether that press landed on a tile (a click flips it) or on an empty
 # cell (a drag draws the selection box, see board_view.gd's `begin_box`).
 var _pressed_on_tile := false
-# Whether a tile was just dropped here by that very press: a tile picked
-# up after a swap is dropped on the next press (see `_pick_up`), and the
-# release that follows mustn't also flip it.
-var _dropped_by_press := false
 
 
 # A "virtual" function: Godot calls this itself (we never call it
@@ -96,30 +92,12 @@ func _drop_data(_at_position: Vector2, data: Variant) -> void:
 	if data.has("cells"):
 		tiles_moved.emit(data["cells"], Vector2i(col, row) - data["grab"])
 		return
-	# The tile already here, if any: the session puts it in the player's
-	# hand (see GameSession.place_tile), and the player picks it up at once.
-	var displaced := board.tile_at(row, col)
-	_dropped_by_press = true
+	# On a tile, the session puts that one in the player's hand (see
+	# GameSession.place_tile/move_tile), to play again from there.
 	if data.has("from_row"):
 		tile_moved.emit(data["from_row"], data["from_col"], row, col)
 	else:
 		tile_dropped.emit(row, col, data["tile"])
-	if displaced != null:
-		# Godot ends this drop only after this function returns, so the
-		# next drag can't start before: `call_deferred` runs it once the
-		# current frame's work is done.
-		_pick_up.call_deferred(displaced)
-
-
-# Starts dragging `tile`, just swapped off this cell, as if picked up from
-# the hand: wherever the player taps next, it's dropped there (Godot ends
-# a drag started this way on the next press). Dropped nowhere useful, it
-# simply stays in the hand.
-func _pick_up(tile: Tile) -> void:
-	# Still here: the swap was refused.
-	if board.tile_at(row, col) == tile:
-		return
-	force_drag({"tile": tile}, TileView.build_drag_preview(tile, size))
 
 
 # Virtual function: Godot calls this the moment the player starts dragging
@@ -212,7 +190,6 @@ func _gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
 		if event.pressed:
 			_press_position = event.position
-			_dropped_by_press = false
 			_pressed_on_tile = board.tile_at(row, col) != null
 			if not _pressed_on_tile:
 				# `position` is this cell's place in the grid; the event's,
@@ -222,8 +199,6 @@ func _gui_input(event: InputEvent) -> void:
 		elif not _pressed_on_tile:
 			board_view.end_box(board)
 			accept_event()
-		elif _dropped_by_press:
-			_dropped_by_press = false
 		elif board.tile_at(row, col) != null and event.position.distance_to(_press_position) < 6:
 			tile_flipped.emit(row, col)
 	elif event is InputEventMouseMotion and not _pressed_on_tile and event.button_mask != 0:

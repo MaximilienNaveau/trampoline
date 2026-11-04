@@ -209,9 +209,9 @@ game does:**
   cells draws a dotted box; the tiles under it move as one block, keeping
   their shape).
 - **Swapping**: a tile dropped on another takes its place; the one it
-  landed on goes into the player's hand, and they're holding it at once,
-  to drop wherever they tap next (left in the hand if that's nowhere
-  useful). A board tile can also be dragged back into the hand.
+  landed on goes into the player's hand (*"échanger des lettres entre
+  tirage et lettres posées"*), to play from there like any other. A board
+  tile can also be dragged back into the hand.
 - **The turn can't end while a cell that held a letter when the turn
   began is empty** (framed in red). A blank ("-") tile's cell is the
   exception: taking it off shortens a word on purpose.

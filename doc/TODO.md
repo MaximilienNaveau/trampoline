@@ -61,10 +61,8 @@ hand, then a shared win.
 - [x] Moving tiles (2015 rules, see `RULES.md` "Moving and swapping
       tiles"): any tile moves during a turn, alone or in a block picked
       with a dotted selection box; dropping a tile on another swaps it into
-      the hand, picked up at once; the turn can't end with a cell emptied
-      that held a letter; each turn earns the board's change in worth.
-- [ ] While a swapped-out tile is carried, its copy still shows in the
-      hand: hide it until it's dropped.
+      the hand; the turn can't end with a cell emptied that held a letter;
+      each turn earns the board's change in worth.
 - [ ] A "Comment jouer" card for the selection box and swapping.
 - [ ] A game saved mid-turn forgets which tiles were put down from the
       hand that turn (so the one-row rule can't flag them after loading).
