@@ -83,7 +83,7 @@ var _save_and_restart_button: Button
 # each node anchoring itself to a hand-picked pixel offset, so the whole
 # screen reflows on a narrower/taller window (a phone in portrait) instead
 # of clipping or running off-screen. `Layout`, the actual direct child of
-# Main, is a plain ScrollContainer around it all — a safety net in case
+# Main, is a ScrollContainer (see drag_steady_scroll.gd) around it all — a safety net in case
 # some screen is too short to fit everything (the whole page scrolls
 # rather than cropping), not part of the reflow itself. `Margin`, right
 # below it, just adds a fixed border of breathing room around `Content`
