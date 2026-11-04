@@ -63,7 +63,7 @@ static func save(session: GameSession, path: String) -> bool:
 		"scoring": session.scoring.export_state(),
 		"play_time": session.play_time,
 		"ended_by_time": session.ended_by_time,
-		"bonus_points": session.bonus_points,
+		"value_at_turn_start": session.value_at_turn_start,
 	}
 
 	var file := FileAccess.open(path, FileAccess.WRITE)
@@ -121,11 +121,13 @@ static func load(path: String, dictionary: FrenchDictionary = null) -> GameSessi
 	# Saves from before the one-hour limit have neither: no time played.
 	session.play_time = data.get("play_time", 0.0)
 	session.ended_by_time = data.get("ended_by_time", false)
-	# JSON reads every number back as a float, hence `int()`. Older saves
-	# have no bonuses: the session's own zeros are kept.
-	var bonuses: Array = data.get("bonus_points", [])
-	for player_id in range(bonuses.size()):
-		session.bonus_points[player_id] = int(bonuses[player_id])
+	# How the board stood when the saved turn began (see GameSession's
+	# `value_at_turn_start`). Older saves don't have it: the turn is taken
+	# as starting from the board as loaded. JSON reads every number back as
+	# a float, hence `int()`.
+	session.value_at_turn_start = int(
+		data.get("value_at_turn_start", Scoring.board_value(session.board, session.dictionary))
+	)
 
 	return session
 
@@ -135,9 +137,10 @@ static func load(path: String, dictionary: FrenchDictionary = null) -> GameSessi
 # built on top of it (see crossword_puzzle.gd), if any. Free play has no
 # bag/hands/turns to save at all (every tile not on the board is simply
 # "available" — see FreePlaySession.available_tiles), so this is a
-# smaller version of `save` above: just tile flip-state, the board, and
-# scoring. `puzzle_index` is CrosswordPuzzle.puzzle_index when saving
-# mid-puzzle, or -1 for plain free play (no puzzle active).
+# smaller version of `save` above: just tile flip-state and the board
+# (the score is read off the board). `puzzle_index` is
+# CrosswordPuzzle.puzzle_index when saving mid-puzzle, or -1 for plain
+# free play (no puzzle active).
 static func save_free_play(session: FreePlaySession, path: String, puzzle_index: int = -1) -> bool:
 	var tile_index := _build_tile_index(session.pool)
 
@@ -157,7 +160,6 @@ static func save_free_play(session: FreePlaySession, path: String, puzzle_index:
 		"version": SAVE_VERSION,
 		"tile_states": tile_states,
 		"board": board_data,
-		"scoring": session.scoring.export_state(),
 		"puzzle_index": puzzle_index,
 	}
 
@@ -195,8 +197,6 @@ static func load_free_play(path: String, dictionary: FrenchDictionary = null) ->
 			var index: int = int(data["board"][row][col])
 			if index != -1:
 				session.board.place(row, col, session.pool.tiles[index])
-
-	session.scoring.restore_state(data["scoring"])
 
 	return {"session": session, "puzzle_index": int(data["puzzle_index"])}
 

@@ -47,8 +47,8 @@ The name refers to two related things:
 
 ## Scoring
 
-Formula: **(sum of position scores) − 5 x (number of green letters used in
-valid words)**, plus bonuses:
+Formula: **a word of n letters is worth 1 + 2 + … + n, minus 5 per green
+letter**, plus bonuses:
 
 | Bonus | Condition |
 |---|---|
@@ -57,27 +57,33 @@ valid words)**, plus bonuses:
 | +10 | Complete any line (reach 9 filled cells in a row), any timing |
 | +30 | Complete the entire 117-cell board |
 
-**"Position score" is placement ORDER within a row, not column index.**
-This is the single most important and most easily-misimplemented rule:
-each row has one running counter starting at 1. Whichever letter is
-physically placed *next* in that row — regardless of which column it lands
-in, and regardless of whether it's added as a prefix or a suffix — gets the
-next counter value.
+The 2015 rules: *"La case 1 vaut 1 point, la case 2 vaut 2, etc.. la case
+9 vaut 9. La ligne totale vaut 45 points."* The nth letter of a word is
+worth n — whichever side it was added on.
 
-Worked example: Player 1 places a 6-letter word, scoring 1+2+3+4+5+6 = 21.
+**Each turn earns what it changed the board's worth by. Decided by
+Maximilien (2026-11-04):** the board is worth the sum of its valid words
+(as above); a turn earns the board's worth when it ends minus its worth
+when it began, plus the bonuses won. Nobody owns a letter: placing,
+moving, swapping and flipping all count the same way, and breaking a word
+costs the player who broke it.
+
+Worked example: Player 1 places a 6-letter word, earning 1+2+3+4+5+6 = 21.
 Player 2 later completes it to 9 letters by adding a 3-letter prefix *or*
-suffix (either side scores the same) and scores 7+8+9 = 24 for those 3
-letters. This is deliberate: it rewards *completing* a risky short word
-more than starting it, which is a core part of the game's tension — do you
-lay down a short word now (cheap points, but you're handing the bigger
-payoff to whoever finishes it), or hold back for a full 9-letter word
-yourself?
+suffix (either side scores the same): the word is now worth 45, so they
+earn 45 − 21 = 24 (and +10 for the line). This is deliberate: it rewards
+*completing* a risky short word more than starting it, which is a core
+part of the game's tension — do you lay down a short word now (cheap
+points, but you're handing the bigger payoff to whoever finishes it), or
+hold back for a full 9-letter word yourself?
 
 Only dictionary-valid words count toward score (see "Word validation"
 below). Green letters cost 5 points each regardless of position.
 
-The Unity implementation (`RowLetterHistory.cs`) already implements this
-correctly — reuse the same logic, don't reintroduce column-based scoring.
+(The Unity implementation, `RowLetterHistory.cs`, numbered letters by
+placement order within a row and credited each to whoever placed it. The
+Godot game replaced that with the above, which stays consistent however
+tiles move.)
 
 ## Letters and tiles
 

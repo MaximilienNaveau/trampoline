@@ -93,9 +93,10 @@ func _test_round_trip_preserves_state() -> void:
 	_check(loaded_green_tile.current_is_green(), "...including that it counts as green")
 
 	_check(
-		loaded.scoring.player_word_score(loaded.board, _dictionary, 4, 0, 0) == 21,
-		"scoring state round-trips well enough to recompute the same score"
+		loaded.value_at_turn_start == session.value_at_turn_start,
+		"what the board was worth as the turn began round-trips"
 	)
+	_check(loaded.turn_points() == session.turn_points(), "...so the turn's points read the same")
 
 	DirAccess.remove_absolute(_SAVE_PATH)
 
@@ -128,7 +129,7 @@ func _test_free_play_round_trip_preserves_state() -> void:
 	_check(loaded != null, "loading succeeds")
 	_check(loaded["session"].board.word_at(4, 0) == "MAISON", "the board round-trips")
 	_check(loaded["puzzle_index"] == 3, "the active puzzle index round-trips")
-	_check(loaded["session"].current_score() == 21, "scoring state round-trips into the same score")
+	_check(loaded["session"].current_score() == 21, "the board round-trips into the same score")
 
 	DirAccess.remove_absolute(_SAVE_PATH)
 

@@ -1,9 +1,8 @@
 # The solo "free play" sandbox from doc/RULES.md's single-player modes:
 # all 117 tiles available at once, no turns, no draw restrictions — place,
 # move, remove, or flip any tile anywhere, any time. Standard scoring
-# still applies (a word's score is the sum of its letters' placement-order
-# position scores, minus 5 per green letter — see scoring.gd), just with a
-# single implicit player instead of GameSession's turn-based ones.
+# still applies (a word of n letters is worth 1 + 2 + … + n, minus 5 per
+# green letter — see scoring.gd), as one running total.
 #
 # Deliberately NOT a GameSession subclass: GameSession carries turns/bag/
 # draw-scheduling that free play has no use for at all, so inheriting
@@ -15,13 +14,8 @@
 class_name FreePlaySession
 extends RefCounted
 
-# Scoring is written per-player (see scoring.gd), but free play only ever
-# has the one — every placement is attributed to this fixed id.
-const PLAYER_ID := 0
-
 var board: Board
 var pool: TilePool
-var scoring: Scoring
 var dictionary: FrenchDictionary
 
 
@@ -32,7 +26,6 @@ var dictionary: FrenchDictionary
 func _init(a_dictionary: FrenchDictionary = null) -> void:
 	board = Board.new()
 	pool = TilePool.new()
-	scoring = Scoring.new()
 	dictionary = a_dictionary if a_dictionary != null else FrenchDictionary.new()
 
 
@@ -63,10 +56,7 @@ func available_tiles() -> Array[Tile]:
 # board.gd's own header comment: free play calls straight into Board).
 # Returns false and does nothing if the cell is already occupied.
 func place_tile(row: int, col: int, tile: Tile) -> bool:
-	if not board.place(row, col, tile):
-		return false
-	scoring.record_placement(row, col, PLAYER_ID)
-	return true
+	return board.place(row, col, tile)
 
 
 # Whether the tile currently at (row, col) can be picked back up — always
@@ -96,7 +86,6 @@ func remove_tile(row: int, col: int) -> Tile:
 	if tile == null:
 		return null
 	board.remove(row, col)
-	scoring.forget(row, col)
 	return tile
 
 
@@ -115,9 +104,6 @@ func move_tile(from_row: int, from_col: int, to_row: int, to_col: int) -> bool:
 	if not board.place(to_row, to_col, tile):
 		board.place(from_row, from_col, tile)  # rollback: destination occupied
 		return false
-
-	scoring.forget(from_row, from_col)
-	scoring.record_placement(to_row, to_col, PLAYER_ID)
 	return true
 
 
@@ -134,17 +120,8 @@ func flip_tile(row: int, col: int) -> bool:
 	return true
 
 
-# The current total score: the sum of every currently-valid word's
-# position scores on the board, minus the green-letter penalty (see
-# Scoring.player_word_score) — recomputed from scratch each call, the
-# same approach GameSession._recompute_all_scores uses, just for the
-# single PLAYER_ID instead of once per turn-based player. There's no
-# separate "commit" step in free play — the score is just always whatever
-# it currently is.
+# The current total score: what the board is worth (see
+# Scoring.board_value). There's no separate "commit" step in free play —
+# the score is just always whatever it currently is.
 func current_score() -> int:
-	var total := 0
-	for row in range(Board.ROWS):
-		for segment in board.segments_in_row(row):
-			var col: int = segment[0]
-			total += scoring.player_word_score(board, dictionary, row, col, PLAYER_ID)
-	return total
+	return Scoring.board_value(board, dictionary)

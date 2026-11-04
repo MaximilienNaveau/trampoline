@@ -3,16 +3,14 @@
 # letters), or moving it wholesale to a different row entirely — see
 # doc/RULES.md. Confirmed by Maximilien:
 #   - Any player may move any word, not just its original contributors.
-#   - A word's earned position scores and ownership travel WITH its
-#     tiles — moving a word never changes what it's worth or who gets
-#     credit for it (see scoring.gd's `score_at`/`owner_at`/`forget`/
-#     `restore_placement`, which exist specifically for this).
+#   - Moving a word changes the board's worth only if it makes or breaks
+#     words — what the turn earns is that change (see scoring.gd).
 #   - The destination can be any row, even one that already holds an
 #     unrelated word, as long as the exact destination cells are free —
 #     this is why board.gd supports more than one word per row.
 #
 # Every function here is `static`, same reasoning as growth_rules.gd: this
-# class holds no state, it only acts on a `Board`/`Scoring` passed in.
+# class holds no state, it only acts on a `Board` passed in.
 class_name WordMove
 extends RefCounted
 
@@ -38,32 +36,22 @@ static func can_move(board: Board, from_row: int, from_col: int, to_row: int, to
 
 
 # Relocates the word at `(from_row, from_col)` so its first letter lands
-# at `(to_row, to_col)`, carrying each tile's earned position score and
-# owner along with it. Returns false and does nothing if `can_move`
+# at `(to_row, to_col)`. Returns false and does nothing if `can_move`
 # refuses the move.
-static func move(
-	board: Board, scoring: Scoring, from_row: int, from_col: int, to_row: int, to_col: int
-) -> bool:
+static func move(board: Board, from_row: int, from_col: int, to_row: int, to_col: int) -> bool:
 	if not can_move(board, from_row, from_col, to_row, to_col):
 		return false
 	var source_columns := board.word_columns_at(from_row, from_col)
 
-	# Pull every tile (and its score/owner) out of its old cell first,
+	# Pull every tile out of its old cell first,
 	# before placing anything back down — a move that shifts a word
 	# within its own row can have destination cells that overlap the
 	# source, so nothing can be placed until the whole word is lifted.
 	var tiles: Array[Tile] = []
-	var scores: Array[int] = []
-	var owners: Array[int] = []
 	for col in source_columns:
 		tiles.append(board.remove(from_row, col))
-		scores.append(scoring.score_at(from_row, col))
-		owners.append(scoring.owner_at(from_row, col))
-		scoring.forget(from_row, col)
 
 	for i in range(tiles.size()):
-		var dest_col := to_col + i
-		board.place(to_row, dest_col, tiles[i])
-		scoring.restore_placement(to_row, dest_col, scores[i], owners[i])
+		board.place(to_row, to_col + i, tiles[i])
 
 	return true

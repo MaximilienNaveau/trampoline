@@ -25,12 +25,10 @@ var play_time := 0.0
 # Whether the game ended because the hour ran out (see `end_turn`) —
 # saved with the game too.
 var ended_by_time := false
-# Bonus points each player has won so far (line, full word, full board —
-# see scoring.gd), indexed by player id. Kept apart from the words'
-# points, which are recomputed from the board after every turn (see
-# `_recompute_all_scores`), so a bonus won once stays won. Saved with the
-# game (see save_game.gd).
-var bonus_points: Array[int] = []
+# What the board was worth when the current turn began (see scoring.gd's
+# `board_value`): the turn earns the difference (see `turn_points`).
+# Saved with the game (see save_game.gd).
+var value_at_turn_start := 0
 
 # Tiles the current player has placed since their turn began — these are
 # still "in progress" and can be freely taken back or relocated (see
@@ -69,8 +67,7 @@ func _init(number_of_players: int, a_dictionary: FrenchDictionary = null) -> voi
 	# draws nothing, the hand being full already (see `_start_turn`).
 	for player_id in range(number_of_players):
 		turns.refill_hand(bag, player_id)
-		bonus_points.append(0)
-	scoring.begin_turn(board)
+	_note_turn_start()
 
 
 # Whether the game has ended, either way (see turn_manager.gd's header
@@ -145,7 +142,6 @@ func place_tile(row: int, col: int, tile: Tile) -> bool:
 	if not board.place(row, col, tile):
 		return false
 	bag.consume(player_id, tile)
-	scoring.record_placement(row, col, player_id)
 	_placed_this_turn.append(tile)
 	# A tile on the board is no longer in hand to give back.
 	_marked_for_discard.erase(tile)
@@ -205,7 +201,6 @@ func remove_tile(row: int, col: int) -> Tile:
 	if tile == null or not _can_take_back(row, col, tile):
 		return null
 	board.remove(row, col)
-	scoring.forget(row, col)
 	bag.give_to_hand(turns.current_player_id(), tile)
 	_placed_this_turn.erase(tile)
 	return tile
@@ -227,18 +222,14 @@ func move_own_tile(from_row: int, from_col: int, to_row: int, to_col: int) -> bo
 	if not board.place(to_row, to_col, tile):
 		board.place(from_row, from_col, tile)  # rollback: destination occupied
 		return false
-
-	scoring.forget(from_row, from_col)
-	scoring.record_placement(to_row, to_col, turns.current_player_id())
 	return true
 
 
 # Relocates the word at (from_row, from_col) so its first letter lands at
-# (to_row, to_col) — see word_move.gd. Any player may move any word; its
-# earned score and ownership travel with it. Returns false and does
-# nothing if the move isn't legal.
+# (to_row, to_col) — see word_move.gd. Any player may move any word.
+# Returns false and does nothing if the move isn't legal.
 func _move_word(from_row: int, from_col: int, to_row: int, to_col: int) -> bool:
-	return WordMove.move(board, scoring, from_row, from_col, to_row, to_col)
+	return WordMove.move(board, from_row, from_col, to_row, to_col)
 
 
 # Same as `_move_word`, but for dragging a word by whichever one of its
@@ -262,8 +253,8 @@ func move_word_by_grabbed_tile(from_row: int, from_col: int, to_row: int, to_col
 # on the board at any time, regardless of whose turn it is or who placed
 # it. Scoring doesn't need telling about this separately: `Scoring` always
 # reads a tile's CURRENT face live (see scoring.gd), so a flipped tile's
-# new letter/color is simply picked up the next time scores are
-# recomputed. Returns false and does nothing if the cell is empty.
+# new letter/color is simply picked up the next time the board's worth is
+# read. Returns false and does nothing if the cell is empty.
 func flip_tile(row: int, col: int) -> bool:
 	var tile := board.tile_at(row, col)
 	if tile == null:
@@ -306,13 +297,13 @@ func invalid_cells() -> Array:
 	return TurnValidity.invalid_cells(board, _placed_this_turn)
 
 
-# What the current player's score would change by, from their words
-# alone, if their turn ended right now — negative if, say, they flipped
-# one of their own letters to green (see scoring.gd). Bonuses come
-# separately, see `turn_bonuses`. Changes nothing.
+# What the current player's score would change by, from the words alone,
+# if their turn ended right now: how much their turn changed the board's
+# worth (see scoring.gd) — negative if, say, they flipped a letter to
+# green or broke a word. Bonuses come separately, see `turn_bonuses`.
+# Changes nothing.
 func turn_points() -> int:
-	var player_id := turns.current_player_id()
-	return _word_points(player_id) + bonus_points[player_id] - turns.player_score(player_id)
+	return Scoring.board_value(board, dictionary) - value_at_turn_start
 
 
 # The bonuses the current player would win if their turn ended right now
@@ -329,19 +320,21 @@ func turn_bonuses() -> Array[int]:
 	return bonuses
 
 
-# Ends the current player's turn: tallies every player's current score,
-# pays out any bonuses just earned, marks the player finished if they're
-# out of tiles for good, and starts the next turn if the game isn't over.
+# Ends the current player's turn: adds what it earned (see `turn_points`)
+# and any bonuses just won to their score, marks the player finished if
+# they're out of tiles for good, and starts the next turn if the game
+# isn't over.
 # Returns false and does nothing if `can_end_turn()` refuses.
 func end_turn() -> bool:
 	if not can_end_turn():
 		return false
 
 	var player_id := turns.current_player_id()
+	var points := turn_points()
 	for row in range(Board.ROWS):
-		bonus_points[player_id] += scoring.claim_line_bonus(board, dictionary, row)
-	bonus_points[player_id] += scoring.claim_board_bonus(board)
-	_recompute_all_scores()
+		points += scoring.claim_line_bonus(board, dictionary, row)
+	points += scoring.claim_board_bonus(board)
+	turns.set_player_score(player_id, turns.player_score(player_id) + points)
 
 	# The tiles this player chose to give back go into the bag now; their
 	# hand is refilled at the start of their next turn, so the next player
@@ -367,7 +360,7 @@ func end_turn() -> bool:
 
 func _start_turn() -> void:
 	turns.refill_hand(bag, turns.current_player_id())
-	scoring.begin_turn(board)
+	_note_turn_start()
 	# Whatever the PREVIOUS player placed is now a done deal — frozen in
 	# place for anyone else, movable only as a whole word (see
 	# `_can_take_back`). The new current player starts with a clean slate.
@@ -375,22 +368,9 @@ func _start_turn() -> void:
 	_marked_for_discard.clear()
 
 
-# Recomputes every player's score from scratch — the sum of their own
-# share of every word currently on the board (see
-# Scoring.player_word_score), across every row and every segment within
-# it, plus the bonuses they've won (see `bonus_points`). Simpler and less
-# error-prone than incrementally patching scores as the board changes, at
-# the cost of redoing the sum each time.
-func _recompute_all_scores() -> void:
-	for player_id in range(turns.number_of_players):
-		turns.set_player_score(player_id, _word_points(player_id) + bonus_points[player_id])
-
-
-# `player_id`'s share of every valid word on the board right now.
-func _word_points(player_id: int) -> int:
-	var total := 0
-	for row in range(Board.ROWS):
-		for segment in board.segments_in_row(row):
-			var col: int = segment[0]
-			total += scoring.player_word_score(board, dictionary, row, col, player_id)
-	return total
+# Notes down how the board stands as a turn begins: what it's worth
+# (`value_at_turn_start`) and, for the bonuses, how full each row is (see
+# scoring.gd's `begin_turn`).
+func _note_turn_start() -> void:
+	value_at_turn_start = Scoring.board_value(board, dictionary)
+	scoring.begin_turn(board)
