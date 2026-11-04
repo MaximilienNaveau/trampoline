@@ -1,16 +1,14 @@
 # The solo "free play" sandbox from doc/RULES.md's single-player modes:
 # all 117 tiles available at once, no turns, no draw restrictions — place,
-# move, remove, or flip any tile anywhere, any time. Standard scoring
+# move, remove, swap or flip any tile anywhere, any time. Standard scoring
 # still applies (a word of n letters is worth 1 + 2 + … + n, minus 5 per
 # green letter — see scoring.gd), as one running total.
 #
 # Deliberately NOT a GameSession subclass: GameSession carries turns/bag/
 # draw-scheduling that free play has no use for at all, so inheriting
 # would either buy nothing (an empty base) or force free-play-skip
-# branches into GameSession itself. main.gd instead treats whichever
-# session is active (GameSession or this) the same way BoardView already
-# treats `is_takeable`/`can_place_here` — as plain Callables, not a shared
-# type.
+# branches into GameSession itself. main.gd instead calls whichever
+# session is active (GameSession or this) by the same method names.
 class_name FreePlaySession
 extends RefCounted
 
@@ -52,59 +50,33 @@ func available_tiles() -> Array[Tile]:
 	return available
 
 
-# Places `tile` at (row, col) — no GrowthRules restriction at all (see
-# board.gd's own header comment: free play calls straight into Board).
-# Returns false and does nothing if the cell is already occupied.
-func place_tile(row: int, col: int, tile: Tile) -> bool:
-	return board.place(row, col, tile)
-
-
-# Whether the tile currently at (row, col) can be picked back up — always
-# true in free play, regardless of whose turn it is or when it was placed
-# (there's no such thing as either here). False only because the cell
-# itself is empty is handled by BoardCell before this is even asked (see
-# board_cell.gd's `_get_drag_data`).
-func can_take_back(_row: int, _col: int) -> bool:
-	return true
-
-
-# Whether (row, col) is currently a legal spot to drop a NEW tile — the
-# one universal restriction that's true in every mode (see board.gd): a
-# cell can't hold two tiles at once. Skipping this check would let a
-# board-to-board drag onto an occupied cell silently destroy the tile
-# already there (removed from its source, then discarded because the
-# destination refused it with nothing to roll back to).
-func can_place_here(row: int, col: int) -> bool:
-	return board.is_empty(row, col)
+# Places `tile` at (row, col) — anywhere, free play has no rules about
+# where (board.gd's own header comment: free play calls straight into
+# Board). On an occupied cell, the tile there goes back among the
+# available ones (a swap, as in a game, see GameSession.place_tile).
+func place_tile(row: int, col: int, tile: Tile) -> void:
+	board.remove(row, col)
+	board.place(row, col, tile)
 
 
 # Picks the tile at (row, col) back up, giving it back to `available_tiles()`
 # (nothing else to update — see that function's own comment). Returns
 # null if the cell is empty.
 func remove_tile(row: int, col: int) -> Tile:
-	var tile := board.tile_at(row, col)
-	if tile == null:
-		return null
-	board.remove(row, col)
-	return tile
+	return board.remove(row, col)
 
 
-# Relocates a tile from (from_row, from_col) to (to_row, to_col). Needed
-# because `can_take_back` is unconditionally true, so a drag can start
-# from an occupied board cell, not just from the tile palette. Mirrors
-# GameSession.move_own_tile's rollback exactly: if the destination turns
-# out occupied, the tile goes right back where it came from instead of
-# vanishing. Returns false and does nothing if the source is empty.
-func move_tile(from_row: int, from_col: int, to_row: int, to_col: int) -> bool:
-	var tile := board.tile_at(from_row, from_col)
-	if tile == null:
-		return false
-
-	board.remove(from_row, from_col)
-	if not board.place(to_row, to_col, tile):
-		board.place(from_row, from_col, tile)  # rollback: destination occupied
-		return false
-	return true
+# Moves the tile at (from_row, from_col) to (to_row, to_col). On an
+# occupied cell, the tile there goes back among the available ones (a
+# swap, see `place_tile`). Does nothing if the source is empty or is the
+# destination itself.
+func move_tile(from_row: int, from_col: int, to_row: int, to_col: int) -> void:
+	if (
+		board.is_empty(from_row, from_col)
+		or Vector2i(from_col, from_row) == Vector2i(to_col, to_row)
+	):
+		return
+	place_tile(to_row, to_col, board.remove(from_row, from_col))
 
 
 # Flips the tile at (row, col) in place, revealing its other face — same

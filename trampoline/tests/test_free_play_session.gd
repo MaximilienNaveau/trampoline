@@ -20,11 +20,9 @@ func _initialize() -> void:
 	_test_available_tiles_starts_full()
 	_test_available_tiles_shrinks_after_placement()
 	_test_available_tiles_grows_after_removal()
-	_test_place_tile_refuses_occupied_cell()
-	_test_can_take_back_is_always_true()
-	_test_can_place_here_true_for_empty_false_for_occupied()
+	_test_place_tile_on_a_tile_swaps()
 	_test_move_tile_into_empty_cell()
-	_test_move_tile_rolls_back_when_destination_occupied()
+	_test_move_tile_onto_a_tile_swaps()
 	_test_flip_tile()
 	_test_flip_tile_refuses_empty_cell()
 	_test_current_score_zero_initially()
@@ -69,48 +67,37 @@ func _test_available_tiles_grows_after_removal() -> void:
 	_check(session.available_tiles().has(tile), "...specifically that exact tile again")
 
 
-func _test_place_tile_refuses_occupied_cell() -> void:
+# A tile dropped on another takes its place; the other goes back among
+# the available tiles.
+func _test_place_tile_on_a_tile_swaps() -> void:
 	var session := FreePlaySession.new(_dictionary)
 	var first: Tile = session.pool.tiles[0]
 	var second: Tile = session.pool.tiles[1]
 	session.place_tile(0, 0, first)
-	_check(not session.place_tile(0, 0, second), "a second tile can't land on an occupied cell")
-	_check(session.board.tile_at(0, 0) == first, "the original tile is undisturbed")
-
-
-func _test_can_take_back_is_always_true() -> void:
-	var session := FreePlaySession.new(_dictionary)
-	_check(session.can_take_back(0, 0), "true even for an empty cell (the caller checks occupancy)")
-	session.place_tile(0, 0, session.pool.tiles[0])
-	_check(session.can_take_back(0, 0), "true for an occupied cell too — no turn/ownership concept")
-
-
-func _test_can_place_here_true_for_empty_false_for_occupied() -> void:
-	var session := FreePlaySession.new(_dictionary)
-	session.place_tile(0, 0, session.pool.tiles[0])
-	_check(not session.can_place_here(0, 0), "refused: the cell already holds a tile")
-	_check(session.can_place_here(0, 1), "allowed: any empty cell, no adjacency restriction")
+	session.place_tile(0, 0, second)
+	_check(session.board.tile_at(0, 0) == second, "the new tile takes the cell")
+	_check(session.available_tiles().has(first), "the old one is available again")
 
 
 func _test_move_tile_into_empty_cell() -> void:
 	var session := FreePlaySession.new(_dictionary)
 	var tile: Tile = session.pool.tiles[0]
 	session.place_tile(0, 4, tile)
-	_check(session.move_tile(0, 4, 0, 0), "relocating to an empty cell succeeds")
+	session.move_tile(0, 4, 0, 0)
 	_check(session.board.tile_at(0, 0) == tile, "the tile is now at its new position")
 	_check(session.board.is_empty(0, 4), "the old cell is empty")
 
 
-func _test_move_tile_rolls_back_when_destination_occupied() -> void:
+func _test_move_tile_onto_a_tile_swaps() -> void:
 	var session := FreePlaySession.new(_dictionary)
 	var moving: Tile = session.pool.tiles[0]
-	var blocker: Tile = session.pool.tiles[1]
+	var under: Tile = session.pool.tiles[1]
 	session.place_tile(0, 4, moving)
-	session.place_tile(0, 0, blocker)
-
-	_check(not session.move_tile(0, 4, 0, 0), "refused: the destination is already occupied")
-	_check(session.board.tile_at(0, 4) == moving, "the moved tile lands back at its origin")
-	_check(session.board.tile_at(0, 0) == blocker, "the blocker is untouched")
+	session.place_tile(0, 0, under)
+	session.move_tile(0, 4, 0, 0)
+	_check(session.board.tile_at(0, 0) == moving, "the moved tile takes the cell")
+	_check(session.board.is_empty(0, 4), "...leaving its own")
+	_check(session.available_tiles().has(under), "the tile it landed on is available again")
 
 
 func _test_flip_tile() -> void:
@@ -136,7 +123,7 @@ func _test_current_score_zero_initially() -> void:
 # Same word/expected-sum pair as GameSession's own
 # _test_end_turn_scores_and_advances, confirming free play's live
 # current_score() agrees with the turn-based end_turn() tally for
-# identical input — placement-order position scores, summed.
+# identical input — 1 + 2 + … + n.
 func _test_current_score_matches_word_sum() -> void:
 	var session := FreePlaySession.new(_dictionary)
 	var word := "maison"

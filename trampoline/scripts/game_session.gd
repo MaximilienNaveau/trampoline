@@ -1,6 +1,6 @@
 # Ties every other piece together into an actual playable turn loop:
 # Board + TileBag + TurnManager + Scoring + FrenchDictionary +
-# GrowthRules + WordMove + WordChallenge. The equivalent of the Unity
+# WordChallenge. The equivalent of the Unity
 # project's GameControllerMultiplayer, but for the current design (see
 # doc/RULES.md and this project's other scripts for the individual rules).
 class_name GameSession
@@ -29,15 +29,19 @@ var ended_by_time := false
 # `board_value`): the turn earns the difference (see `turn_points`).
 # Saved with the game (see save_game.gd).
 var value_at_turn_start := 0
+# The cells holding a letter when the current turn began, as
+# `Vector2i(col, row)`: during a turn any tile may move, but these must be
+# filled again before it ends (see `emptied_cells`). A blank ("-") tile's
+# cell isn't among them: taking a blank off shortens a word on purpose
+# (see doc/RULES.md). Saved with the game too.
+var cells_to_keep_filled: Array[Vector2i] = []
 
-# Tiles the current player has placed since their turn began — these are
-# still "in progress" and can be freely taken back or relocated (see
-# `_can_take_back`/`move_own_tile` below), unlike a tile placed in an
-# earlier, already-ended turn, which is frozen in place (only a whole word
-# can be relocated afterward, via `move_word_by_grabbed_tile`). Also what `invalid_cells()`
-# below checks against: a turn confined to one row and one connected group
-# of letters (see doc/RULES.md) is a property of ALL of this turn's tiles
-# together, not any single placement. Reset every `_start_turn()`.
+# Tiles the current player has put down from their hand since their turn
+# began. What `invalid_cells()` below checks against: a turn's new letters
+# go on one row, in one connected group (see doc/RULES.md) — a property of
+# ALL of this turn's tiles together, not any single placement. Tiles
+# already on the board and only moved don't count. Reset every
+# `_start_turn()`.
 var _placed_this_turn: Array[Tile] = []
 
 # Tiles in the current player's hand they've chosen to give back to the
@@ -126,21 +130,22 @@ func _compare_players(a: int, b: int) -> int:
 	return 0
 
 
-# Places one of the current player's own hand tiles at (row, col), as long
-# as it's actually empty. Returns false and does nothing if `tile` isn't
-# currently in the current player's hand, or the cell is already occupied.
-# Deliberately does NOT check GrowthRules/TurnValidity here — a player is
-# free to place tiles anywhere and rearrange all turn; `can_end_turn()`
-# below is what actually catches an illegal result, the same way an
-# invalid dictionary word already works (see word_challenge.gd). This lets
-# the UI show the player what's wrong (see `invalid_cells()`) rather than
-# just silently refusing to let a tile land somewhere.
+# Places one of the current player's own hand tiles at (row, col). On an
+# occupied cell, the two swap: the tile there goes into the player's hand
+# (the 2015 rules let a player swap letters between their hand and the
+# board). Returns false and does nothing if `tile` isn't in the current
+# player's hand. Deliberately doesn't check where it lands —
+# `can_end_turn()` below is what catches an illegal result, so the UI can
+# show the player what's wrong (see `invalid_cells()`) rather than just
+# silently refusing to let a tile land somewhere.
 func place_tile(row: int, col: int, tile: Tile) -> bool:
 	var player_id := turns.current_player_id()
 	if not bag.hand(player_id).has(tile):
 		return false
-	if not board.place(row, col, tile):
-		return false
+	var displaced := board.remove(row, col)
+	if displaced != null:
+		_take_into_hand(displaced)
+	board.place(row, col, tile)
 	bag.consume(player_id, tile)
 	_placed_this_turn.append(tile)
 	# A tile on the board is no longer in hand to give back.
@@ -168,93 +173,48 @@ func marked_for_discard() -> Array[Tile]:
 	return _marked_for_discard.duplicate()
 
 
-# Whether the tile at (row, col) can currently be picked back up — either
-# because it's a blank sitting at its word's edge (the always-available
-# "shorten" mechanic, see growth_rules.gd's `can_remove`), or because the
-# CURRENT player placed it earlier in this very turn. Nothing is committed
-# until the turn actually ends (see `_start_turn`), so a this-turn tile can
-# be taken back from anywhere in its word, edge or middle — freely
-# rearranging/rebuilding a word while it's still being composed is exactly
-# what lets a player be more inventive, and `can_end_turn` is what actually
-# guards the board once they're done. A real letter placed in an EARLIER
-# turn matches neither case: it's frozen in place.
-func _can_take_back(row: int, col: int, tile: Tile) -> bool:
-	return GrowthRules.can_remove(board, row, col) or _placed_this_turn.has(tile)
-
-
-# Whether the tile currently at (row, col) can be picked back up right now
-# (see `_can_take_back` above) — false if the cell is empty.
-func can_take_back(row: int, col: int) -> bool:
-	var tile := board.tile_at(row, col)
-	return tile != null and _can_take_back(row, col, tile)
-
-
-# Picks the tile at (row, col) back up, if `can_take_back` allows it. The
-# tile goes into the CURRENT player's hand — whoever performs the removal
-# receives it, regardless of who originally placed it (assumption worth
-# flagging: doc/RULES.md doesn't say where a picked-up tile should go;
-# giving it to the remover, rather than back into the shared bag, was the
-# simplest reasonable default). Returns null and does nothing if the
-# removal isn't legal.
+# Picks the tile at (row, col) up into the CURRENT player's hand — any
+# tile, whoever put it there: during a turn, every tile on the board may
+# move (see doc/RULES.md); the turn just can't end with a cell emptied
+# that held a letter when it began (see `emptied_cells`). Returns null and
+# does nothing if the cell is empty.
 func remove_tile(row: int, col: int) -> Tile:
-	var tile := board.tile_at(row, col)
-	if tile == null or not _can_take_back(row, col, tile):
-		return null
-	board.remove(row, col)
-	bag.give_to_hand(turns.current_player_id(), tile)
-	_placed_this_turn.erase(tile)
+	var tile := board.remove(row, col)
+	if tile != null:
+		_take_into_hand(tile)
 	return tile
 
 
-# Relocates a single tile the current player placed earlier this same turn
-# from (from_row, from_col) to (to_row, to_col) — see `_can_take_back`
-# above for why an older, frozen tile can't move this way (use `move_word_by_grabbed_tile`
-# for those instead). Returns false and does nothing if picking the tile up
-# isn't legal, or the destination is already occupied — like `place_tile`,
-# doesn't otherwise restrict WHERE it can land; `can_end_turn()` is what
-# catches an illegal result.
-func move_own_tile(from_row: int, from_col: int, to_row: int, to_col: int) -> bool:
-	var tile := board.tile_at(from_row, from_col)
-	if tile == null or not _can_take_back(from_row, from_col, tile):
+# Moves the tile at (from_row, from_col) to (to_row, to_col) — any tile,
+# like `remove_tile`. On an occupied cell, the tile there goes into the
+# current player's hand (a swap, as in `place_tile`). Returns false and
+# does nothing if there's no tile to move, or it's dropped where it is.
+func move_tile(from_row: int, from_col: int, to_row: int, to_col: int) -> bool:
+	if (
+		board.is_empty(from_row, from_col)
+		or Vector2i(from_col, from_row) == Vector2i(to_col, to_row)
+	):
 		return false
-
-	board.remove(from_row, from_col)
-	if not board.place(to_row, to_col, tile):
-		board.place(from_row, from_col, tile)  # rollback: destination occupied
-		return false
+	var displaced := board.remove(to_row, to_col)
+	if displaced != null:
+		_take_into_hand(displaced)
+	board.place(to_row, to_col, board.remove(from_row, from_col))
 	return true
 
 
-# Relocates the word at (from_row, from_col) so its first letter lands at
-# (to_row, to_col) — see word_move.gd. Any player may move any word.
-# Returns false and does nothing if the move isn't legal.
-func _move_word(from_row: int, from_col: int, to_row: int, to_col: int) -> bool:
-	return WordMove.move(board, from_row, from_col, to_row, to_col)
-
-
-# Same as `_move_word`, but for dragging a word by whichever one of its
-# tiles the player actually grabbed, at (from_row, from_col) — (to_row,
-# to_col) is where THAT tile should land, not necessarily the word's first
-# letter. Without this adjustment, dragging the middle of a word would
-# yank its first letter to the drop point instead of following the
-# cursor. Returns false and does nothing if the source isn't part of a
-# word, or if the resulting move isn't legal.
-func move_word_by_grabbed_tile(from_row: int, from_col: int, to_row: int, to_col: int) -> bool:
-	var source_columns := board.word_columns_at(from_row, from_col)
-	if source_columns.is_empty():
-		return false
-	var grabbed_offset: int = source_columns.find(from_col)
-	return _move_word(from_row, from_col, to_row, to_col - grabbed_offset)
+# `tile`, just taken off the board, goes into the current player's hand.
+func _take_into_hand(tile: Tile) -> void:
+	bag.give_to_hand(turns.current_player_id(), tile)
+	# Back in hand, it no longer counts as put down this turn.
+	_placed_this_turn.erase(tile)
 
 
 # Flips the tile at (row, col) in place, revealing its other face — see
-# doc/RULES.md's "trampoline" mechanic: a cell is never emptied by this,
-# only changed, so (unlike `_can_take_back`) any player may flip any tile
-# on the board at any time, regardless of whose turn it is or who placed
-# it. Scoring doesn't need telling about this separately: `Scoring` always
-# reads a tile's CURRENT face live (see scoring.gd), so a flipped tile's
-# new letter/color is simply picked up the next time the board's worth is
-# read. Returns false and does nothing if the cell is empty.
+# doc/RULES.md's "trampoline" mechanic: any tile on the board may be
+# flipped. Scoring doesn't need telling about this separately: `Scoring`
+# always reads a tile's CURRENT face live (see scoring.gd), so a flipped
+# tile's new letter/color is simply picked up the next time the board's
+# worth is read. Returns false and does nothing if the cell is empty.
 func flip_tile(row: int, col: int) -> bool:
 	var tile := board.tile_at(row, col)
 	if tile == null:
@@ -263,21 +223,29 @@ func flip_tile(row: int, col: int) -> bool:
 	return true
 
 
-# Whether (row, col) is currently a legal spot to drop a new tile: simply
-# whether it's empty. Placement itself no longer enforces GrowthRules (see
-# `place_tile`'s own comment) — exposed so BoardView can ask through a
-# Callable (see board_view.gd's `refresh`) instead of BoardCell hardcoding
-# this itself.
-func can_place_here(row: int, col: int) -> bool:
-	return board.is_empty(row, col)
-
-
 # Whether the current player may end their turn right now: blocked while
-# any word on the board is invalid (see word_challenge.gd) OR this turn's
-# own placements don't form one legal single-row, single-word turn (see
-# turn_validity.gd).
+# any word on the board is invalid (see word_challenge.gd), this turn's
+# new letters don't form one legal single-row, single-word turn (see
+# turn_validity.gd), or a cell that held a letter when the turn began is
+# empty (see `emptied_cells`).
 func can_end_turn() -> bool:
-	return WordChallenge.can_end_turn(board, dictionary) and invalid_cells().is_empty()
+	return (
+		WordChallenge.can_end_turn(board, dictionary)
+		and invalid_cells().is_empty()
+		and emptied_cells().is_empty()
+	)
+
+
+# The cells (`Vector2i(col, row)`) that held a letter when the turn began
+# and are empty now: the 2015 rules' "aucune case occupée avant une
+# intervention ne doit être vidée de son contenu" — tiles may move, but
+# the board never loses a letter.
+func emptied_cells() -> Array[Vector2i]:
+	var emptied: Array[Vector2i] = []
+	for cell in cells_to_keep_filled:
+		if board.is_empty(cell.y, cell.x):
+			emptied.append(cell)
+	return emptied
 
 
 # The word(s) currently blocking `can_end_turn()` above, as a list of
@@ -361,16 +329,20 @@ func end_turn() -> bool:
 func _start_turn() -> void:
 	turns.refill_hand(bag, turns.current_player_id())
 	_note_turn_start()
-	# Whatever the PREVIOUS player placed is now a done deal — frozen in
-	# place for anyone else, movable only as a whole word (see
-	# `_can_take_back`). The new current player starts with a clean slate.
 	_placed_this_turn.clear()
 	_marked_for_discard.clear()
 
 
 # Notes down how the board stands as a turn begins: what it's worth
-# (`value_at_turn_start`) and, for the bonuses, how full each row is (see
-# scoring.gd's `begin_turn`).
+# (`value_at_turn_start`), which cells must stay filled
+# (`cells_to_keep_filled`), and, for the bonuses, how full each row is
+# (see scoring.gd's `begin_turn`).
 func _note_turn_start() -> void:
 	value_at_turn_start = Scoring.board_value(board, dictionary)
+	cells_to_keep_filled.clear()
+	for row in range(Board.ROWS):
+		for col in range(Board.COLUMNS):
+			var tile := board.tile_at(row, col)
+			if tile != null and not tile.is_blank():
+				cells_to_keep_filled.append(Vector2i(col, row))
 	scoring.begin_turn(board)

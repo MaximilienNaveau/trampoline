@@ -5,7 +5,7 @@
 # refused outright anymore — a player can freely place/move/take back tiles
 # all turn, and only finds out something's wrong when trying to end_turn(),
 # the same way an invalid dictionary word already works (see
-# word_challenge.gd). `static`, same reasoning as GrowthRules/WordChallenge:
+# word_challenge.gd). `static`, same reasoning as WordChallenge:
 # this class holds no state of its own, only `board`/`placed_this_turn`
 # passed in by whoever's asking (GameSession).
 class_name TurnValidity

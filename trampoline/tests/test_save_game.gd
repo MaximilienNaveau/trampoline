@@ -96,6 +96,10 @@ func _test_round_trip_preserves_state() -> void:
 		loaded.value_at_turn_start == session.value_at_turn_start,
 		"what the board was worth as the turn began round-trips"
 	)
+	_check(
+		loaded.cells_to_keep_filled == session.cells_to_keep_filled,
+		"...and which cells must stay filled"
+	)
 	_check(loaded.turn_points() == session.turn_points(), "...so the turn's points read the same")
 
 	DirAccess.remove_absolute(_SAVE_PATH)

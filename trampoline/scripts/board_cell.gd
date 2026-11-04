@@ -1,9 +1,8 @@
-# One droppable (and, sometimes, draggable) cell in BoardView's grid (see
-# board_view.gd). Knows the Board only well enough to read it — the same
-# read-only relationship BoardView itself has with Board, never mutating
-# anything directly; `placeable`/`draggable`/`invalid` below are all
-# decided elsewhere (GameSession/FreePlaySession) and just handed to this
-# cell by BoardView. Actually placing/moving a tile is main.gd's job: this
+# One droppable, draggable cell in BoardView's grid (see board_view.gd).
+# Knows the Board only well enough to read it — the same read-only
+# relationship BoardView itself has with Board, never mutating anything
+# directly; `invalid` below is decided elsewhere (GameSession) and just
+# handed to this cell by BoardView. Actually placing/moving a tile is main.gd's job: this
 # cell just reports what happened via the signals below.
 class_name BoardCell
 extends Panel
@@ -16,7 +15,6 @@ extends Panel
 # signals, so main.gd only has to listen in one place instead of 117.
 signal tile_dropped(row: int, col: int, tile: Tile)
 signal tile_moved(from_row: int, from_col: int, to_row: int, to_col: int)
-signal word_moved(from_row: int, from_col: int, to_row: int, to_col: int)
 signal tile_flipped(row: int, col: int)
 
 # This cell's position in the board grid — set once by BoardView right
@@ -29,23 +27,9 @@ var col: int
 # looks *right now*, not just at creation time.
 var board: Board
 
-# Whether the tile currently sitting here (if any) is still eligible to be
-# picked back up — see GameSession.can_take_back. Kept up to date by
-# BoardView.refresh(), same as `board` above. BoardCell never decides this
-# itself: it has no notion of turns, only Board does.
-var draggable: bool = false
-
-# Whether a NEW tile could legally be dropped here right now — in both
-# modes, simply whether the cell is empty (see GameSession.can_place_here/
-# FreePlaySession.can_place_here). Same reasoning as `draggable` above:
-# BoardCell has no rules of its own, it only asks whichever session is
-# running through a Callable BoardView hands it (see board_view.gd's
-# `refresh`).
-var placeable: bool = false
-
 # Whether this cell is currently part of why the turn can't end yet — see
 # GameSession.invalid_cells/invalid_words. Kept up to date by
-# BoardView.refresh(), same as `board`/`draggable` above; free play has no
+# BoardView.refresh(), same as `board` above; free play has no
 # such concept and always leaves this false.
 var invalid: bool = false
 
@@ -66,16 +50,14 @@ var label: Label
 # over by BoardView at creation time, same reasoning as `label` above.
 var corner_badge: Panel
 
-# The BoardView that owns this cell, also handed over at creation time —
-# needed so a word-drag (see `_get_drag_data` below) can reach and hide
-# every OTHER cell in the same word, not just this one (see board_view.gd's
-# `get_cell`).
-var board_view: BoardView
-
 # Remembers where a left-click started, so `_gui_input` below can tell a
 # plain click (releasing close to where it was pressed) from a drag that
 # happened to end and release back over this same cell.
 var _press_position: Vector2 = Vector2.ZERO
+# Whether a tile was just dropped here by that very press: a tile picked
+# up after a swap is dropped on the next press (see `_pick_up`), and the
+# release that follows mustn't also flip it.
+var _dropped_by_press := false
 
 
 # A "virtual" function: Godot calls this itself (we never call it
@@ -84,34 +66,43 @@ var _press_position: Vector2 = Vector2.ZERO
 # shows the player a "no" cursor over illegal cells, and also stops
 # `_drop_data` below from ever being called for this drop. `data` is
 # whatever the drag started with (see `_get_drag_data` below and
-# tile_panel.gd's own version) — a Dictionary shaped one of three ways,
-# which is how a drop target tells them apart.
+# tile_panel.gd's own version) — a Dictionary shaped one of two ways
+# (with `from_row` or not), which is how a drop target tells them apart.
 func _can_drop_data(_at_position: Vector2, data: Variant) -> bool:
 	if not data is Dictionary:
 		return false
-	if data.has("word_from_row"):
-		# Mirrors GameSession.move_word_by_grabbed_tile's own offset math
-		# (see game_session.gd) — WordMove.can_move checks legality for the
-		# word's FIRST letter, not necessarily the tile actually grabbed.
-		var source_columns := board.word_columns_at(data["word_from_row"], data["word_from_col"])
-		if source_columns.is_empty():
-			return false
-		var grabbed_offset: int = source_columns.find(data["word_from_col"])
-		return WordMove.can_move(
-			board, data["word_from_row"], data["word_from_col"], row, col - grabbed_offset
-		)
-	return data.has("tile") and placeable
+	# One tile: anywhere but back where it came from. On another tile, the
+	# two swap (see `_drop_data`).
+	return not (data.has("from_row") and data["from_row"] == row and data["from_col"] == col)
 
 
 # Virtual function Godot calls once, only if `_can_drop_data` just returned
 # true and the player actually released the mouse here.
 func _drop_data(_at_position: Vector2, data: Variant) -> void:
-	if data.has("word_from_row"):
-		word_moved.emit(data["word_from_row"], data["word_from_col"], row, col)
-	elif data.has("from_row"):
+	# The tile already here, if any: the session puts it in the player's
+	# hand (see GameSession.place_tile), and the player picks it up at once.
+	var displaced := board.tile_at(row, col)
+	_dropped_by_press = true
+	if data.has("from_row"):
 		tile_moved.emit(data["from_row"], data["from_col"], row, col)
 	else:
 		tile_dropped.emit(row, col, data["tile"])
+	if displaced != null:
+		# Godot ends this drop only after this function returns, so the
+		# next drag can't start before: `call_deferred` runs it once the
+		# current frame's work is done.
+		_pick_up.call_deferred(displaced)
+
+
+# Starts dragging `tile`, just swapped off this cell, as if picked up from
+# the hand: wherever the player taps next, it's dropped there (Godot ends
+# a drag started this way on the next press). Dropped nowhere useful, it
+# simply stays in the hand.
+func _pick_up(tile: Tile) -> void:
+	# Still here: the swap was refused.
+	if board.tile_at(row, col) == tile:
+		return
+	force_drag({"tile": tile}, TileView.build_drag_preview(tile, size))
 
 
 # Virtual function: Godot calls this the moment the player starts dragging
@@ -123,31 +114,14 @@ func _get_drag_data(_at_position: Vector2) -> Variant:
 	if tile == null:
 		return null
 
-	if draggable:
-		# Hide this cell's own copy while it's being dragged, so there
-		# aren't two of it on screen at once — one here, one following the
-		# cursor. `refresh()` puts it back (see `_notification` below) once
-		# the drag ends, whether or not it actually moved the tile away.
-		hide_tile()
-		set_drag_preview(TileView.build_drag_preview(tile, size))
-		return {"tile": tile, "from_row": row, "from_col": col}
-
-	# Not individually takeable — this tile is frozen from an earlier turn
-	# (see GameSession.can_take_back) — so dragging it instead offers up
-	# the WHOLE WORD it belongs to, the same way any player may relocate
-	# any already-played word (see word_move.gd). The preview shows every
-	# tile in that word, not just the one grabbed, so the player can see
-	# what they're actually about to move — and every cell in the word
-	# (not just this one) hides for the same reason as above, via
-	# board_view.get_cell to reach the sibling cells that hold them.
-	var word_columns := board.word_columns_at(row, col)
-	var grabbed_index: int = word_columns.find(col)
-	var word_tiles: Array[Tile] = []
-	for c in word_columns:
-		word_tiles.append(board.tile_at(row, c))
-		board_view.get_cell(row, c).hide_tile()
-	set_drag_preview(TileView.build_word_drag_preview(word_tiles, grabbed_index, size))
-	return {"word_from_row": row, "word_from_col": col}
+	# Any tile may move during a turn (see GameSession.move_tile).
+	# Hide this cell's own copy while it's being dragged, so there aren't
+	# two of it on screen at once — one here, one following the cursor.
+	# `refresh()` puts it back (see `_notification` below) once the drag
+	# ends, whether or not it actually moved the tile away.
+	hide_tile()
+	set_drag_preview(TileView.build_drag_preview(tile, size))
+	return {"tile": tile, "from_row": row, "from_col": col}
 
 
 # Blanks this cell out, regardless of what's actually on the board there —
@@ -193,13 +167,14 @@ func _notification(what: int) -> void:
 # Virtual function: Godot calls this for mouse/keyboard events over this
 # Control that the drag-and-drop system above doesn't already claim. Used
 # here to detect a plain click — releasing the mouse close to where it was
-# pressed — and treat it as "flip this tile in place": doc/RULES.md's
-# "trampoline" mechanic says flipping never empties a cell, so (unlike
-# dragging) any occupied cell may always be flipped, no `draggable` check
-# needed.
+# pressed — and treat it as "flip this tile in place" (doc/RULES.md's
+# "trampoline" mechanic).
 func _gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
 		if event.pressed:
 			_press_position = event.position
+			_dropped_by_press = false
+		elif _dropped_by_press:
+			_dropped_by_press = false
 		elif board.tile_at(row, col) != null and event.position.distance_to(_press_position) < 6:
 			tile_flipped.emit(row, col)

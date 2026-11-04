@@ -5,8 +5,8 @@
 # is there. See the bottom of this file for the fuller challenge/penalty
 # mechanic this might grow into later.
 #
-# `static`, same reasoning as growth_rules.gd/word_move.gd: no state of
-# its own, just questions about a `Board`+`FrenchDictionary` passed in.
+# `static`, same reasoning as turn_validity.gd: no state of its own, just
+# questions about a `Board`+`FrenchDictionary` passed in.
 class_name WordChallenge
 extends RefCounted
 
@@ -44,9 +44,9 @@ static func can_end_turn(board: Board, dictionary: FrenchDictionary) -> bool:
 # several open questions to settle before attempting it:
 #
 #   - Removing a challenged word breaks the normal "words only grow"
-#     invariant (see growth_rules.gd) — a real letter would need a
-#     new, deliberate removal exception just for this case, distinct
-#     from the existing blank-tile-only exception.
+#     invariant (see GameSession.emptied_cells) — a real letter would
+#     need a new, deliberate removal exception just for this case,
+#     distinct from the existing blank-tile-only exception.
 #   - Where do the removed tiles go? Back to the offending player's hand
 #     (they can try again later), or back into the shared bag?
 #   - What's the actual penalty — skip their next turn entirely (as

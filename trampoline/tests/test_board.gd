@@ -2,9 +2,8 @@
 #   godot4 --headless --path . --script tests/test_board.gd
 # See tests/test_tiles.gd for why this isn't a test-framework addon.
 #
-# Board is deliberately unrestricted (see board.gd's header comment) — the
-# turn-based growth/blank-removal rules are tested separately, in
-# tests/test_growth_rules.gd.
+# Board is deliberately unrestricted (see board.gd's header comment) — what
+# a turn may do is tested with GameSession, in tests/test_game_session.gd.
 extends SceneTree
 
 var _failures := 0
@@ -48,8 +47,8 @@ func _test_place_and_remove() -> void:
 	_check(board.place(0, 4, Tile.new("C", "Z", true)), "placing into an empty cell succeeds")
 	_check(not board.place(0, 4, Tile.new("A", "Z", true)), "placing into an occupied cell fails")
 
-	# Board itself has no adjacency rule — that's growth_rules.gd's job.
-	# Placing anywhere else empty, even leaving a gap, is allowed here.
+	# Board itself has no adjacency rule: placing anywhere else empty,
+	# even leaving a gap, is allowed here.
 	var far_away_ok := board.place(0, 7, Tile.new("A", "Z", true))
 	_check(far_away_ok, "placing anywhere else empty succeeds (no adjacency rule here)")
 
@@ -60,8 +59,8 @@ func _test_place_and_remove() -> void:
 	_check(board.remove(0, 4) == null, "removing an already-empty cell returns null")
 
 	# Board places no restriction on what can be removed either — a
-	# real-letter tile comes right back out. That restriction belongs to
-	# growth_rules.gd, not the raw grid.
+	# real-letter tile comes right back out (what a turn must leave behind
+	# is GameSession's business, see its `emptied_cells`).
 	board.place(0, 4, Tile.new("H", "Z", true))
 	var removed_letter := board.remove(0, 4)
 	var real_letter_removable := removed_letter != null and removed_letter.current_letter() == "H"

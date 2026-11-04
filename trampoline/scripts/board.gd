@@ -1,20 +1,16 @@
 # The 13x9 board: 117 cells, one 9-letter word per row (see doc/RULES.md).
 #
 # Pure grid mechanics only — place/remove a tile in a cell, and read back
-# what's there. On purpose, this does NOT enforce the turn-based "grow
-# only, blanks are the one removal exception" ruleset — that's
-# mode-specific: free-play mode needs to place and remove tiles anywhere,
-# with no restrictions at all, while turn-based/scored play needs those
-# restrictions. See growth_rules.gd for that ruleset; it calls into this
-# file rather than the other way around, so this file has no knowledge of
-# which mode is using it, or of players/turns/scoring/drawing.
+# what's there. On purpose, this enforces no rules: free play places and
+# removes tiles anywhere, and what a turn may do is GameSession's business
+# (see game_session.gd), so this file has no knowledge of which mode is
+# using it, or of players/turns/scoring/drawing.
 #
-# A row can hold more than one separate word at once — normal growth only
-# ever extends one contiguous run, but relocating a whole word elsewhere
-# (see word_move.gd) can leave two unrelated words sharing a row, as long
-# as they don't overlap. Every function below that deals with "the word"
-# is anchored at a specific column rather than assuming a row has exactly
-# one — see `segments_in_row`.
+# A row can hold more than one separate word at once — tiles move freely
+# during a turn (see game_session.gd), so two unrelated words can share a
+# row, as long as they don't overlap. Every function below that deals
+# with "the word" is anchored at a specific column rather than assuming a
+# row has exactly one — see `segments_in_row`.
 class_name Board
 extends RefCounted
 
@@ -70,7 +66,7 @@ func rightmost_filled(row: int) -> int:
 # `[start_col, end_col]` inclusive pairs, left to right. A row nobody has
 # touched has none; a normal row being grown one contiguous word at a time
 # has exactly one; a row holding two unrelated, non-touching words (only
-# possible after relocating one there — see word_move.gd) has two.
+# possible after moving tiles there — see game_session.gd) has two.
 func segments_in_row(row: int) -> Array:
 	var segments := []
 	var col := 0
@@ -96,10 +92,9 @@ func place(row: int, col: int, tile: Tile) -> bool:
 
 
 # Removes and returns whatever tile is at `(row, col)`, leaving it empty.
-# Unconditional — free-play mode relies on being able to pick up and move
-# any tile at will. Turn-based play must NOT call this directly; it should
-# go through `GrowthRules.remove()`, which only allows removing a
-# currently-blank-showing tile. Returns `null` if the cell is empty.
+# Unconditional: any tile may be picked up during a turn (what a turn
+# must leave behind is GameSession's business, see `emptied_cells`).
+# Returns `null` if the cell is empty.
 func remove(row: int, col: int) -> Tile:
 	var tile: Tile = _cells[row][col]
 	_cells[row][col] = null

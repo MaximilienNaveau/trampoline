@@ -38,16 +38,15 @@ func _initialize() -> void:
 	_test_game_over_via_exhaustion()
 	_test_game_over_via_board_completion()
 	_test_remove_tile()
-	_test_remove_tile_frozen_after_turn_ends()
+	_test_remove_earlier_tile_must_be_refilled()
+	_test_remove_earlier_blank_needs_no_refill()
 	_test_remove_tile_allows_middle_of_this_turns_word()
-	_test_move_own_tile()
-	_test_move_own_tile_refuses_frozen_tile()
-	_test_move_own_tile_to_a_different_row_is_flagged_invalid()
-	_test_move_word_by_grabbed_tile_from_the_start()
-	_test_move_word_by_grabbed_tile_from_the_middle()
-	_test_move_word_by_grabbed_tile_refuses_illegal_destination()
+	_test_place_tile_on_a_tile_swaps()
+	_test_move_tile()
+	_test_move_tile_onto_a_tile_swaps()
+	_test_move_tile_to_a_different_row_is_flagged_invalid()
 	_test_flip_tile()
-	_test_flip_tile_frozen_tile_still_flips()
+	_test_flip_earlier_tile()
 	_test_flip_tile_refuses_empty_cell()
 
 	if _failures == 0:
@@ -193,7 +192,7 @@ func _test_place_tile_not_in_hand_fails() -> void:
 	_check(session.board.is_empty(1, 4), "the board is untouched by the refused placement")
 
 
-# place_tile() no longer enforces GrowthRules/one-row-per-turn itself (see
+# place_tile() doesn't enforce one-row-per-turn itself (see
 # game_session.gd's own comment) — a player can drop a tile on any empty
 # cell, anywhere, and rearrange all turn; `invalid_cells()`/`can_end_turn()`
 # (see the `_test_invalid_cells_*` tests below) are what actually catch an
@@ -401,30 +400,46 @@ func _test_remove_tile() -> void:
 	)
 
 
-# Once a turn ends, whatever it placed is frozen — a real letter can no
-# longer be taken back at all, even from its own word's edge, unlike a
-# still-in-progress turn's own tiles (see _test_remove_tile above).
-func _test_remove_tile_frozen_after_turn_ends() -> void:
-	var session := GameSession.new(2, _dictionary)
-	var word := "MAISON"
+# The current player places `word` from `col` of `row`, then ends the turn.
+func _play_word(session: GameSession, row: int, col: int, word: String) -> void:
 	for i in range(word.length()):
 		var tile := Tile.new(word[i], "Z", true)
-		_give_hand_tile(session, 0, tile)
-		session.place_tile(6, i, tile)
-	session.end_turn()  # player 0's turn is over; player 1 is now current
-
-	_check(
-		session.remove_tile(6, 0) == null,
-		"a real-letter tile from an ALREADY-ENDED turn is frozen, even at its word's edge"
-	)
-	_check(session.board.word_at(6, 0) == "MAISON", "the word is untouched")
+		_give_hand_tile(session, session.turns.current_player_id(), tile)
+		session.place_tile(row, col + i, tile)
+	session.end_turn()
 
 
-# Unlike the always-available blank "shorten" mechanic (edge-only, see
-# growth_rules.gd), nothing about a still-in-progress turn is committed
-# yet — so even the MIDDLE tile of a word the current player is still
-# building can be taken back, letting them freely rearrange/rebuild it
-# before ending their turn.
+# Any tile may be picked up, even one from an earlier turn — but the turn
+# can't end until its cell is filled again (doc/RULES.md: the board never
+# loses a letter).
+func _test_remove_earlier_tile_must_be_refilled() -> void:
+	var session := GameSession.new(2, _dictionary)
+	_play_word(session, 6, 0, "MAISON")  # player 0; player 1 is now current
+	var tile := session.remove_tile(6, 0)
+	_check(tile != null, "a tile from an earlier turn can be picked up")
+	_check(session.bag.hand(1).has(tile), "...into the current player's hand")
+	_check(session.emptied_cells() == [Vector2i(0, 6)], "its cell must be filled again")
+	_check(not session.can_end_turn(), "...so the turn can't end yet")
+	session.place_tile(6, 0, tile)
+	_check(session.can_end_turn(), "put back, the turn can end")
+
+
+# A blank ("-") is the one tile whose cell may be left empty: taking it off
+# shortens a word on purpose.
+func _test_remove_earlier_blank_needs_no_refill() -> void:
+	var session := GameSession.new(2, _dictionary)
+	var blank := Tile.new("E", "", true)
+	_give_hand_tile(session, 0, blank)
+	session.place_tile(3, 6, blank)
+	blank.flip()
+	_play_word(session, 3, 0, "MAISON")  # same turn: ends it
+	session.remove_tile(3, 6)
+	_check(session.emptied_cells().is_empty(), "the blank's cell may stay empty")
+
+
+# Nothing about a still-in-progress turn is committed yet — so even the
+# MIDDLE tile of a word the current player is still building can be taken
+# back, letting them freely rearrange/rebuild it before ending their turn.
 func _test_remove_tile_allows_middle_of_this_turns_word() -> void:
 	var session := GameSession.new(1, _dictionary)
 	var tiles: Array[Tile] = []
@@ -442,40 +457,51 @@ func _test_remove_tile_allows_middle_of_this_turns_word() -> void:
 	)
 	_check(session.board.is_empty(7, 3), "its cell is empty again")
 	_check(session.bag.hand(0).has(tiles[1]), "...and it's back in the current player's hand")
+	_check(session.emptied_cells().is_empty(), "it was empty when the turn began: fine")
 
 
-func _test_move_own_tile() -> void:
+# A hand tile dropped on a board tile takes its place; the board tile goes
+# into the hand (the 2015 rules' swap between hand and board).
+func _test_place_tile_on_a_tile_swaps() -> void:
+	var session := GameSession.new(2, _dictionary)
+	_play_word(session, 4, 0, "MAISON")  # player 0; player 1 is now current
+	var under := session.board.tile_at(4, 0)
+	var tile := Tile.new("R", "Z", true)
+	_give_hand_tile(session, 1, tile)
+	_check(session.place_tile(4, 0, tile), "a hand tile can land on a board tile")
+	_check(session.board.word_at(4, 0) == "RAISON", "...taking its place")
+	_check(session.bag.hand(1).has(under), "the tile under it goes into the hand")
+	_check(session.turn_points() == 0, "RAISON is worth what MAISON was")
+	_check(session.can_end_turn(), "...and the turn can end")
+
+
+func _test_move_tile() -> void:
 	var session := GameSession.new(1, _dictionary)
 	var tile := Tile.new("S", "Z", true)
 	_give_hand_tile(session, 0, tile)
 	session.place_tile(8, 4, tile)
 
-	_check(session.move_own_tile(8, 4, 8, 0), "relocating this turn's own tile succeeds")
+	_check(session.move_tile(8, 4, 8, 0), "relocating a tile succeeds")
 	_check(session.board.tile_at(8, 0) == tile, "the tile is now at its new position")
 	_check(session.board.is_empty(8, 4), "the old cell is empty")
+	_check(not session.move_tile(8, 0, 8, 0), "dropping it where it is does nothing")
 
 
-func _test_move_own_tile_refuses_frozen_tile() -> void:
+func _test_move_tile_onto_a_tile_swaps() -> void:
 	var session := GameSession.new(2, _dictionary)
-	var word := "MAISON"  # must be dictionary-valid, or end_turn() below would refuse
-	for i in range(word.length()):
-		var tile := Tile.new(word[i], "Z", true)
-		_give_hand_tile(session, 0, tile)
-		session.place_tile(9, i, tile)
-	var tile: Tile = session.board.tile_at(9, 0)
-	session.end_turn()
-
-	_check(
-		not session.move_own_tile(9, 0, 9, 8),
-		"a tile from an already-ended turn can't be relocated this way"
-	)
-	_check(session.board.tile_at(9, 0) == tile, "it stays exactly where it was")
+	_play_word(session, 9, 0, "MAISON")  # player 0; player 1 is now current
+	var under := session.board.tile_at(9, 0)
+	var moving := session.board.tile_at(9, 5)
+	_check(session.move_tile(9, 5, 9, 0), "a board tile can land on another")
+	_check(session.board.tile_at(9, 0) == moving, "...taking its place")
+	_check(session.bag.hand(1).has(under), "the tile under it goes into the hand")
+	_check(session.emptied_cells() == [Vector2i(5, 9)], "the cell it left must be filled again")
 
 
-# move_own_tile() doesn't enforce the single-row rule either — moving this
+# move_tile() doesn't enforce the single-row rule either — moving this
 # turn's own tile to a different row succeeds, same as a fresh placement
 # there would, and shows up via invalid_cells() instead.
-func _test_move_own_tile_to_a_different_row_is_flagged_invalid() -> void:
+func _test_move_tile_to_a_different_row_is_flagged_invalid() -> void:
 	var session := GameSession.new(1, _dictionary)
 	var tiles: Array[Tile] = []
 	for letter in ["C", "A"]:
@@ -485,75 +511,9 @@ func _test_move_own_tile_to_a_different_row_is_flagged_invalid() -> void:
 	session.place_tile(10, 2, tiles[0])
 	session.place_tile(10, 3, tiles[1])
 
-	_check(session.move_own_tile(10, 2, 6, 0), "moving to a different row succeeds")
+	_check(session.move_tile(10, 2, 6, 0), "moving to a different row succeeds")
 	_check(session.board.tile_at(6, 0) == tiles[0], "the tile is now at its new position")
 	_check(not session.can_end_turn(), "...but leaves the turn spread across two rows, blocked")
-
-
-# Dragging by the word's OWN first letter: no offset to correct for.
-func _test_move_word_by_grabbed_tile_from_the_start() -> void:
-	var session := GameSession.new(1, _dictionary)
-	var tiles: Array[Tile] = []
-	for letter in ["C", "A", "T"]:
-		var tile := Tile.new(letter, "Z", true)
-		_give_hand_tile(session, 0, tile)
-		tiles.append(tile)
-	session.place_tile(10, 2, tiles[0])
-	session.place_tile(10, 3, tiles[1])
-	session.place_tile(10, 4, tiles[2])
-
-	_check(
-		session.move_word_by_grabbed_tile(10, 2, 10, 0),
-		"relocating by the word's first letter succeeds"
-	)
-	_check(session.board.word_at(10, 0) == "CAT", "the word reads correctly at its new position")
-
-
-# Dragging by a MIDDLE letter should carry the whole word so THAT letter
-# (not the word's first letter) ends up at the drop point — otherwise the
-# word would visibly jump instead of following the cursor.
-func _test_move_word_by_grabbed_tile_from_the_middle() -> void:
-	var session := GameSession.new(1, _dictionary)
-	var tiles: Array[Tile] = []
-	for letter in ["C", "A", "T"]:
-		var tile := Tile.new(letter, "Z", true)
-		_give_hand_tile(session, 0, tile)
-		tiles.append(tile)
-	session.place_tile(11, 2, tiles[0])
-	session.place_tile(11, 3, tiles[1])  # the "A" — grabbed from here
-	session.place_tile(11, 4, tiles[2])
-
-	# Drop the grabbed "A" at column 6: the word's first letter ("C") must
-	# then land one column earlier, at column 5.
-	_check(
-		session.move_word_by_grabbed_tile(11, 3, 11, 6), "relocating by a middle letter succeeds"
-	)
-	_check(session.board.word_at(11, 5) == "CAT", "the word lands offset by the grab point")
-	_check(session.board.tile_at(11, 6) == tiles[1], "the grabbed A ends up exactly where dropped")
-
-
-func _test_move_word_by_grabbed_tile_refuses_illegal_destination() -> void:
-	var session := GameSession.new(1, _dictionary)
-	var tiles: Array[Tile] = []
-	for letter in ["C", "A", "T"]:
-		var tile := Tile.new(letter, "Z", true)
-		_give_hand_tile(session, 0, tile)
-		tiles.append(tile)
-	session.place_tile(12, 2, tiles[0])
-	session.place_tile(12, 3, tiles[1])
-	session.place_tile(12, 4, tiles[2])
-
-	# Placed directly on the board (same shortcut as
-	# _test_game_over_via_board_completion, no hand bookkeeping needed) —
-	# this test is about WordMove's destination-occupied check, not
-	# placement itself.
-	session.board.place(12, 7, Tile.new("X", "Z", true))  # occupies where "T" would land
-
-	_check(
-		not session.move_word_by_grabbed_tile(12, 2, 12, 5),
-		"refused because the destination overlaps an unrelated tile"
-	)
-	_check(session.board.word_at(12, 2) == "CAT", "the word stays exactly where it was")
 
 
 func _test_flip_tile() -> void:
@@ -578,11 +538,9 @@ func _test_flip_tile() -> void:
 	)
 
 
-# Flipping never empties a cell (see doc/RULES.md's "trampoline"
-# mechanic), so — unlike remove_tile/move_own_tile — it isn't restricted to
-# the current turn's own tiles; a tile from an already-ended turn flips
-# just as freely.
-func _test_flip_tile_frozen_tile_still_flips() -> void:
+# Any tile flips, including one from an earlier turn (see doc/RULES.md's
+# "trampoline" mechanic).
+func _test_flip_earlier_tile() -> void:
 	var session := GameSession.new(2, _dictionary)
 	var word := "MAISON"
 	for i in range(word.length()):

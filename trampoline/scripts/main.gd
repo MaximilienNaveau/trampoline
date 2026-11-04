@@ -235,7 +235,6 @@ func _ready() -> void:
 	# board_cell.gd's header comment for what a signal/connection is.
 	_board_view.tile_dropped.connect(_on_board_tile_dropped)
 	_board_view.tile_moved.connect(_on_board_tile_moved)
-	_board_view.word_moved.connect(_on_board_word_moved)
 	_board_view.tile_flipped.connect(_on_board_tile_flipped)
 	# Keeps the free-play palette's (and the turn-based hand's) own tile
 	# size in sync with the board's, which BoardView already recomputes on
@@ -307,11 +306,9 @@ func _ready() -> void:
 
 
 # Called whenever a TilePanel gets dropped onto a BoardCell (see
-# board_cell.gd/tile_panel.gd). GrowthRules legality was already checked
-# before Godot even allowed the drop (`BoardCell._can_drop_data`), but
-# `place_tile` also checks the tile is actually in the current player's
-# hand — belt and braces, and the only check that actually matters here
-# since the view layer already filtered out illegal board positions.
+# board_cell.gd/tile_panel.gd) — onto an empty cell, or onto a tile, which
+# then swaps into the hand (see GameSession.place_tile). `place_tile`
+# also checks the tile is actually in the current player's hand.
 func _on_board_tile_dropped(row: int, col: int, tile: Tile) -> void:
 	if _is_free_play():
 		_free_play_session.place_tile(row, col, tile)
@@ -321,24 +318,13 @@ func _on_board_tile_dropped(row: int, col: int, tile: Tile) -> void:
 
 
 # Called whenever a BoardCell gets dragged onto another BoardCell (see
-# board_cell.gd) — relocating a tile the current player placed earlier this
-# same turn. `move_own_tile` re-checks eligibility itself (the view layer
-# only used it to decide whether to even start the drag), so an already-
-# frozen tile that somehow got dragged anyway simply won't move.
+# board_cell.gd) — any tile may move during a turn; onto another tile,
+# that one swaps into the hand (see GameSession.move_tile).
 func _on_board_tile_moved(from_row: int, from_col: int, to_row: int, to_col: int) -> void:
 	if _is_free_play():
 		_free_play_session.move_tile(from_row, from_col, to_row, to_col)
 	else:
-		_session.move_own_tile(from_row, from_col, to_row, to_col)
-	_refresh_views()
-
-
-# Called whenever a BoardCell is dragged onto another BoardCell while
-# carrying a whole WORD instead of a single tile (see board_cell.gd) —
-# relocating an already-played word from an earlier turn. Any player may
-# do this, not just whoever originally placed it (see word_move.gd).
-func _on_board_word_moved(from_row: int, from_col: int, to_row: int, to_col: int) -> void:
-	_session.move_word_by_grabbed_tile(from_row, from_col, to_row, to_col)
+		_session.move_tile(from_row, from_col, to_row, to_col)
 	_refresh_views()
 
 
@@ -842,10 +828,9 @@ func _fade_out_end_turn_banner() -> void:
 
 
 # Redraws both views from the session's current state — the board, and
-# whichever player's turn it currently is. `_session.can_take_back` is
-# passed straight through as a Callable (see board_view.gd's `refresh` for
-# what that means) rather than BoardView asking GameSession itself. Also
-# checks whether the game has just ended (see `_update_game_over_banner`).
+# whichever player's turn it currently is, with what stops the turn from
+# ending framed in red (see board_view.gd's `refresh`). Also checks
+# whether the game has just ended (see `_update_game_over_banner`).
 func _refresh_views() -> void:
 	# Also re-checked here, not only on PlayArea moving: starting or
 	# leaving a turn-based game changes whether the hand needs room.
@@ -853,11 +838,7 @@ func _refresh_views() -> void:
 	# Only a turn-based game is timed; free play has no time limit.
 	_game_clock.session = null if _is_free_play() else _session
 	if _is_free_play():
-		_board_view.refresh(
-			_free_play_session.board,
-			_free_play_session.can_take_back,
-			_free_play_session.can_place_here
-		)
+		_board_view.refresh(_free_play_session.board)
 		_palette_view.refresh(_free_play_session.available_tiles(), _board_view.cell_side())
 		_scoreboard.show_score(_free_play_session.current_score())
 		# Clues as a list beside the board in landscape, where it fits; as
@@ -885,7 +866,7 @@ func _refresh_views() -> void:
 				_set_status_text(_game_over_banner, "")
 		return
 	_board_view.refresh(
-		_session.board, _session.can_take_back, _session.can_place_here, _session.invalid_cells()
+		_session.board, _session.invalid_cells(), _session.invalid_words(), _session.emptied_cells()
 	)
 	# The hand shows the tiles the player keeps; the tray beside it, the
 	# ones marked to give back.
@@ -919,10 +900,10 @@ func _all_player_names() -> Array[String]:
 
 # Builds the message shown by `_end_turn_banner` after a refused
 # `end_turn()` — names the actual invalid word(s) (see game_session.gd's
-# `invalid_words`) and/or explains a broken single-row/single-word turn
-# (see `invalid_cells`) rather than just saying "no". Both can be true at
-# once (an invalid word AND a scattered turn), so each gets its own line
-# rather than one crowding the other out.
+# `invalid_words`), explains a broken single-row/single-word turn (see
+# `invalid_cells`) and/or emptied cells (see `emptied_cells`) rather than
+# just saying "no". Several can be true at once, so each gets its own line
+# rather than one crowding the others out.
 func _format_end_turn_error() -> String:
 	var messages: Array[String] = []
 
@@ -938,6 +919,11 @@ func _format_end_turn_error() -> String:
 		messages.append(
 			"Les lettres jouées ce tour doivent former un seul mot, sur une seule ligne."
 		)
+
+	# Cells left empty that held a letter when the turn began (framed in
+	# red on the board, see GameSession.emptied_cells).
+	if not _session.emptied_cells().is_empty():
+		messages.append("Une case remplie au début du tour doit l'être encore à la fin.")
 
 	return "\n".join(messages)
 

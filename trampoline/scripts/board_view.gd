@@ -11,12 +11,10 @@
 #
 # Deliberately knows nothing about GameSession, TurnManager, scoring, or
 # any other game rule: it only ever reads a `Board` (see board.gd), draws
-# whatever's there, and asks GrowthRules (a stateless rule-checker, not a
-# mutator) whether a drop would be legal. It never places/moves a tile
-# itself — that's main.gd's job, listening for the signals below. It also
-# never watches the board for changes on its own — whoever owns this node
-# calls `refresh(board, is_takeable)` after the board changes (placing/
-# removing/flipping/moving a tile).
+# whatever's there. It never places/moves a tile itself — that's main.gd's
+# job, listening for the signals below. It also never watches the board
+# for changes on its own — whoever owns this node calls `refresh(board, …)`
+# after the board changes (placing/removing/flipping/moving a tile).
 class_name BoardView
 extends PanelContainer
 
@@ -28,7 +26,6 @@ extends PanelContainer
 # know about.
 signal tile_dropped(row: int, col: int, tile: Tile)
 signal tile_moved(from_row: int, from_col: int, to_row: int, to_col: int)
-signal word_moved(from_row: int, from_col: int, to_row: int, to_col: int)
 signal tile_flipped(row: int, col: int)
 
 # Fires whenever `_update_cell_sizes` below recomputes `_cell_side` — lets
@@ -77,6 +74,11 @@ const _DEPTH := Vector2(10, 20)
 const _FRONT_TINT := Color(0.72, 0.72, 0.72)
 const _RIGHT_TINT := Color(0.52, 0.52, 0.52)
 const _SHADOW := Color(0, 0, 0, 0.4)
+# Red frames round what stops the turn from ending: words that aren't
+# words, and emptied cells (see `refresh`) — doc/ART_DIRECTION.md's
+# `error` red.
+const _ERROR_COLOR := Color("c8463c")
+const _ERROR_LINE_WIDTH := 3.0
 
 # The painted frame's look: the same paint as the box's lid, as a
 # StyleBoxTexture (an image stretched to fit a rectangle while keeping
@@ -135,6 +137,13 @@ var _cell_panels: Array = []
 # matching its own tiles to the board's.
 var _cell_side: float = 0.0
 
+# What to frame in red (see `refresh`): each invalid word's cells, and the
+# emptied cells, as lists of `Vector2i(col, row)` per frame.
+var _error_frames: Array = []
+# A plain Control laid over the grid, for the frames to be drawn over the
+# tiles (`_draw` itself paints under them).
+var _overlay: Control
+
 # `@onready` runs this line once this node's children actually exist
 # (right before `_ready()` — a plain `var _grid := $Grid` at the top of
 # the class would run too early, before the scene tree below this node
@@ -155,6 +164,13 @@ func _ready() -> void:
 	room.content_margin_bottom = frame_style.content_margin_bottom + _DEPTH.y
 	add_theme_stylebox_override("panel", room)
 	_build_grid()
+	# A PanelContainer stretches every child over the same area, so the
+	# overlay lies exactly over the grid. It lets every click through, and
+	# its `draw` signal lets this script paint on it, like a callback.
+	_overlay = Control.new()
+	_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_overlay)
+	_overlay.draw.connect(_draw_overlay)
 	# The viewport's own `size_changed` signal fires whenever the actual
 	# window/screen size changes — e.g. the player resizing the window,
 	# or an Android device simply having a different screen size than
@@ -195,7 +211,6 @@ func _build_grid() -> void:
 			var panel := BoardCell.new()
 			panel.row = row
 			panel.col = col
-			panel.board_view = self
 			# The cell draws its hole itself (see board_cell.gd's `_draw`),
 			# so its own Panel background is switched off: StyleBoxEmpty
 			# draws nothing.
@@ -206,7 +221,6 @@ func _build_grid() -> void:
 			# slot or a C callback registered against a function pointer.
 			panel.tile_dropped.connect(_on_cell_tile_dropped)
 			panel.tile_moved.connect(_on_cell_tile_moved)
-			panel.word_moved.connect(_on_cell_word_moved)
 			panel.tile_flipped.connect(_on_cell_tile_flipped)
 
 			# The tile's face, raised above the cell; sized and placed in
@@ -341,22 +355,16 @@ func row_rect(row: int) -> Rect2:
 	return Rect2(0, row * (_cell_side + v_separation), width, _cell_side)
 
 
-# Redraws every cell from `board`'s current state. `is_takeable`/
-# `can_place_here` are Callables — GDScript's way of passing a function
-# itself around as a value (like a C++ std::function or a Python function
-# reference), each taking `(row, col)` and answering one question: whether
-# that cell's tile can currently be picked back up, and whether a NEW tile
-# could legally be dropped there. BoardView calls them once per cell
-# instead of knowing either rule itself (see this file's header comment)
-# — main.gd passes `GameSession.can_take_back`/`GameSession.can_place_here`
-# (or FreePlaySession's own versions) here.
-#
-# `invalid_cells` is different: not a per-cell question, but the WHOLE list
-# of `{row, col}` problem cells at once (see GameSession.invalid_cells) —
-# free play has no such concept, so it defaults to empty rather than every
-# caller needing to pass an always-true/false Callable for it.
+# Redraws every cell from `board`'s current state, and frames in red what
+# stops the turn from ending (see GameSession): `invalid_cells`, the
+# `{row, col}` tiles breaking the turn's shape (red-bordered themselves,
+# see GameSession.invalid_cells); `invalid_words`, the `{row, col, word}`
+# words that aren't words (see GameSession.invalid_words); and
+# `emptied_cells`, the `Vector2i(col, row)` cells that must be filled
+# again (see GameSession.emptied_cells). Free play has none of these, so
+# all default to empty.
 func refresh(
-	board: Board, is_takeable: Callable, can_place_here: Callable, invalid_cells: Array = []
+	board: Board, invalid_cells: Array = [], invalid_words: Array = [], emptied_cells: Array = []
 ) -> void:
 	# A quick "is (row, col) in the list" lookup built once per refresh,
 	# rather than re-scanning `invalid_cells` for every one of the 117
@@ -371,17 +379,43 @@ func refresh(
 			# Kept current every refresh, not just at creation, in case a
 			# future save/load ever swaps in a whole new Board instance.
 			panel.board = board
-			panel.draggable = is_takeable.call(row, col)
-			panel.placeable = can_place_here.call(row, col)
 			panel.invalid = invalid_lookup.has("%d_%d" % [row, col])
 			panel.refresh()
 
+	_error_frames.clear()
+	for word in invalid_words:
+		var columns := board.word_columns_at(word["row"], word["col"])
+		var cells: Array[Vector2i] = []
+		for col in columns:
+			cells.append(Vector2i(col, word["row"]))
+		_error_frames.append(cells)
+	for cell in emptied_cells:
+		_error_frames.append([cell])
+	_overlay.queue_redraw()
 
-# Looks up the single cell at (row, col) — used by BoardCell itself (see
-# board_cell.gd's `_get_drag_data`) to reach and hide sibling cells that
-# belong to the same word being dragged, not just the one actually grabbed.
-func get_cell(row: int, col: int) -> BoardCell:
-	return _cell_panels[row][col]
+
+# Draws on `_overlay`: the red frames (see `refresh`).
+func _draw_overlay() -> void:
+	for cells in _error_frames:
+		_frame(cells, _ERROR_COLOR, _ERROR_LINE_WIDTH)
+
+
+# A frame round `cells` (side by side on one row), inside their edges.
+# `draw_rect` with `filled` false draws only the border, centred on the
+# rectangle's edge: shrunk by half the width to sit inside it.
+func _frame(cells: Array, color: Color, width: float) -> void:
+	var rect := _cell_rect(cells[0].x, cells[0].y, cells.size())
+	_overlay.draw_rect(rect.grow(-width / 2.0), color, false, width)
+
+
+# The rectangle of `count` cells side by side from `(col, row)`, in the
+# grid's (and `_overlay`'s) coordinates — see `row_rect`.
+func _cell_rect(col: int, row: int, count: int) -> Rect2:
+	var h_separation: int = _grid.get_theme_constant("h_separation")
+	var rect := row_rect(row)
+	rect.position.x = col * (_cell_side + h_separation)
+	rect.size.x = count * _cell_side + (count - 1) * h_separation
+	return rect
 
 
 # Forwards one cell's drop straight to this view's own single signal (see
@@ -393,11 +427,6 @@ func _on_cell_tile_dropped(row: int, col: int, tile: Tile) -> void:
 # Same idea, for a tile moved from one board cell to another.
 func _on_cell_tile_moved(from_row: int, from_col: int, to_row: int, to_col: int) -> void:
 	tile_moved.emit(from_row, from_col, to_row, to_col)
-
-
-# Same idea, for a whole word dragged by one of its (frozen) tiles.
-func _on_cell_word_moved(from_row: int, from_col: int, to_row: int, to_col: int) -> void:
-	word_moved.emit(from_row, from_col, to_row, to_col)
 
 
 # Same idea, for a cell clicked (not dragged) to flip its tile in place.

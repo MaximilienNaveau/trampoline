@@ -52,6 +52,11 @@ static func save(session: GameSession, path: String) -> bool:
 			hand_indices.append(tile_index[tile])
 		hands_data[str(player_id)] = hand_indices
 
+	# `Vector2i` isn't JSON: each cell is saved as a `[col, row]` pair.
+	var cells_to_keep_filled := []
+	for cell in session.cells_to_keep_filled:
+		cells_to_keep_filled.append([cell.x, cell.y])
+
 	var data := {
 		"version": SAVE_VERSION,
 		"number_of_players": session.turns.number_of_players,
@@ -64,6 +69,7 @@ static func save(session: GameSession, path: String) -> bool:
 		"play_time": session.play_time,
 		"ended_by_time": session.ended_by_time,
 		"value_at_turn_start": session.value_at_turn_start,
+		"cells_to_keep_filled": cells_to_keep_filled,
 	}
 
 	var file := FileAccess.open(path, FileAccess.WRITE)
@@ -122,12 +128,17 @@ static func load(path: String, dictionary: FrenchDictionary = null) -> GameSessi
 	session.play_time = data.get("play_time", 0.0)
 	session.ended_by_time = data.get("ended_by_time", false)
 	# How the board stood when the saved turn began (see GameSession's
-	# `value_at_turn_start`). Older saves don't have it: the turn is taken
-	# as starting from the board as loaded. JSON reads every number back as
-	# a float, hence `int()`.
+	# `value_at_turn_start`/`cells_to_keep_filled`). Older saves have
+	# neither: the turn is taken as starting from the board as loaded,
+	# with no cell held to stay filled. JSON reads every number back as a
+	# float, hence `int()`.
 	session.value_at_turn_start = int(
 		data.get("value_at_turn_start", Scoring.board_value(session.board, session.dictionary))
 	)
+	if data.has("cells_to_keep_filled"):
+		session.cells_to_keep_filled.clear()
+		for pair in data["cells_to_keep_filled"]:
+			session.cells_to_keep_filled.append(Vector2i(int(pair[0]), int(pair[1])))
 
 	return session
 

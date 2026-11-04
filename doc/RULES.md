@@ -41,6 +41,8 @@ The name refers to two related things:
    must never end up empty again after a subsequent move. Words extend
    (prefix or suffix), get letters swapped out for other letters, or get
    completed by another player — but a filled cell is never vacated.
+   During a turn, tiles may move freely; the rule is checked when the turn
+   ends (see "Moving and swapping tiles" below).
 2. **Tiles physically flip between two faces.** A tile already on the board
    can be flipped in place to reveal its other letter, changing the word
    without removing the tile — this is still "growing," never "emptying."
@@ -82,8 +84,7 @@ below). Green letters cost 5 points each regardless of position.
 
 (The Unity implementation, `RowLetterHistory.cs`, numbered letters by
 placement order within a row and credited each to whoever placed it. The
-Godot game replaced that with the above, which stays consistent however
-tiles move.)
+Godot game replaced that with the above once tiles could move freely.)
 
 ## Letters and tiles
 
@@ -192,6 +193,32 @@ disconnected. A placement is never refused outright either way: like an
 invalid dictionary word, a broken turn is flagged live (the offending
 tiles are highlighted) and blocks ending the turn, rather than being
 silently rejected the moment it happens.
+
+### Moving and swapping tiles
+
+The 2015 rules let a player rework what is already on the board before
+placing: *"il est permis, avant de poser, d'échanger des lettres entre
+tirage et lettres posées"*, *"du simple échange de lettres, au
+remplacement total ou partiel de mots déjà en place"* — with one strict
+condition: *"aucune case occupée avant une intervention ne doit être
+vidée de son contenu"*. **Decided by Maximilien (2026-11-04), and what the
+game does:**
+
+- **Any tile on the board may be moved during a turn**, whoever placed it
+  and whenever.
+- **Swapping**: a tile dropped on another takes its place; the one it
+  landed on goes into the player's hand, and they're holding it at once,
+  to drop wherever they tap next (left in the hand if that's nowhere
+  useful). A board tile can also be dragged back into the hand.
+- **The turn can't end while a cell that held a letter when the turn
+  began is empty** (framed in red). A blank ("-") tile's cell is the
+  exception: taking it off shortens a word on purpose.
+- The single-row rule above applies to the letters put down from the
+  hand, not to tiles only moved on the board.
+- Two words may end up side by side: they then read as one run of
+  letters, which must be a real word for the turn to end (the board frames
+  it in red otherwise). PAR + TOUT → PARTOUT (28) against 6 + 10 before:
+  that turn earns +12.
 
 ## End of the game
 

@@ -84,8 +84,8 @@ func _test_two_different_rows_is_flagged() -> void:
 	_check(invalid.size() == 2, "cells from both rows are reported")
 
 
-# A row can hold two separate segments already (see board.gd — only
-# possible via word_move.gd relocating a whole word there) — that's not
+# A row can hold two separate segments already (see board.gd — e.g. after
+# tiles were moved there, see game_session.gd) — that's not
 # THIS turn's doing, so it shouldn't get flagged just because a fresh tile
 # extends one of them.
 func _test_untouched_pre_existing_segment_is_ignored() -> void:
