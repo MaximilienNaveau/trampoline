@@ -1,4 +1,4 @@
-[gd_scene load_steps=24 format=3]
+[gd_scene load_steps=25 format=3]
 
 [ext_resource type="Script" path="res://scripts/main.gd" id="1"]
 [ext_resource type="PackedScene" path="res://scenes/board_view.tscn" id="2"]
@@ -19,6 +19,7 @@
 [ext_resource type="Script" path="res://scripts/score_recap.gd" id="17"]
 [ext_resource type="Script" path="res://scripts/scoreboard.gd" id="18"]
 [ext_resource type="Script" path="res://scripts/drag_steady_scroll.gd" id="19"]
+[ext_resource type="Script" path="res://scripts/quit_game_button.gd" id="20"]
 
 [sub_resource type="StyleBoxFlat" id="EndTurnBannerStyle"]
 bg_color = Color(0.75, 0.16, 0.16, 1)
@@ -181,9 +182,11 @@ text="Sauvegarder"
 layout_mode=2
 text="Charger"
 
-[node name="NewGameButton" type="Button" parent="Layout/Margin/Content/OptionsPanel/MenuItems"]
+[node name="NewGameButton" type="Button" parent="Layout/Margin/Content/OptionsPanel/MenuItems" node_paths=PackedStringArray("blocked_by")]
 layout_mode=2
 text="Quitter la partie"
+script=ExtResource("20")
+blocked_by=NodePath("../../../../../../InputBlocker")
 
 [node name="HowToPlayMenuButton" type="Button" parent="Layout/Margin/Content/OptionsPanel/MenuItems"]
 unique_name_in_owner=true
