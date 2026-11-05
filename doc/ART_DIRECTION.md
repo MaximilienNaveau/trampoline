@@ -71,8 +71,9 @@ Rules:
 ## Typography
 
 - **Tiles and UI**: a geometric sans, close to the real tiles. Use **Jost**
-  (OFL, Futura-like, Google Fonts): SemiBold for tile letters, Medium for
-  buttons, Regular for body. It replaces Baloo 2, which is too rounded and
+  (OFL, Futura-like, Google Fonts): SemiBold for tile letters, buttons and
+  labels, Medium for body (Regular's thin strokes looked blurry on a
+  phone, 2026-11-05). It replaces Baloo 2, which is too rounded and
   cartoonish next to the original.
 - **Signature accent**: a handwritten face (**Caveat**, OFL) used only
   for "M. Cheenne" on the box lid and for the tagline "Un jeu pour faire

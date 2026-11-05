@@ -16,3 +16,6 @@ the painted middle of `box_lid.jpg` (so it's the exact same green as the
 lid's top) with a wood grain soft-light-blended into it (wavy grain lines
 from a noise-perturbed sawtooth, plus motion-blurred fibres). Original
 work, no third-party source.
+
+`menu_icon.svg` — the "☰" menu button's icon: three rounded bars in
+`cream_text` (see doc/ART_DIRECTION.md). Hand-written SVG, original work.

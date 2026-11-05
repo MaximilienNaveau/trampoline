@@ -1,4 +1,4 @@
-[gd_scene load_steps=27 format=3]
+[gd_scene load_steps=28 format=3]
 
 [ext_resource type="Script" path="res://scripts/main.gd" id="1"]
 [ext_resource type="PackedScene" path="res://scenes/board_view.tscn" id="2"]
@@ -21,6 +21,7 @@
 [ext_resource type="Script" path="res://scripts/drag_steady_scroll.gd" id="19"]
 [ext_resource type="Script" path="res://scripts/quit_game_button.gd" id="20"]
 [ext_resource type="Script" path="res://scripts/end_screen.gd" id="21"]
+[ext_resource type="Texture2D" path="res://assets/textures/menu_icon.svg" id="22"]
 
 [sub_resource type="StyleBoxFlat" id="EndTurnBannerStyle"]
 bg_color = Color(0.75, 0.16, 0.16, 1)
@@ -157,8 +158,10 @@ size_flags_horizontal=3
 theme_override_constants/separation=10
 
 [node name="OptionsButton" type="Button" parent="Layout/Margin/Content/TopBar"]
+custom_minimum_size=Vector2(44, 0)
 layout_mode=2
-text="☰"
+icon=ExtResource("22")
+icon_alignment=1
 
 [node name="GameClock" type="Label" parent="Layout/Margin/Content/TopBar"]
 visible=false
