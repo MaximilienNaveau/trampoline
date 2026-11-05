@@ -4,12 +4,13 @@
 # the current turn on a button press. This is the one place allowed to know
 # about both the game rules (GameSession) and the views — BoardView/
 # HandView never talk to GameSession directly, per this project's
-# "separate logic from graphics" rule. `StartMenu` lets the player pick how
-# many people are playing before `_session` even exists — or, instead,
-# start the free-play sandbox (see `_on_free_play_chosen`/
+# "separate logic from graphics" rule. The start card (see start_card.gd)
+# lets the player pick how many people are playing before `_session` even
+# exists — or, instead,
+# start the free-play sandbox (see `_start_free_play`/
 # free_play_session.gd), which uses `_free_play_session` in `_session`'s
 # place. Everything that needs one or the other stays hidden until then
-# (see `_on_player_count_chosen`/`_return_to_start_menu`).
+# (see `_start_session`/`_return_to_start_menu`).
 extends Control
 
 # How long the end-turn notification takes to fade in/out (see
@@ -56,11 +57,6 @@ var _dictionary_thread := Thread.new()
 # GameSession (it survives a New Game).
 var _timer_enabled: bool = false
 
-# How many players StartMenu's count buttons picked, remembered between
-# that click and `_on_names_confirmed` actually creating the session —
-# NameEntry needs to know how many name fields to show in between.
-var _pending_player_count: int = 0
-
 # `$Layout/Margin/Content/...` look up the child nodes declared in scenes/main.tscn —
 # the same shorthand board_view.gd itself uses for its own "Grid" child.
 # `@onready` runs this once those children actually exist, rather than too
@@ -75,8 +71,8 @@ var _pending_player_count: int = 0
 # below it, just adds a fixed border of breathing room around `Content`
 # on all four sides (see main.tscn) so nothing sits flush against the
 # screen edge.
-@onready var _title: Label = $BoxLid/Box/Hinge/Lid/CardArea/Card/Items/Title
-@onready var _tagline: Label = $BoxLid/Box/Hinge/Lid/CardArea/Card/Items/Tagline
+# The start menu on the box lid (see start_card.gd).
+@onready var _start_card: Control = $BoxLid/Box/Hinge/Lid/CardArea/Card/Items
 # Stacks BoardView above HandArea (the hand/palette/clue list, grouped so
 # they move as one) in portrait, or arranges them side by side in
 # landscape (see `_update_play_area_orientation` below). Declared as a
@@ -118,7 +114,6 @@ var _discard_tray: DiscardTray = $Layout/Margin/Content/PlayArea/HandArea/HandBa
 # "Comment jouer": the animated rules (see how_to_play_view.gd), opened
 # from the start menu or the ☰ menu, drawn over everything else.
 @onready var _how_to_play: HowToPlayView = $HowToPlay
-@onready var _how_to_play_button: Button = %StartMenu/HowToPlayButton
 @onready var _how_to_play_menu_button: Button = %HowToPlayMenuButton
 @onready var _options_button: Button = $Layout/Margin/Content/TopBar/OptionsButton
 @onready var _options_panel: PanelContainer = $Layout/Margin/Content/OptionsPanel
@@ -132,46 +127,8 @@ var _discard_tray: DiscardTray = $Layout/Margin/Content/PlayArea/HandArea/HandBa
 @onready var _reset_turn_button: Button = $Layout/Margin/Content/TopBar/ResetTurnButton
 # Under the hand: "Trier", "Tout jaune", "Tout vert" (see hand_tiles.gd).
 @onready var _hand_tools: HBoxContainer = $Layout/Margin/Content/PlayArea/HandArea/HandTools
-# On the start card, while a game is saved (see `_return_to_start_menu`).
-@onready var _resume_button: Button = %StartMenu/ResumeButton
 @onready var _new_game_confirm_dialog: ConfirmationDialog = $NewGameConfirmDialog
-# `%Name` finds a node marked "unique name in owner" in main.tscn (shown
-# with a % in the editor) wherever it sits in the scene — shorter than
-# the full `$Path/To/Node`, and survives moving the node around.
-@onready var _start_menu: Control = %StartMenu
-@onready var _one_player_button: Button = %StartMenu/Players/Button1
-@onready var _two_players_button: Button = %StartMenu/Players/Button2
-@onready var _three_players_button: Button = %StartMenu/Players/Button3
-@onready var _four_players_button: Button = %StartMenu/Players/Button4
-@onready var _name_entry_menu: Control = %NameEntry
-# The 4 name fields, indexed 0..3 to match player_id — see
-# `_on_player_count_chosen` for how only the first `count` of them are
-# actually shown.
-@onready var _name_edits: Array[LineEdit] = [
-	%NameEntry/Name1Edit,
-	%NameEntry/Name2Edit,
-	%NameEntry/Name3Edit,
-	%NameEntry/Name4Edit,
-]
-@onready var _start_with_names_button: Button = %NameEntry/Buttons/StartButton
-@onready var _back_button: Button = %NameEntry/Buttons/BackButton
-@onready var _free_play_button: Button = %StartMenu/FreePlayButton
 @onready var _palette_view: HandView = $Layout/Margin/Content/PlayArea/HandArea/PaletteView
-# The 10 crossword puzzle-picker buttons, indexed 0..9 to match
-# CrosswordPuzzles.PUZZLES — see `_ready()`'s loop below for how each one
-# reports its own index, and crossword_puzzles.gd for the data itself.
-@onready var _crossword_puzzle_buttons: Array[Button] = [
-	%StartMenu/CrosswordGrid/CrosswordPuzzle1Button,
-	%StartMenu/CrosswordGrid/CrosswordPuzzle2Button,
-	%StartMenu/CrosswordGrid/CrosswordPuzzle3Button,
-	%StartMenu/CrosswordGrid/CrosswordPuzzle4Button,
-	%StartMenu/CrosswordGrid/CrosswordPuzzle5Button,
-	%StartMenu/CrosswordGrid/CrosswordPuzzle6Button,
-	%StartMenu/CrosswordGrid/CrosswordPuzzle7Button,
-	%StartMenu/CrosswordGrid/CrosswordPuzzle8Button,
-	%StartMenu/CrosswordGrid/CrosswordPuzzle9Button,
-	%StartMenu/CrosswordGrid/CrosswordPuzzle10Button,
-]
 @onready var _clue_list_view: ClueListView = $Layout/Margin/Content/PlayArea/HandArea/ClueListView
 # Portrait's replacement for `_clue_list_view`: a "?" per board row that
 # pops up its clue in a speech bubble (see clue_markers_view.gd). A child
@@ -263,11 +220,13 @@ func _ready() -> void:
 	tools.get_node("AllGreenButton").pressed.connect(
 		_on_turn_action.bind(func() -> void: HandTiles.show_faces(_hand(), true))
 	)
-	_resume_button.pressed.connect(_on_resume_pressed)
+	_start_card.game_chosen.connect(_on_game_chosen)
+	_start_card.resume_chosen.connect(_on_resume_chosen)
+	_start_card.free_play_chosen.connect(_start_free_play)
+	_start_card.how_to_play_chosen.connect(_how_to_play.open)
 	_end_screen.replay_pressed.connect(_on_replay_pressed)
 	_end_screen.menu_pressed.connect(_start_new_game)
 	_new_game_button.pressed.connect(_on_new_game_pressed)
-	_how_to_play_button.pressed.connect(_how_to_play.open)
 	_game_clock.is_running = _is_play_clock_running
 	_how_to_play_menu_button.pressed.connect(_on_how_to_play_menu_pressed)
 	_options_button.pressed.connect(_on_options_pressed)
@@ -276,22 +235,6 @@ func _ready() -> void:
 	# `confirmed` fires when the dialog's own built-in OK button (relabeled
 	# "Quitter" — see scenes/main.tscn) is pressed.
 	_new_game_confirm_dialog.confirmed.connect(_start_new_game)
-	# `Callable.bind(n)` hands the same method one extra fixed argument
-	# per button (n itself), rather than writing four near-identical
-	# handler functions that only differ by which number they pass on.
-	_one_player_button.pressed.connect(_on_player_count_chosen.bind(1))
-	_two_players_button.pressed.connect(_on_player_count_chosen.bind(2))
-	_three_players_button.pressed.connect(_on_player_count_chosen.bind(3))
-	_four_players_button.pressed.connect(_on_player_count_chosen.bind(4))
-	_start_with_names_button.pressed.connect(_on_names_confirmed)
-	_back_button.pressed.connect(_on_back_to_start_menu_pressed)
-	_free_play_button.pressed.connect(_on_free_play_chosen)
-	# Same `Callable.bind` idea as the player-count buttons above, but
-	# looped since there are 10 of them — each button reports its own
-	# index in `_crossword_puzzle_buttons` (and in CrosswordPuzzles.PUZZLES)
-	# instead of main.gd needing 10 near-identical connect lines.
-	for i in range(_crossword_puzzle_buttons.size()):
-		_crossword_puzzle_buttons[i].pressed.connect(_on_crossword_chosen.bind(i))
 	# The palette (free play) and the hand (turn-based play) are never both
 	# visible at once, so both can safely feed the same handler.
 	_palette_view.tile_returned.connect(_on_hand_tile_returned)
@@ -419,29 +362,11 @@ func _on_hand_tile_returned(from_row: int, from_col: int) -> void:
 	_refresh_views()
 
 
-# Called when one of StartMenu's player-count buttons is pressed (see
-# `Callable.bind` above for how each one reports its own number). Doesn't
-# create the GameSession yet — shows NameEntry first (see
-# `_on_names_confirmed`, which actually creates it), with exactly `count`
-# of its 4 name fields visible.
-func _on_player_count_chosen(count: int) -> void:
-	_pending_player_count = count
-	_start_menu.visible = false
-	_name_entry_menu.visible = true
-	for i in range(_name_edits.size()):
-		_name_edits[i].visible = i < count
-		_name_edits[i].text = ""
-
-
-# Called when NameEntry's "Commencer" button is pressed. Only NOW
-# does the actual GameSession get created — nothing before this point
-# could show real game state anyway, since GameSession would build its
-# own French dictionary and starting hands. A blank name field falls
-# back to the plain "Joueur N" (see GameSession.player_name).
-func _on_names_confirmed() -> void:
-	var session := GameSession.new(_pending_player_count, _dictionary())
-	for i in range(_pending_player_count):
-		session.player_names.append(_name_edits[i].text.strip_edges())
+# A new game, from the start card (see start_card.gd): `names[i]` is what
+# player i entered.
+func _on_game_chosen(names: Array[String]) -> void:
+	var session := GameSession.new(names.size(), _dictionary())
+	session.player_names = names
 	_start_session(session)
 
 
@@ -454,11 +379,13 @@ func _on_replay_pressed() -> void:
 
 
 # "Reprendre la partie": the game saved at the start of its last turn
-# (see `_begin_turn`). Should the file be unreadable, the button goes.
-func _on_resume_pressed() -> void:
+# (see `_begin_turn`). Should the file be unreadable, it's deleted, and
+# the button goes with it.
+func _on_resume_chosen() -> void:
 	var loaded := SaveGame.load(SaveGame.AUTOSAVE_PATH, _dictionary())
 	if loaded == null:
-		_resume_button.visible = false
+		DirAccess.remove_absolute(SaveGame.AUTOSAVE_PATH)
+		_start_card.show_menu()
 		return
 	_start_session(loaded)
 
@@ -466,10 +393,7 @@ func _on_resume_pressed() -> void:
 # Shows `session`, a new or resumed turn-based game, and starts its turn.
 func _start_session(session: GameSession) -> void:
 	_session = session
-	_start_menu.visible = false
-	_name_entry_menu.visible = false
-	_title.visible = false
-	_tagline.visible = false
+	_start_card.close()
 	_board_view.visible = true
 	_hand_view.visible = true
 	_end_turn_button.visible = true
@@ -480,14 +404,6 @@ func _start_session(session: GameSession) -> void:
 	_refresh_views()
 	_begin_turn()
 	_box_lid.open()
-
-
-# Called when NameEntry's "Retour" button is pressed — no session
-# exists yet at this point, so there's nothing to tear down, just go
-# back to picking a player count.
-func _on_back_to_start_menu_pressed() -> void:
-	_name_entry_menu.visible = false
-	_start_menu.visible = true
 
 
 # The one FrenchDictionary this whole app run ever loads (see
@@ -517,14 +433,20 @@ func _is_free_play() -> bool:
 	return _free_play_session != null
 
 
-# Called when StartMenu's "Jeu libre" button is pressed. Unlike
-# `_on_player_count_chosen`, there's no turn to end and no timer to run
-# (EndTurnButton stays hidden), and nothing is saved.
-func _on_free_play_chosen() -> void:
-	_free_play_session = FreePlaySession.new(_dictionary())
-	_start_menu.visible = false
-	_title.visible = false
-	_tagline.visible = false
+# Starts free play ("Jeu libre", `puzzle_index` -1) or crossword number
+# `puzzle_index + 1` (see the `Callable.bind` calls in `_ready()`): free
+# play's sandbox — all 117 tiles, unrestricted placement, live scoring —
+# plus, for a crossword, its clues; `_refresh_views` checks the puzzle's
+# progress each time something changes. There's no turn to end and no
+# timer to run (EndTurnButton stays hidden). Picks up where that mode was
+# left, if it was saved (see `_refresh_views`).
+func _start_free_play(puzzle_index: int) -> void:
+	var path := SaveGame.free_play_path(puzzle_index)
+	_free_play_session = SaveGame.load_free_play(path, _dictionary())
+	if _free_play_session == null:
+		_free_play_session = FreePlaySession.new(_dictionary())
+	_crossword_puzzle = CrosswordPuzzle.new(puzzle_index) if puzzle_index >= 0 else null
+	_start_card.close()
 	_board_view.visible = true
 	_palette_view.visible = true
 	_new_game_button.visible = true
@@ -533,44 +455,21 @@ func _on_free_play_chosen() -> void:
 
 
 # Whether a crossword puzzle is the one currently active — always
-# alongside a `_free_play_session` (see `_on_crossword_chosen`), never on
+# alongside a `_free_play_session` (see `_start_free_play`), never on
 # its own.
 func _is_crossword() -> bool:
 	return _crossword_puzzle != null
 
 
-# Called when one of StartMenu's crossword puzzle-number buttons is
-# pressed (see the `Callable.bind` loop in `_ready()` for how each one
-# reports its own index). Reuses free play's exact sandbox (all 117
-# tiles, unrestricted placement, live scoring — see `_on_free_play_chosen`
-# above) and adds the clue list alongside it; `_refresh_views` is what
-# actually checks progress against the puzzle's hidden target each time
-# something changes.
-func _on_crossword_chosen(puzzle_index: int) -> void:
-	_free_play_session = FreePlaySession.new(_dictionary())
-	_crossword_puzzle = CrosswordPuzzle.new(puzzle_index)
-	_start_menu.visible = false
-	_title.visible = false
-	_tagline.visible = false
-	_board_view.visible = true
-	_palette_view.visible = true
-	_new_game_button.visible = true
-	_refresh_views()
-	_box_lid.open()
-
-
 # Called when "Quitter la partie" is pressed — asks first, rather than
 # abandoning the current session outright (see `_start_new_game`, and
-# NewGameConfirmDialog in scenes/main.tscn). A turn-based game is saved
-# at the start of every turn (see `_begin_turn`), so it isn't lost; free
-# play isn't saved. Closes the "☰" dropdown first — otherwise it would
-# stay open, floating over the confirmation dialog.
+# NewGameConfirmDialog in scenes/main.tscn). Nothing is lost: a
+# turn-based game is saved at the start of every turn (see `_begin_turn`),
+# free play on every change (see `_refresh_views`). Closes the "☰"
+# dropdown first — otherwise it would stay open, floating over the
+# confirmation dialog.
 func _on_new_game_pressed() -> void:
 	_options_panel.visible = false
-	_new_game_confirm_dialog.dialog_text = "Quitter la partie et revenir au menu ?"
-	if not _is_free_play():
-		_new_game_confirm_dialog.dialog_text += " « Reprendre la partie » la retrouve."
-
 	_new_game_confirm_dialog.popup_centered()
 
 
@@ -589,8 +488,7 @@ func _start_new_game() -> void:
 # OptionsPanel, the dropdown menu holding "Quitter la partie", "Comment
 # jouer" and the timer toggle. Showing the button itself doesn't need
 # `_session` to exist, but "Quitter la partie" is hidden until a game
-# actually starts, the same as before (see `_on_names_confirmed`/
-# `_return_to_start_menu`).
+# actually starts (see `_start_session`/`_return_to_start_menu`).
 func _on_options_pressed() -> void:
 	_options_panel.visible = not _options_panel.visible
 
@@ -832,6 +730,9 @@ func _refresh_views() -> void:
 	# Only a turn-based game is timed; free play has no time limit.
 	_game_clock.session = null if _is_free_play() else _session
 	if _is_free_play():
+		# Saved on every change, for next time (see `_start_free_play`).
+		var puzzle_index := _crossword_puzzle.puzzle_index if _is_crossword() else -1
+		SaveGame.save_free_play(_free_play_session, SaveGame.free_play_path(puzzle_index))
 		_board_view.refresh(_free_play_session.board)
 		_palette_view.refresh(_free_play_session.available_tiles(), _board_view.cell_side())
 		_scoreboard.show_score(_free_play_session.current_score())
@@ -932,23 +833,19 @@ func _format_end_turn_error() -> String:
 # again — used both by `_ready()` (before any game has started yet) and
 # by `_start_new_game()` (after abandoning one).
 func _return_to_start_menu() -> void:
-	_start_menu.visible = true
+	_start_card.show_menu()
 	_box_lid.close()
-	_title.visible = true
-	_tagline.visible = true
 	_board_view.visible = false
 	_hand_view.visible = false
 	_end_turn_button.visible = false
 	_discard_tray.visible = false
 	_reset_turn_button.visible = false
 	_hand_tools.visible = false
-	_resume_button.visible = FileAccess.file_exists(SaveGame.AUTOSAVE_PATH)
 	_new_game_button.visible = false
 	_palette_view.visible = false
 	_clue_list_view.visible = false
 	_clue_markers.visible = false
 	_board_view.reserved_right_width = 0.0
-	_name_entry_menu.visible = false
 	_options_panel.visible = false
 	_handoff_screen.visible = false
 	_end_screen.visible = false

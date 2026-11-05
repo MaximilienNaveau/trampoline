@@ -28,6 +28,16 @@ const SAVE_VERSION := 1
 const AUTOSAVE_PATH := "user://autosave.json"
 
 
+# Where free play is saved (`puzzle_index` -1), or crossword number
+# `puzzle_index + 1` (see crossword_puzzle.gd): each its own file, so
+# every crossword keeps its own progress. Saved on every change, picked
+# up again when that mode is chosen (see main.gd's `_start_free_play`).
+static func free_play_path(puzzle_index: int) -> String:
+	if puzzle_index < 0:
+		return "user://free_play.json"
+	return "user://crossword_%d.json" % (puzzle_index + 1)
+
+
 # Writes `session`'s entire state to `path` — e.g. "user://save1.json".
 # "user://" is Godot's own writable, per-user data directory (the
 # equivalent of a config/save directory a C++ or Python app would look up
@@ -136,6 +146,51 @@ static func load(path: String, dictionary: FrenchDictionary = null) -> GameSessi
 	var hand := session.bag.hand(session.turns.current_player_id())
 	session.turn_start = TurnStart.new(session.board, hand, session.dictionary)
 
+	return session
+
+
+# Writes free play's board (see free_play_session.gd) to `path` (see
+# `free_play_path`). Free play has no bag/hands/turns to save at all
+# (every tile not on the board is simply "available" — see
+# FreePlaySession.available_tiles), so this is a smaller version of
+# `save` above: just tile flip-state and the board (the score is read off
+# the board). Returns false if the file couldn't be opened for writing.
+static func save_free_play(session: FreePlaySession, path: String) -> bool:
+	var tile_index := _build_tile_index(session.pool)
+	var tile_states := []
+	for tile in session.pool.tiles:
+		tile_states.append(tile.is_showing_front())
+	var board_data := []
+	for row in range(Board.ROWS):
+		var row_data := []
+		for col in range(Board.COLUMNS):
+			var tile := session.board.tile_at(row, col)
+			row_data.append(tile_index[tile] if tile != null else -1)
+		board_data.append(row_data)
+	var data := {"version": SAVE_VERSION, "tile_states": tile_states, "board": board_data}
+	var file := FileAccess.open(path, FileAccess.WRITE)
+	if file == null:
+		return false
+	file.store_string(JSON.stringify(data))
+	return true
+
+
+# The free play written to `path` by `save_free_play`, or null if the
+# file is missing or isn't valid JSON.
+static func load_free_play(path: String, dictionary: FrenchDictionary = null) -> FreePlaySession:
+	if not FileAccess.file_exists(path):
+		return null
+	var data = JSON.parse_string(FileAccess.get_file_as_string(path))
+	if data == null or not data.has("board"):
+		return null
+	var session := FreePlaySession.new(dictionary)
+	for i in range(session.pool.tiles.size()):
+		session.pool.tiles[i].set_showing_front(data["tile_states"][i])
+	for row in range(Board.ROWS):
+		for col in range(Board.COLUMNS):
+			var index: int = int(data["board"][row][col])
+			if index != -1:
+				session.board.place(row, col, session.pool.tiles[index])
 	return session
 
 

@@ -24,6 +24,7 @@ func _initialize() -> void:
 
 	_test_round_trip_preserves_state()
 	_test_load_missing_file_returns_null()
+	_test_free_play_round_trip()
 
 	if _failures == 0:
 		print("\nAll checks passed.")
@@ -98,3 +99,32 @@ func _test_round_trip_preserves_state() -> void:
 func _test_load_missing_file_returns_null() -> void:
 	var loaded := SaveGame.load("user://this_file_does_not_exist.json", _dictionary)
 	_check(loaded == null, "loading a missing file returns null instead of crashing")
+
+
+# Free play's board round-trips, flip state included (see
+# SaveGame.save_free_play); each crossword has a save file of its own.
+func _test_free_play_round_trip() -> void:
+	var session := FreePlaySession.new(_dictionary)
+	var word := "MAISON"
+	for i in range(word.length()):
+		for tile in session.available_tiles():
+			if tile.front_letter() == word[i]:
+				session.place_tile(4, i, tile)
+				break
+	session.flip_tile(4, 0)
+	_check(SaveGame.save_free_play(session, _SAVE_PATH), "free play: saving succeeds")
+	var loaded := SaveGame.load_free_play(_SAVE_PATH, _dictionary)
+	_check(loaded != null, "free play: loading succeeds")
+	_check(
+		loaded.board.word_at(4, 0) == session.board.word_at(4, 0),
+		"free play: the board round-trips, the flipped tile included"
+	)
+	_check(loaded.current_score() == session.current_score(), "...into the same score")
+	_check(
+		(
+			SaveGame.free_play_path(-1) != SaveGame.free_play_path(0)
+			and SaveGame.free_play_path(0) != SaveGame.free_play_path(1)
+		),
+		"free play and each crossword save to their own file"
+	)
+	DirAccess.remove_absolute(_SAVE_PATH)

@@ -1,4 +1,4 @@
-[gd_scene load_steps=29 format=3]
+[gd_scene load_steps=30 format=3]
 
 [ext_resource type="Script" path="res://scripts/main.gd" id="1"]
 [ext_resource type="PackedScene" path="res://scenes/board_view.tscn" id="2"]
@@ -23,6 +23,7 @@
 [ext_resource type="Script" path="res://scripts/end_screen.gd" id="21"]
 [ext_resource type="Texture2D" path="res://assets/textures/menu_icon.svg" id="22"]
 [ext_resource type="Script" path="res://scripts/play_mat.gd" id="23"]
+[ext_resource type="Script" path="res://scripts/start_card.gd" id="24"]
 
 [sub_resource type="StyleBoxFlat" id="EndTurnBannerStyle"]
 bg_color = Color(0.75, 0.16, 0.16, 1)
@@ -334,7 +335,7 @@ size=Vector2i(320, 170)
 dialog_autowrap=true
 ok_button_text="Quitter"
 cancel_button_text="Annuler"
-dialog_text="Quitter la partie et revenir au menu ?"
+dialog_text="Quitter la partie et revenir au menu ? Elle est sauvegardée."
 
 [node name="InputBlocker" type="Control" parent="."]
 layout_mode=1
@@ -553,6 +554,7 @@ theme_override_styles/panel=SubResource("CardStyle")
 
 [node name="Items" type="VBoxContainer" parent="BoxLid/Box/Hinge/Lid/CardArea/Card"]
 layout_mode=2
+script=ExtResource("24")
 theme_override_constants/separation=12
 
 [node name="Title" type="Label" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items"]
