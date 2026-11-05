@@ -52,8 +52,8 @@ var _marked_for_discard: Array[Tile] = []
 
 
 # `dictionary` can be injected (e.g. a test reusing one already-loaded
-# instance across several sessions, since loading it re-reads and
-# normalizes ~438,000 lines every time) — defaults to loading a fresh one.
+# instance across several sessions rather than reading the ~421,000-word
+# list again) — defaults to loading a fresh one.
 func _init(number_of_players: int, a_dictionary: FrenchDictionary = null) -> void:
 	board = Board.new()
 	# Kept as its own field (not just handed to TileBag and forgotten) so

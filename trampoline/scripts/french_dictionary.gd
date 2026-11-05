@@ -10,10 +10,19 @@
 # Simplified from the C# version: that one supported both a synchronous
 # and an async load, but every actual caller in the Unity project passed
 # `async: false` anyway, so only the synchronous path is ported here.
+#
+# The game doesn't read the Hunspell file itself: stripping the accents
+# off its ~440,000 lines takes seconds (far more on a phone). A tool
+# (tools/build_word_list.gd) does it once, writing every word, already in
+# tile letters, sorted, to `WORD_LIST_PATH` — which the game just reads.
+# tests/test_french_dictionary.gd checks that list is up to date.
 class_name FrenchDictionary
 extends RefCounted
 
-const _DICTIONARY_PATH := "res://data/dictionaries/fr-classique.dic"
+# The Hunspell word list the game's words come from (see the header).
+const HUNSPELL_PATH := "res://data/dictionaries/fr-classique.dic"
+# Every valid word, in plain A-Z tile letters, one per line, sorted.
+const WORD_LIST_PATH := "res://data/dictionaries/fr-words.txt"
 
 # Every accented/ligature/superscript character that appears in the source
 # word list, mapped to the plain uppercase letter(s) it should be treated
@@ -126,20 +135,31 @@ const _ACCENT_MAP := {
 	"ₓ": "X",
 }
 
-# The set of every valid (already-normalized) word. GDScript has no
-# built-in Set type, so — same trick as in `tile_bag.gd`'s hands — a
-# Dictionary stands in for one: only the keys matter, values are unused.
-var _words: Dictionary = {}
+# Every valid word, sorted (see the header). A PackedStringArray is a
+# compact array of strings, like a C++ `std::vector<std::string>`; being
+# sorted, it can be searched by halves (`bsearch`, a binary search, like
+# C++'s `std::lower_bound`) — no need to build a hash set of 420,000
+# words first, which is what made loading slow.
+var _words: PackedStringArray
 
 
 func _init() -> void:
-	_load()
+	var file := FileAccess.open(WORD_LIST_PATH, FileAccess.READ)
+	if file == null:
+		push_error("FrenchDictionary: could not open %s" % WORD_LIST_PATH)
+		return
+	# One call reading the whole file and one splitting it: both run in
+	# Godot's own C++, in milliseconds. `false`: no empty entries.
+	_words = file.get_as_text().split("\n", false)
 
 
 # Whether `word` is valid, case- and accent-insensitively — matching
 # however the game's plain-letter tiles actually spell it out.
 func is_word_valid(word: String) -> bool:
-	return _words.has(_normalize(word))
+	var normalized := normalize(word)
+	# Where `normalized` is, or would be inserted to keep the list sorted.
+	var index := _words.bsearch(normalized)
+	return index < _words.size() and _words[index] == normalized
 
 
 # How many words loaded — mainly useful for sanity-checking the load
@@ -148,34 +168,37 @@ func word_count() -> int:
 	return _words.size()
 
 
-func _load() -> void:
-	var file := FileAccess.open(_DICTIONARY_PATH, FileAccess.READ)
-	if file == null:
-		push_error("FrenchDictionary: could not open %s" % _DICTIONARY_PATH)
-		return
-	# Reading the whole file in one call and splitting it ourselves is
-	# noticeably faster here than the more obvious `while not
-	# file.eof_reached(): file.get_line()` loop — each `get_line()` call
-	# carries its own overhead, and this file now has ~440,000 lines.
+# Every word of the Hunspell file at `path`, in tile letters, sorted,
+# each once — what `WORD_LIST_PATH` holds. Slow (seconds): only for
+# tools/build_word_list.gd and the test checking its output is current.
+static func words_from_hunspell(path: String) -> PackedStringArray:
+	# Used as a set, to keep each word once: only the keys matter.
+	var words := {}
+	var file := FileAccess.open(path, FileAccess.READ)
 	for line in file.get_as_text().split("\n"):
-		_add_line(line)
+		var word := _word_from_line(line)
+		if word != "":
+			words[word] = true
+	var sorted := PackedStringArray(words.keys())
+	sorted.sort()
+	return sorted
 
 
 # Parses one raw Hunspell .dic line (e.g. "1er/23\t154" or "abaisser/12")
-# and adds the resulting word to the set, unless it should be skipped.
+# and returns the resulting word, or "" if it should be skipped.
 # Mirrors `FrenchDictionary.cs`'s `LoadDictionary` exactly, including how
 # the file's leading word-count line and any comment line end up
 # harmlessly filtered out on their own (see the digit check below): split
 # on '/' then '\t' then ' ' to isolate the bare word, normalize it, then
 # reject anything left containing a dash or a digit.
-func _add_line(line: String) -> void:
+static func _word_from_line(line: String) -> String:
 	if line.strip_edges() == "" or line.begins_with("#"):
-		return
+		return ""
 	var word := line.split("/")[0].split("\t")[0].split(" ")[0]
-	var normalized := _normalize(word)
+	var normalized := normalize(word)
 	if normalized.contains("-") or _contains_digit(normalized):
-		return
-	_words[normalized] = true
+		return ""
+	return normalized
 
 
 # Walks `word` ONE CHARACTER AT A TIME, replacing each one that's a key in
@@ -183,10 +206,9 @@ func _add_line(line: String) -> void:
 # this used to do (once per _ACCENT_MAP entry, on every word): each
 # `.replace()` re-scans the whole string looking for that one substring,
 # so doing 80 of them costs roughly 80x a single pass, and this function
-# runs once per line while loading a dictionary that's now ~440,000 lines
-# long — that used to take over 10 seconds; this one-pass version is what
-# actually keeps a fresh session's startup fast.
-func _normalize(word: String) -> String:
+# runs once per line of a dictionary that's now ~440,000 lines long (see
+# `words_from_hunspell`). `static`: it needs no loaded word list.
+static func normalize(word: String) -> String:
 	var normalized := ""
 	for i in range(word.length()):
 		var character := word[i]
@@ -194,7 +216,7 @@ func _normalize(word: String) -> String:
 	return normalized.to_upper()
 
 
-func _contains_digit(text: String) -> bool:
+static func _contains_digit(text: String) -> bool:
 	for i in range(text.length()):
 		if text[i] in "0123456789":
 			return true

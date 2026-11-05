@@ -37,6 +37,15 @@ func _initialize() -> void:
 	_check(not dictionary.is_word_valid("QSXWZY"), "gibberish is not a valid word")
 	_check(not dictionary.is_word_valid(""), "the empty string is not a valid word")
 
+	# The word list the game reads must be what the tool builds from the
+	# Hunspell file today (see tools/build_word_list.gd).
+	var fresh := FrenchDictionary.words_from_hunspell(FrenchDictionary.HUNSPELL_PATH)
+	var shipped := FileAccess.get_file_as_string(FrenchDictionary.WORD_LIST_PATH)
+	_check(
+		shipped == "\n".join(fresh) + "\n",
+		"fr-words.txt is up to date (else run tools/build_word_list.gd)"
+	)
+
 	if _failures == 0:
 		print("\nAll checks passed.")
 	else:

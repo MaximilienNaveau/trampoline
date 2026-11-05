@@ -35,13 +35,14 @@ var _crossword_puzzle: CrosswordPuzzle
 
 # Loaded once and reused for every session this app run creates (see
 # `_dictionary()` below) — every one of GameSession/FreePlaySession's own
-# constructors would otherwise happily load its own fresh copy, but
-# reading and normalizing the ~438,000-line word list takes a couple of
-# real seconds, noticeable every single time a mode is (re)started.
+# constructors would otherwise happily load its own fresh copy of the
+# ~421,000-word list (see french_dictionary.gd), each time a mode is
+# (re)started.
 var _shared_dictionary: FrenchDictionary
 # Loads that dictionary in the background, started as soon as the start
 # menu shows (see `_ready()`), so it's usually done by the time a mode is
-# picked instead of freezing the screen for those seconds then. A Thread
+# picked instead of making the player wait then (a fraction of a second
+# on a phone). A Thread
 # is a real OS thread, like std::thread / Python's threading.Thread.
 var _dictionary_thread := Thread.new()
 
