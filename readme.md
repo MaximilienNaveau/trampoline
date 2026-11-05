@@ -66,3 +66,10 @@ on first launch ("More info" → "Run anyway").
 Not built for now: Godot won't export even an unsigned Xcode project without
 an App Store Team ID, and there's no Apple Developer account behind this
 game yet.
+
+## License
+
+[MIT](LICENSE): free to use, change, share and sell, keeping the copyright
+notice. The fonts, the dictionary, and Michel Chéenne's own material (the
+crosswords, his documents in `doc/`) keep their own terms: see
+[NOTICE](NOTICE).

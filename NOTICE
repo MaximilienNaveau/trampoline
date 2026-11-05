@@ -1,0 +1,32 @@
+Trampoline — "Un jeu pour faire rebondir les mots", a word game by
+Michel Chéenne, implemented by Maximilien Naveau.
+
+Everything in this repository is under the MIT License (see LICENSE) —
+the code, the art (textures, icons, splash), the music and sound effects
+and the scripts that make them — EXCEPT the files below, which keep their
+own terms.
+
+Third-party files
+-----------------
+- trampoline/assets/fonts/Caveat-Variable.ttf, Jost-Variable.ttf:
+  SIL Open Font License 1.1 (Caveat-OFL.txt, Jost-OFL.txt beside them).
+- trampoline/data/dictionaries/: the French dictionary by Olivier R.
+  (Dicollecte, "Classique" variant) and the word list made from it,
+  Mozilla Public License 2.0 (README_dict_fr.txt).
+- The music and sound effects are rendered with the GeneralUser GS
+  soundfont by S. Christian Collins (GeneralUser GS License v2.0, which
+  allows using it to make music, commercial or not). The soundfont itself
+  is not in this repository. See trampoline/tools/audio/README.md.
+
+Michel Chéenne's work
+---------------------
+Trampoline is Michel Chéenne's game. Its rules are implemented freely
+(game rules as such are not subject to copyright). His own written
+material is NOT under the MIT License: it remains © Michel Chéenne and
+his heirs, and is included with his permission, given orally to
+Maximilien Naveau during his lifetime:
+- the crosswords of the game (trampoline/scripts/crossword_puzzles.gd),
+  taken from his "GRILLE" sheets;
+- his documents in doc/: Trampoline.doc, " Trampoline Version 2015.doc",
+  Trampoline.txt, and the .xls/.ods sheets;
+- doc/real-game/: photos of the original box, board and tiles.
