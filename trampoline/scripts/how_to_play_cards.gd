@@ -69,7 +69,7 @@ const CARDS := [
 		],
 	},
 	{
-		"caption": "Posez un mot sur une ligne",
+		"caption": "Posez un mot sur une ligne, à partir de la première colonne",
 		"rows": 3,
 		"hand": "MAISONRT",
 		"steps":

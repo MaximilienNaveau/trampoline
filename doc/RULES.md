@@ -259,6 +259,8 @@ and crossword have no time limit):
 
 Any word in a standard dictionary is legal, including proper nouns,
 compound words, and all grammatical forms (plural, gender, conjugations).
+Proper nouns (first names, places) and the acronyms the word list holds
+stay playable — confirmed by Maximilien, 2026-11-05.
 
 The original design is a reactive **challenge**: a turn can end with a bad
 word on the board, and another player can challenge it afterward; if
