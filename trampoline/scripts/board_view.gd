@@ -48,7 +48,7 @@ signal cell_size_changed(side: float)
 # in sync with it by hand if it ever changes. Public (not `_`-prefixed)
 # since hand_view.gd's own palette-width math reuses this same value
 # rather than risking a second, separately-drifting copy of it.
-const PAGE_MARGIN := 24.0
+const PAGE_MARGIN := 8.0
 
 # How much of the page's available width the board claims once the window
 # is wide enough to show the board and the hand/palette side by side,
