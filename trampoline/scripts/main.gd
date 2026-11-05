@@ -111,6 +111,9 @@ var _discard_tray: DiscardTray = $Layout/Margin/Content/PlayArea/HandArea/HandBa
 # instead of a permanently-visible row, to leave more of a small phone
 # screen for the board itself — see `_on_options_pressed`.
 @onready var _new_game_button: Button = $Layout/Margin/Content/OptionsPanel/MenuItems/NewGameButton
+# "Sauvegarder la partie": keeps a copy of the game in progress (see
+# `_on_save_copy_pressed`).
+@onready var _save_copy_button: Button = %SaveCopyButton
 # "Comment jouer": the animated rules (see how_to_play_view.gd), opened
 # from the start menu or the ☰ menu, drawn over everything else.
 @onready var _how_to_play: HowToPlayView = $HowToPlay
@@ -224,6 +227,8 @@ func _ready() -> void:
 	_start_card.resume_chosen.connect(_on_resume_chosen)
 	_start_card.free_play_chosen.connect(_start_free_play)
 	_start_card.how_to_play_chosen.connect(_how_to_play.open)
+	_start_card.saved_game_chosen.connect(_on_saved_game_chosen)
+	_save_copy_button.pressed.connect(_on_save_copy_pressed)
 	_end_screen.replay_pressed.connect(_on_replay_pressed)
 	_end_screen.menu_pressed.connect(_start_new_game)
 	_new_game_button.pressed.connect(_on_new_game_pressed)
@@ -399,6 +404,27 @@ func _on_resume_chosen() -> void:
 	_start_session(loaded)
 
 
+# A game saved by hand, from the start card's list (see start_card.gd);
+# should its file be unreadable, back to the menu.
+func _on_saved_game_chosen(path: String) -> void:
+	var loaded := SaveGame.load(path, _dictionary())
+	if loaded == null:
+		_start_card.show_menu()
+		return
+	_start_session(loaded)
+
+
+# "Sauvegarder la partie" in the ☰ menu: keeps a copy of the game as its
+# current turn began (the autosave, see `_begin_turn`), to load again from
+# the start card ("Charger une partie") — say, to put a solo game aside
+# for a game with friends. The button says it worked, for a moment.
+func _on_save_copy_pressed() -> void:
+	var kept := SaveGame.keep_copy(SaveGame.AUTOSAVE_PATH, SaveGame.SAVES_DIR)
+	_save_copy_button.text = "Partie sauvegardée !" if kept else "Rien à sauvegarder"
+	await get_tree().create_timer(1.5).timeout
+	_save_copy_button.text = "Sauvegarder la partie"
+
+
 # Shows `session`, a new or resumed turn-based game, and starts its turn.
 func _start_session(session: GameSession) -> void:
 	_session = session
@@ -409,6 +435,7 @@ func _start_session(session: GameSession) -> void:
 	_discard_tray.visible = true
 	_reset_turn_button.visible = true
 	_hand_tools.visible = true
+	_save_copy_button.visible = true
 	_new_game_button.visible = true
 	_refresh_views()
 	_begin_turn()
@@ -850,6 +877,7 @@ func _return_to_start_menu() -> void:
 	_discard_tray.visible = false
 	_reset_turn_button.visible = false
 	_hand_tools.visible = false
+	_save_copy_button.visible = false
 	_new_game_button.visible = false
 	_palette_view.visible = false
 	_clue_list_view.visible = false

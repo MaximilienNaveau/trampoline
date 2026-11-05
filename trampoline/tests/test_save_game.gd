@@ -25,6 +25,7 @@ func _initialize() -> void:
 	_test_round_trip_preserves_state()
 	_test_load_missing_file_returns_null()
 	_test_free_play_round_trip()
+	_test_saved_games()
 
 	if _failures == 0:
 		print("\nAll checks passed.")
@@ -127,4 +128,27 @@ func _test_free_play_round_trip() -> void:
 		),
 		"free play and each crossword save to their own file"
 	)
+	DirAccess.remove_absolute(_SAVE_PATH)
+
+
+# Games saved by hand (see SaveGame.keep_copy/saved_games): a copy of the
+# autosave, listed with its players and scores; nothing to copy without
+# one. In a test folder of their own, not the game's.
+func _test_saved_games() -> void:
+	var dir := "user://test_saves/"
+	_check(not SaveGame.keep_copy("user://no_such_autosave.json", dir), "no game: nothing kept")
+	var session := GameSession.new(2, _dictionary)
+	session.player_names = ["Alice", ""]
+	session.turns.set_player_score(0, 45)
+	SaveGame.save(session, _SAVE_PATH)
+	_check(SaveGame.keep_copy(_SAVE_PATH, dir), "a game is kept")
+	_check(SaveGame.keep_copy(_SAVE_PATH, dir), "...twice in the same second, too")
+	var games := SaveGame.saved_games(dir)
+	_check(games.size() == 2, "both copies are listed")
+	_check(games[0]["names"] == ["Alice", ""], "...with the players' names")
+	_check(games[0]["scores"] == [45, 0], "...and their scores")
+	_check(SaveGame.load(games[0]["path"], _dictionary) != null, "a kept game loads")
+	for game in games:
+		DirAccess.remove_absolute(game["path"])
+	DirAccess.remove_absolute(dir)
 	DirAccess.remove_absolute(_SAVE_PATH)

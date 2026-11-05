@@ -1,7 +1,8 @@
 # The cream card on the box lid (see box_lid.gd): the title, the tagline,
-# and the start menu — "Reprendre la partie", how many players (then
-# their names), "Jeu libre", the crosswords, "Comment jouer". It only
-# reports what the player chose, through its signals; main.gd starts it.
+# and the start menu — "Reprendre la partie", "Charger une partie" (then
+# the list of games saved by hand), how many players (then their names),
+# "Jeu libre", the crosswords, "Comment jouer". It only reports what the
+# player chose, through its signals; main.gd starts it.
 #
 # Purely a menu: it creates no game itself.
 extends VBoxContainer
@@ -14,6 +15,11 @@ signal resume_chosen
 # Free play (`puzzle_index` -1), or crossword number `puzzle_index + 1`.
 signal free_play_chosen(puzzle_index: int)
 signal how_to_play_chosen
+# A game saved by hand (see SaveGame.keep_copy), its file at `path`.
+signal saved_game_chosen(path: String)
+
+# The saved games listed at most, newest first.
+const _SAVED_GAMES_SHOWN := 8
 
 # How many players the count buttons picked, kept until the names are
 # confirmed (see `_on_names_confirmed`).
@@ -22,6 +28,10 @@ var _player_count := 0
 @onready var _start_menu: Control = $StartMenu
 @onready var _name_entry: Control = $NameEntry
 @onready var _resume_button: Button = $StartMenu/ResumeButton
+@onready var _load_button: Button = $StartMenu/LoadButton
+# The list of games saved by hand, and the rows in it.
+@onready var _saved_games: Control = $SavedGames
+@onready var _saved_list: VBoxContainer = $SavedGames/List
 # The 4 name fields, indexed 0..3 to match player_id — only the first
 # `_player_count` of them are shown (see `_on_player_count_chosen`).
 @onready var _name_edits: Array[LineEdit] = [
@@ -43,6 +53,8 @@ func _ready() -> void:
 	$NameEntry/Buttons/BackButton.pressed.connect(show_menu)
 	_resume_button.pressed.connect(resume_chosen.emit)
 	$StartMenu/HowToPlayButton.pressed.connect(how_to_play_chosen.emit)
+	_load_button.pressed.connect(_show_saved_games)
+	$SavedGames/BackButton.pressed.connect(show_menu)
 	$StartMenu/FreePlayButton.pressed.connect(free_play_chosen.emit.bind(-1))
 	# The 10 crossword buttons, each reporting its index in
 	# CrosswordPuzzles.PUZZLES (see crossword_puzzles.gd).
@@ -53,18 +65,73 @@ func _ready() -> void:
 
 
 # Shows the title and the start menu — with "Reprendre la partie" only
-# while a game is saved (see SaveGame.AUTOSAVE_PATH).
+# while a game is saved (see SaveGame.AUTOSAVE_PATH), "Charger une partie"
+# only while one was saved by hand.
 func show_menu() -> void:
 	for node: Control in [$Title, $Tagline, _start_menu]:
 		node.visible = true
 	_name_entry.visible = false
+	_saved_games.visible = false
 	_resume_button.visible = FileAccess.file_exists(SaveGame.AUTOSAVE_PATH)
+	_load_button.visible = not SaveGame.saved_games(SaveGame.SAVES_DIR).is_empty()
 
 
 # Hides it all, as the lid opens on a game.
 func close() -> void:
-	for node: Control in [$Title, $Tagline, _start_menu, _name_entry]:
+	for node: Control in [$Title, $Tagline, _start_menu, _name_entry, _saved_games]:
 		node.visible = false
+
+
+# "Charger une partie": the games saved by hand, newest first, one row
+# each — a button to load it, saying when it was saved and who has how
+# many points, and "×" to delete it.
+func _show_saved_games() -> void:
+	_start_menu.visible = false
+	_saved_games.visible = true
+	for row in _saved_list.get_children():
+		row.queue_free()
+	var games := SaveGame.saved_games(SaveGame.SAVES_DIR)
+	if games.is_empty():
+		show_menu()
+		return
+	for game in games.slice(0, _SAVED_GAMES_SHOWN):
+		var row := HBoxContainer.new()
+		_saved_list.add_child(row)
+		var load_button := Button.new()
+		load_button.text = _describe(game)
+		load_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		load_button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		load_button.pressed.connect(saved_game_chosen.emit.bind(game["path"]))
+		row.add_child(load_button)
+		var delete_button := Button.new()
+		delete_button.text = "×"
+		delete_button.pressed.connect(_delete_saved_game.bind(game["path"]))
+		row.add_child(delete_button)
+
+
+# Deletes the game saved at `path`, and lists the others again.
+func _delete_saved_game(path: String) -> void:
+	DirAccess.remove_absolute(path)
+	_show_saved_games()
+
+
+# One saved game (see SaveGame.saved_games) in a line: when it was saved,
+# in local time — "05/11 14:30" — and each player's points, or, alone,
+# just the points.
+static func _describe(game: Dictionary) -> String:
+	# The system's time zone, as minutes ahead of UTC (`bias`).
+	var local: int = game["time"] + Time.get_time_zone_from_system()["bias"] * 60
+	var date := Time.get_datetime_dict_from_unix_time(local)
+	var when := "%02d/%02d %02d:%02d" % [date["day"], date["month"], date["hour"], date["minute"]]
+	var names: Array = game["names"]
+	var scores: Array = game["scores"]
+	if names.size() == 1:
+		return "%s · Seul · %d pts" % [when, scores[0]]
+	var players: Array[String] = []
+	for i in range(names.size()):
+		var player_name: String = names[i] if names[i] != "" else "Joueur %d" % (i + 1)
+		players.append("%s %d" % [player_name, scores[i]])
+	return "%s · %s" % [when, ", ".join(players)]
 
 
 # A player-count button: shows the name fields, exactly `count` of them.

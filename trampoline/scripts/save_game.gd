@@ -26,6 +26,54 @@ const SAVE_VERSION := 1
 # Where the game in progress is saved. "user://" is Godot's own writable,
 # per-user data folder (on Android, the app's private storage).
 const AUTOSAVE_PATH := "user://autosave.json"
+# Where the games saved by hand (the ☰ menu's "Sauvegarder la partie") are
+# kept, one file each, named after when they were saved.
+const SAVES_DIR := "user://saves/"
+
+
+# Keeps a copy of the game saved at `autosave` — the game in progress, as
+# its current turn began (see main.gd's `_begin_turn`) — in the folder
+# `dir`, named after the date and time. Returns false if there's no game
+# to copy, or the copy failed.
+static func keep_copy(autosave: String, dir: String) -> bool:
+	if not FileAccess.file_exists(autosave):
+		return false
+	DirAccess.make_dir_recursive_absolute(dir)
+	# "2026-11-05T14:30:12" — `:` isn't allowed in a file name everywhere.
+	var stamp := Time.get_datetime_string_from_system().replace(":", "-")
+	var path := dir + stamp + ".json"
+	var extra := 2
+	while FileAccess.file_exists(path):  # two saves in the same second
+		path = dir + "%s_%d.json" % [stamp, extra]
+		extra += 1
+	return DirAccess.copy_absolute(autosave, path) == OK
+
+
+# The games kept in the folder `dir` (see `keep_copy`), newest first, each
+# a `{path, time, names, scores}` dictionary: its file, when it was saved
+# (seconds since 1970, UTC), and each player's entered name (maybe empty)
+# and score. Files that can't be read are left out.
+static func saved_games(dir: String) -> Array[Dictionary]:
+	var games: Array[Dictionary] = []
+	if not DirAccess.dir_exists_absolute(dir):  # nothing saved yet
+		return games
+	for file in DirAccess.get_files_at(dir):
+		if not file.ends_with(".json"):
+			continue
+		var path := dir + file
+		var data = JSON.parse_string(FileAccess.get_file_as_string(path))
+		if data == null or not data.has("turns"):
+			continue
+		var names: Array[String] = []
+		var scores: Array[int] = []
+		for i in range(int(data["number_of_players"])):
+			var entered: Array = data.get("player_names", [])
+			names.append(entered[i] if i < entered.size() else "")
+			scores.append(int(data["turns"]["scores"][i]))
+		var time := FileAccess.get_modified_time(path)
+		games.append({"path": path, "time": time, "names": names, "scores": scores})
+	games.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return a["time"] > b["time"])
+	return games
 
 
 # Where free play is saved (`puzzle_index` -1), or crossword number

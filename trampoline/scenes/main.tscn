@@ -201,6 +201,12 @@ visible=false
 layout_mode=2
 theme_override_constants/separation=6
 
+[node name="SaveCopyButton" type="Button" parent="Layout/Margin/Content/OptionsPanel/MenuItems"]
+visible=false
+unique_name_in_owner=true
+layout_mode=2
+text="Sauvegarder la partie"
+
 [node name="NewGameButton" type="Button" parent="Layout/Margin/Content/OptionsPanel/MenuItems" node_paths=PackedStringArray("blocked_by")]
 layout_mode=2
 text="Quitter la partie"
@@ -584,6 +590,12 @@ layout_mode=2
 size_flags_horizontal=4
 text="Reprendre la partie"
 
+[node name="LoadButton" type="Button" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/StartMenu"]
+visible=false
+layout_mode=2
+size_flags_horizontal=4
+text="Charger une partie"
+
 [node name="Prompt" type="Label" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/StartMenu"]
 theme_type_variation=&"InkLabel"
 layout_mode=2
@@ -732,6 +744,26 @@ text="Commencer"
 
 [node name="BackButton" type="Button" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/NameEntry/Buttons"]
 layout_mode=2
+text="Retour"
+
+[node name="SavedGames" type="VBoxContainer" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items"]
+visible=false
+layout_mode=2
+theme_override_constants/separation=10
+
+[node name="Prompt" type="Label" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/SavedGames"]
+theme_type_variation=&"InkLabel"
+layout_mode=2
+horizontal_alignment=1
+text="Parties sauvegardées :"
+
+[node name="List" type="VBoxContainer" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/SavedGames"]
+layout_mode=2
+theme_override_constants/separation=6
+
+[node name="BackButton" type="Button" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/SavedGames"]
+layout_mode=2
+size_flags_horizontal=4
 text="Retour"
 
 [node name="Signature" type="Label" parent="BoxLid/Box/Hinge/Lid"]
