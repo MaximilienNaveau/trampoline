@@ -1,4 +1,4 @@
-[gd_scene load_steps=30 format=3]
+[gd_scene load_steps=34 format=3]
 
 [ext_resource type="Script" path="res://scripts/main.gd" id="1"]
 [ext_resource type="PackedScene" path="res://scenes/board_view.tscn" id="2"]
@@ -24,6 +24,10 @@
 [ext_resource type="Texture2D" path="res://assets/textures/menu_icon.svg" id="22"]
 [ext_resource type="Script" path="res://scripts/play_mat.gd" id="23"]
 [ext_resource type="Script" path="res://scripts/start_card.gd" id="24"]
+[ext_resource type="AudioStream" path="res://assets/audio/music/original_le_rebond.ogg" id="25"]
+[ext_resource type="AudioStream" path="res://assets/audio/music/original_la_grille.ogg" id="26"]
+[ext_resource type="Script" path="res://scripts/sound_effects.gd" id="27"]
+[ext_resource type="Script" path="res://scripts/fading_music.gd" id="28"]
 
 [sub_resource type="StyleBoxFlat" id="EndTurnBannerStyle"]
 bg_color = Color(0.75, 0.16, 0.16, 1)
@@ -222,6 +226,11 @@ text="Comment jouer"
 layout_mode=2
 text="Minuteur (3 min)"
 
+[node name="SoundToggle" type="CheckButton" parent="Layout/Margin/Content/OptionsPanel/MenuItems"]
+layout_mode=2
+button_pressed=true
+text="Son"
+
 [node name="Scoreboard" type="HFlowContainer" parent="Layout/Margin/Content"]
 layout_mode=2
 visible=false
@@ -332,6 +341,19 @@ visible=false
 [node name="TurnTimer" type="Timer" parent="."]
 wait_time=180.0
 one_shot=true
+
+[node name="GameMusic" type="AudioStreamPlayer" parent="."]
+script=ExtResource("28")
+stream=ExtResource("25")
+volume_db=-22.0
+
+[node name="MenuMusic" type="AudioStreamPlayer" parent="."]
+script=ExtResource("28")
+stream=ExtResource("26")
+volume_db=-22.0
+
+[node name="SoundEffects" type="Node" parent="."]
+script=ExtResource("27")
 
 [node name="NewGameConfirmDialog" type="ConfirmationDialog" parent="."]
 title="Quitter la partie"

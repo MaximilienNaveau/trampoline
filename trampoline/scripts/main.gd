@@ -117,10 +117,24 @@ var _discard_tray: DiscardTray = $Layout/Margin/Content/PlayArea/HandArea/HandBa
 # "Comment jouer": the animated rules (see how_to_play_view.gd), opened
 # from the start menu or the ☰ menu, drawn over everything else.
 @onready var _how_to_play: HowToPlayView = $HowToPlay
+# The music played during a game, "Le Rebond" (made by
+# tools/audio/make_music.py). An AudioStreamPlayer is the node that plays a
+# sound not placed anywhere on screen (no left/right panning by position):
+# `play()` starts its `stream` from the top, `stop()` stops it. Its file
+# is imported as a loop (see original_le_rebond.ogg.import), so it goes
+# round until stopped. FadingMusic (see fading_music.gd) adds fading in
+# and out.
+@onready var _game_music: FadingMusic = $GameMusic
+# The start menu's music, "La Grille", a waltz — looped the same way.
+@onready var _menu_music: FadingMusic = $MenuMusic
+# Every sound effect, played by name (see sound_effects.gd).
+@onready var _sound_effects: SoundEffects = $SoundEffects
 @onready var _how_to_play_menu_button: Button = %HowToPlayMenuButton
 @onready var _options_button: Button = $Layout/Margin/Content/TopBar/OptionsButton
 @onready var _options_panel: PanelContainer = $Layout/Margin/Content/OptionsPanel
 @onready var _timer_toggle: CheckButton = $Layout/Margin/Content/OptionsPanel/MenuItems/TimerToggle
+# The ☰ menu's "Son" switch: music and sound effects on/off.
+@onready var _sound_toggle: CheckButton = $Layout/Margin/Content/OptionsPanel/MenuItems/SoundToggle
 @onready var _turn_timer_label: Label = $Layout/Margin/Content/TopBar/TurnTimerLabel
 # The game's one-hour clock in the header (see game_clock.gd).
 @onready var _game_clock: GameClock = $Layout/Margin/Content/TopBar/GameClock
@@ -236,6 +250,7 @@ func _ready() -> void:
 	_how_to_play_menu_button.pressed.connect(_on_how_to_play_menu_pressed)
 	_options_button.pressed.connect(_on_options_pressed)
 	_timer_toggle.toggled.connect(_on_timer_toggle_toggled)
+	_sound_toggle.toggled.connect(_on_sound_toggle_toggled)
 	_end_turn_message_timer.timeout.connect(_on_end_turn_message_timer_timeout)
 	# `confirmed` fires when the dialog's own built-in OK button (relabeled
 	# "Quitter" — see scenes/main.tscn) is pressed.
@@ -256,6 +271,7 @@ func _on_board_tile_dropped(row: int, col: int, tile: Tile) -> void:
 		_free_play_session.place_tile(row, col, tile)
 	else:
 		_session.place_tile(row, col, tile)
+	_sound_effects.play("tile_drop")
 	_refresh_views()
 
 
@@ -267,6 +283,7 @@ func _on_board_tile_moved(from_row: int, from_col: int, to_row: int, to_col: int
 		_free_play_session.move_tile(from_row, from_col, to_row, to_col)
 	else:
 		_session.move_tile(from_row, from_col, to_row, to_col)
+	_sound_effects.play("tile_drop")
 	_refresh_views()
 
 
@@ -278,6 +295,7 @@ func _on_board_tiles_moved(cells: Array[Vector2i], offset: Vector2i) -> void:
 		_free_play_session.move_tiles(cells, offset)
 	else:
 		_session.move_tiles(cells, offset)
+	_sound_effects.play("tile_drop")
 	_refresh_views()
 
 
@@ -290,6 +308,7 @@ func _on_board_tile_flipped(row: int, col: int) -> void:
 		_free_play_session.flip_tile(row, col)
 	else:
 		_session.flip_tile(row, col)
+	_sound_effects.play("tile_flip")
 	_refresh_views()
 
 
@@ -373,6 +392,7 @@ func _on_hand_tile_returned(from_row: int, from_col: int) -> void:
 		_free_play_session.remove_tile(from_row, from_col)
 	else:
 		_session.remove_tile(from_row, from_col)
+	_sound_effects.play("tile_drop")
 	_refresh_views()
 
 
@@ -448,6 +468,7 @@ func _start_session(session: GameSession) -> void:
 	_refresh_views()
 	_begin_turn()
 	_box_lid.open()
+	_start_game_music()
 
 
 # The one FrenchDictionary this whole app run ever loads (see
@@ -499,6 +520,27 @@ func _show_free_play(session: FreePlaySession, puzzle_index: int) -> void:
 	_new_game_button.visible = true
 	_refresh_views()
 	_box_lid.open()
+	_start_game_music()
+
+
+# Crossfades from the menu's music to the game's ("Rejouer" goes straight
+# from one game to the next: the game's tune just carries on). The tiles
+# land on the board with a bounce.
+func _start_game_music() -> void:
+	if not _game_music.playing:
+		_sound_effects.play("bounce")
+	_menu_music.fade_out()
+	_game_music.fade_in()
+
+
+# Built-in callback Godot calls on every node for engine-wide events
+# ("notifications", numbered constants — no direct Python equivalent;
+# think of a signal every node receives without connecting to it).
+# NOTIFICATION_DRAG_BEGIN reaches all nodes whenever any drag starts, so
+# this one place hears every tile being picked up, wherever it sits.
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_DRAG_BEGIN:
+		_sound_effects.play("tile_pick")
 
 
 # Whether a crossword puzzle is the one currently active — always
@@ -551,6 +593,15 @@ func _on_timer_toggle_toggled(enabled: bool) -> void:
 	else:
 		_turn_timer.stop()
 		_turn_timer_label.visible = false
+
+
+# Called when OptionsPanel's "Son" CheckButton is switched. Every sound
+# Godot plays goes through an audio bus — a mixer channel, like a mixing
+# desk's — and they all end up in bus 0, "Master". Muting Master silences
+# the music and every sound effect at once; the music keeps running
+# underneath, so switching back on picks it up where it is now.
+func _on_sound_toggle_toggled(enabled: bool) -> void:
+	AudioServer.set_bus_mute(0, not enabled)
 
 
 # Restarts the 3-minute countdown from the top — called whenever a new
@@ -609,7 +660,9 @@ func _on_end_turn_pressed() -> void:
 		_set_end_turn_message(_format_end_turn_error())
 		_refresh_views()
 		_board_view.shake_errors()
+		_sound_effects.play("word_invalid")
 		return
+	_sound_effects.play(_turn_end_sound(_session.turn_bonuses()))
 	# So the recap between turns can show what this turn changed.
 	_score_recap.remember_scores(_session)
 	# The turn's points float into the score BEFORE it ends: once it has,
@@ -629,6 +682,18 @@ func _on_end_turn_pressed() -> void:
 	_refresh_views()
 
 
+# The sound a turn ends on, from the bonuses it wins (see
+# `GameSession.turn_bonuses`): a fanfare for a whole word placed in one
+# move (+30/+50), a strum for a line simply filled (+10), else a little
+# arpeggio.
+func _turn_end_sound(bonuses: Array[int]) -> String:
+	if bonuses.any(func(bonus: int) -> bool: return bonus >= Scoring.MIXED_COLOR_WORD_BONUS):
+		return "word_bonus"
+	if not bonuses.is_empty():
+		return "line_complete"
+	return "word_valid"
+
+
 # Runs `action`, what one of the turn's buttons does (see `_ready`), then
 # redraws.
 func _on_turn_action(action: Callable) -> void:
@@ -646,6 +711,7 @@ func _hand() -> Array[Tile]:
 func _on_hand_tile_reordered(tile: Tile, before: Tile) -> void:
 	if not _is_free_play():
 		HandTiles.move(_hand(), tile, before)
+		_sound_effects.play("tile_drop")
 		_refresh_views()
 
 
@@ -689,6 +755,7 @@ func _begin_turn() -> void:
 					cells.append(Vector2i(col, row))
 			_board_view.hop(cells, 0.012)
 			await get_tree().create_timer(1.8).timeout
+		_sound_effects.play("game_end")
 		_end_screen.show_result(_session, _all_player_names())
 		return
 	SaveGame.save(_session, SaveGame.AUTOSAVE_PATH)
@@ -707,6 +774,7 @@ func _begin_turn() -> void:
 # is at the screen, so reveal their hand and start their clock.
 func _on_handoff_play_pressed() -> void:
 	_handoff_screen.visible = false
+	_sound_effects.play("bounce_small")
 	_restart_turn_timer()
 
 
@@ -906,6 +974,8 @@ func _return_to_start_menu() -> void:
 	_turn_timer.stop()
 	_turn_timer_label.visible = false
 	_game_clock.session = null
+	_game_music.fade_out()
+	_menu_music.fade_in()
 
 
 # Once the game is over (see game_session.gd's `is_game_over`), there's
