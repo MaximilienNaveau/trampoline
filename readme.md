@@ -10,17 +10,14 @@ no longer released, lives on in `trampoline-unity/` for reference).
 
 ### :robot: Android
 
-Download the latest `trampoline-vX.Y.Z-android.apk` from the
+Install it from F-Droid (below) to get updates on their own, or download
+the latest `trampoline-vX.Y.Z-android.apk` from the
 [GitHub releases](https://github.com/MaximilienNaveau/trampoline/releases)
-and install it. The most recent one is the recommended one.
-
-> F-Droid distribution (below) currently only serves the old Unity build
-> (last version: v3.2.0) — it hasn't been updated for the Godot rewrite
-> yet, since that needs real release signing set up first. Until then,
-> GitHub Releases is the way to get the current version.
+and install it. Both are the same APK, signed with the same key as the
+older Unity versions, so they install over those.
 
 <details>
-<summary>Installing via F-Droid (legacy Unity build only, for now)</summary>
+<summary>Installing via F-Droid</summary>
 
 - Download the latest version of [F-droid here](https://f-droid.org/fr/) and install it on your phone if not done already.
 - Add my repository to the F-Droid repos.
