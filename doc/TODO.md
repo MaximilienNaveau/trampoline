@@ -52,8 +52,9 @@ hand, then a shared win.
       committed debug key (`trampoline/keys/`).
 - [ ] A release signing key, kept out of the repo (GitHub secrets), for
       a store release.
-- [ ] Test on a real phone: touch drag and drop, flipping, the tray's
-      sideways scroll, performance, the screen fitting with no scrolling.
+- [x] Tested on a real phone (2026-11-05): drag and drop, flipping,
+      swapping, arranging the hand, the selection box, the screen fitting.
+      Fixed on the way: the layout sat against the top of a tall screen.
 - [x] Automatic save at the start of every turn (names included), and a
       "Reprendre la partie" button on the start card; the Save/Load
       buttons and their file dialogs are gone. Free play isn't saved.
@@ -74,8 +75,8 @@ hand, then a shared win.
       when the turn began.
 - [x] Under the hand: "Trier" (A to Z), "Tout jaune", "Tout vert"; a hand
       tile can be dragged to another place in the hand.
-- [ ] A hand over 14 tiles (tiles taken back off the board) overflows its
-      two rows: decide (cap? third row? scroll?).
+- [x] A hand over 14 tiles gets a third row (or more): the board makes
+      room for as many rows as the hand needs, at 7 tiles a row.
 - [x] `tests/test_save_game.gd` failed now and then: it looked for given
       letters only in the undrawn pile, which the deal had sometimes
       emptied of them. It now looks in the hands too.
@@ -109,10 +110,13 @@ From `ART_DIRECTION.md` → "Motion" (each ≤ 250 ms, never blocking input):
 - [ ] Scores easier to read at a glance (one chip per player?).
 
 ### 8. End of game
-- [ ] A proper end screen instead of the text banner: final scores
-      ranked, the winner highlighted, eliminated players marked.
-- [ ] "Rejouer" (same players) and "Menu" buttons; going back to the
+- [x] A proper end screen instead of the text banner: final scores
+      ranked (tiles left in hand break ties), the winners in orange.
+- [x] "Rejouer" (same players) and "Menu" buttons; going back to the
       menu closes the lid over the box.
+- [x] Solo: a finished board with no green face at all ("Grille
+      parfaite !") rains yellow tiles and pulses the score; otherwise the
+      screen counts the green faces left, the next game's target.
 
 ### 9. Sound
 - [ ] Sound effects: pick up a tile, drop it (wooden "tok"), flip it
