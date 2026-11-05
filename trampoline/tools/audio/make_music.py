@@ -5,9 +5,13 @@ new chords and a swung second chorus, and two original tunes written for
 Trampoline. All arranged "a la Brassens": nylon guitar pompe, upright bass,
 a lead instrument. Run from the project root inside `nix develop .#audio`:
 
-    python3 tools/audio/make_music.py
+    python3 tools/audio/make_music.py                     # every tune
+    python3 tools/audio/make_music.py --out DIR NAME...   # some, elsewhere
+
+(`nix build .#audio` uses the second form for the tunes the game plays.)
 """
 
+import argparse
 import os
 
 from arrange import CLARINET, NYLON_GUITAR, Pass, Tune, build_loop
@@ -126,8 +130,16 @@ LA_GRILLE = Tune(
     seed=4,
 )
 
+TUNES = {t.name: t for t in (AU_CLAIR_DE_LA_LUNE, AH_VOUS_DIRAI_JE_MAMAN, LE_REBOND, LA_GRILLE)}
+
 if __name__ == "__main__":
-    os.makedirs(OUT, exist_ok=True)
-    for tune in (AU_CLAIR_DE_LA_LUNE, AH_VOUS_DIRAI_JE_MAMAN, LE_REBOND, LA_GRILLE):
-        seconds = build_loop(tune, os.path.join(OUT, tune.name + ".ogg"))
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument("--out", default=OUT, help="output folder")
+    parser.add_argument("names", nargs="*", help=f"tunes (default: all): {', '.join(TUNES)}")
+    args = parser.parse_args()
+    for name in set(args.names) - set(TUNES):
+        parser.error(f"unknown tune {name!r}")
+    os.makedirs(args.out, exist_ok=True)
+    for tune in (TUNES[n] for n in args.names or TUNES):
+        seconds = build_loop(tune, os.path.join(args.out, tune.name + ".ogg"))
         print(f"{tune.name}.ogg  {seconds:.1f} s loop")

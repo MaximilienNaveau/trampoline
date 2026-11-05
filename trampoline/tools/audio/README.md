@@ -1,13 +1,24 @@
 # Music and sound effects generators
 
-Everything in `assets/audio/` is generated from source by these scripts. Run
-them from the `trampoline/` folder:
+Everything in `assets/audio/` is generated from source by these scripts, and
+isn't committed (only Godot's `.import` files are). From the `trampoline/`
+folder:
+
+```sh
+nix build .#audio   # the game's music and sound effects, in the Nix sandbox
+nix run .#audio     # the same, copied into assets/audio/ for the Godot editor
+```
+
+The exports and the tests (`nix build .#linux`, `nix flake check`, CI) use
+`.#audio` on their own. To change a sound and listen to it straight away:
 
 ```sh
 nix develop .#audio
 python3 tools/audio/make_music.py   # -> assets/audio/music/*.ogg (seamless loops)
 python3 tools/audio/make_sfx.py     # -> assets/audio/sfx/*.wav
 ```
+
+Two runs don't give bit-identical files (fluidsynth), but they sound the same.
 
 - `arrange.py`: turns a lead sheet (melody + chord symbols) into a small band
   in the spirit of Georges Brassens's accompaniments: a nylon guitar playing

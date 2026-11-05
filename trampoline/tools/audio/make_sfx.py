@@ -4,9 +4,11 @@ Physical sounds (the trampoline "boing", wooden tiles) are synthesised from
 scratch with numpy; musical cues are played by the same guitar/bass/clarinet
 band as the music (see arrange.py). Run from `nix develop .#audio`:
 
-    python3 tools/audio/make_sfx.py
+    python3 tools/audio/make_sfx.py             # -> assets/audio/sfx/
+    python3 tools/audio/make_sfx.py --out DIR   # elsewhere (`nix build .#audio`)
 """
 
+import argparse
 import os
 
 import numpy as np
@@ -44,7 +46,7 @@ def _save(name, signal, peak_db=-1.0):
     signal = signal.copy()
     signal[-fade:] *= np.linspace(1, 0, fade)  # no click at the very end
     signal *= 10 ** (peak_db / 20) / np.abs(signal).max()
-    wavfile.write(os.path.join(OUT, name), SR, (signal * 32767).astype(np.int16))
+    wavfile.write(os.path.join(out, name), SR, (signal * 32767).astype(np.int16))
     print(name)
 
 
@@ -115,12 +117,15 @@ def stingers():
 
 
 if __name__ == "__main__":
-    os.makedirs(OUT, exist_ok=True)
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument("--out", default=OUT, help="output folder")
+    out = parser.parse_args().out
+    os.makedirs(out, exist_ok=True)
     _save("bounce.wav", boing())
     _save("bounce_small.wav", boing(base=390.0, seconds=0.35), peak_db=-4.0)
     _save("tile_pick.wav", tile_pick(), peak_db=-6.0)
     _save("tile_drop.wav", tile_drop(), peak_db=-4.0)
     _save("tile_flip.wav", tile_flip(), peak_db=-5.0)
     for name, notes, tempo in stingers():
-        build_stinger(notes, tempo, {NYLON_GUITAR, CLARINET}, os.path.join(OUT, name))
+        build_stinger(notes, tempo, {NYLON_GUITAR, CLARINET}, os.path.join(out, name))
         print(name)

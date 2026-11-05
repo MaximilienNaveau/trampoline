@@ -9,6 +9,10 @@ result
 # Python's bytecode cache, left by the audio generators in tools/audio/.
 __pycache__/
 
-# Music candidates tools/audio/make_music.py makes but the game doesn't use
-# (Godot's .import files for them too); rebuild them to listen again.
+# Music and sound effects are built by `nix build .#audio` from
+# tools/audio/ (`nix run .#audio` copies them here for the editor). Only
+# Godot's .import files for the ones the game uses are committed.
+assets/audio/**/*.ogg
+assets/audio/**/*.wav
+# Music candidates make_music.py makes but the game doesn't use.
 assets/audio/music/folk_*
