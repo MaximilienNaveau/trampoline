@@ -90,11 +90,11 @@ const CARDS := [
 		"hand": "",
 		"steps":
 		[
-			{"word": "LAIT", "row": 1, "col": 2, "backs": {0: "F"}},
+			{"word": "LAIT", "row": 1, "col": 0, "backs": {0: "F"}},
 			{"wait": 0.8},
-			{"tap": [1, 2]},
+			{"tap": [1, 0]},
 			{"wait": 1.2},
-			{"tap": [1, 2]},
+			{"tap": [1, 0]},
 			{"wait": 0.8},
 		],
 	},

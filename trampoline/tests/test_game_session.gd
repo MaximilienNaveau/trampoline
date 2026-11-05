@@ -55,6 +55,7 @@ func _initialize() -> void:
 	_test_show_hand_faces()
 	_test_reset_turn()
 	_test_scored_cells()
+	_test_words_start_in_the_first_column()
 
 	if _failures == 0:
 		print("\nAll checks passed.")
@@ -228,7 +229,7 @@ func _test_invalid_cells_empty_for_a_normal_word() -> void:
 		_give_hand_tile(session, 0, tile)
 		tiles.append(tile)
 	for i in range(tiles.size()):
-		session.place_tile(2, 2 + i, tiles[i])
+		session.place_tile(2, i, tiles[i])
 	_check(session.invalid_cells().is_empty(), "one contiguous word this turn is entirely legal")
 	_check(session.can_end_turn(), "...so ending the turn is allowed")
 
@@ -271,7 +272,7 @@ func _test_invalid_cells_clears_once_the_offending_tile_is_taken_back() -> void:
 	var session := GameSession.new(1, _dictionary)
 	var first: Tile = session.bag.hand(0)[0]
 	var second: Tile = session.bag.hand(0)[1]
-	session.place_tile(2, 4, first)
+	session.place_tile(2, 0, first)
 	session.place_tile(6, 0, second)
 	session.remove_tile(6, 0)
 
@@ -539,20 +540,20 @@ func _test_move_tiles_scores_the_board_difference() -> void:
 
 
 # Like Maximilien's POTER + TAXI: a word moved right after another, into
-# something that isn't a word (AXE, already in POTER's row, so that the
-# move empties no cell — POTERAXE). Both words' worth is gone from the
-# board, and the turn can't end; moved back, all is as it was.
+# something that isn't a word (AXE, from the row below — POTERAXE). Both
+# words' worth is gone from the board, and the turn can't end; moved
+# back, all is as it was.
 func _test_move_tiles_into_a_non_word() -> void:
 	var session := GameSession.new(2, _dictionary)
 	_play_word(session, 2, 0, "POTER")
-	_play_word(session, 2, 6, "AXE")
-	var cells: Array[Vector2i] = [Vector2i(6, 2), Vector2i(7, 2), Vector2i(8, 2)]
-	session.move_tiles(cells, Vector2i(-1, 0))
+	_play_word(session, 3, 0, "AXE")
+	var cells: Array[Vector2i] = [Vector2i(0, 3), Vector2i(1, 3), Vector2i(2, 3)]
+	session.move_tiles(cells, Vector2i(5, -1))
 	_check(session.board.word_at(2, 0) == "POTERAXE", "AXE lands right after POTER")
 	_check(session.turn_points() == -(15 + 6), "POTERAXE is worth nothing: -21")
 	_check(not session.can_end_turn(), "...and blocks the end of the turn")
 	var moved: Array[Vector2i] = [Vector2i(5, 2), Vector2i(6, 2), Vector2i(7, 2)]
-	session.move_tiles(moved, Vector2i(1, 0))
+	session.move_tiles(moved, Vector2i(-5, 1))
 	_check(session.turn_points() == 0, "moved back: +0")
 	_check(session.can_end_turn(), "...and the turn can end")
 
@@ -673,3 +674,31 @@ func _test_scored_cells() -> void:
 		session.place_tile(6, i, tile)
 	var cells := session.turn_start.scored_cells(session.board, _dictionary)
 	_check(cells.size() == 5 and cells[0] == Vector2i(0, 6), "the new word's 5 cells, left first")
+
+
+# Every word starts in the first column (see doc/RULES.md): MAISON
+# shifted one cell right is worth nothing, is framed as misplaced, and
+# blocks the end of the turn.
+func _test_words_start_in_the_first_column() -> void:
+	var session := GameSession.new(1, _dictionary)
+	for i in range(6):
+		var tile := Tile.new("MAISON"[i], "Z", true)
+		_give_hand_tile(session, 0, tile)
+		session.place_tile(4, 1 + i, tile)
+	_check(session.turn_points() == 0, "a word not in the first column is worth nothing")
+	var invalid := session.invalid_words()
+	_check(invalid.size() == 1 and invalid[0]["misplaced"], "...it's reported as misplaced")
+	_check(not session.can_end_turn(), "...and the turn can't end")
+	session.move_tiles(
+		[
+			Vector2i(1, 4),
+			Vector2i(2, 4),
+			Vector2i(3, 4),
+			Vector2i(4, 4),
+			Vector2i(5, 4),
+			Vector2i(6, 4)
+		],
+		Vector2i(-1, 0)
+	)
+	_check(session.turn_points() == 21, "moved to the first column, it's worth 21")
+	_check(session.can_end_turn(), "...and the turn can end")

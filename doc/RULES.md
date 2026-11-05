@@ -182,6 +182,15 @@ from an earlier version of this document and from the Godot implementation
 until 2026-08-05; see `TurnValidity` in
 `trampoline/scripts/turn_validity.gd` for the current enforcement.
 
+**Every word starts in the first column. Decided by Maximilien
+(2026-11-05):** a row's word is read from its leftmost cell, and grows to
+the right. Letters standing anywhere else in a row — a second word, or
+one word shifted right — aren't a word: they're worth nothing (see
+`Scoring.board_value`), they're framed in red, and the turn can't end
+while they're there ("Les mots commencent à la première colonne.", see
+`WordChallenge.find_invalid_words`). A blank ("-") tile still ends a
+row's word early.
+
 **Simplified for the current implementation** (confirmed by Maximilien,
 same spirit as "Word validation" below): the legacy text also frames each
 placement as extending the row's existing word from one of its two ends
@@ -217,10 +226,9 @@ game does:**
   exception: taking it off shortens a word on purpose.
 - The single-row rule above applies to the letters put down from the
   hand, not to tiles only moved on the board.
-- Two words may end up side by side: they then read as one run of
-  letters, which must be a real word for the turn to end (the board frames
-  it in red otherwise). PAR + TOUT → PARTOUT (28) against 6 + 10 before:
-  that turn earns +12.
+- Since every word starts in the first column, moved tiles must end up
+  in the row's one word: TOUT slid right by three, then P, A, R put
+  before it, gives PARTOUT (28) against 10 before: that turn earns +18.
 
 ## End of the game
 

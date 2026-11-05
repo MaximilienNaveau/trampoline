@@ -11,19 +11,24 @@ class_name WordChallenge
 extends RefCounted
 
 
-# Every currently-on-the-board word that ISN'T a valid dictionary word, as
-# a list of `{row, col, word}` dictionaries (`col` anchors the word per
+# Every currently-on-the-board word that doesn't count, as a list of
+# `{row, col, word, misplaced}` dictionaries (`col` anchors the word per
 # board.gd's `word_at`/`word_columns_at` — see board.gd for why a row can
-# hold more than one word). Empty cells and gaps aren't words, so they're
-# never included. An empty result means the board is entirely clean.
+# hold more than one word): one that isn't a valid dictionary word, or
+# one that doesn't start in the first column (`misplaced` true — every
+# word does, see doc/RULES.md). Empty cells and gaps aren't words, so
+# they're never included. An empty result means the board is entirely
+# clean.
 static func find_invalid_words(board: Board, dictionary: FrenchDictionary) -> Array:
 	var invalid := []
 	for row in range(Board.ROWS):
 		for segment in board.segments_in_row(row):
 			var col: int = segment[0]
 			var word := board.word_at(row, col)
-			if word != "" and not dictionary.is_word_valid(word):
-				invalid.append({"row": row, "col": col, "word": word})
+			if word == "":
+				continue
+			if col > 0 or not dictionary.is_word_valid(word):
+				invalid.append({"row": row, "col": col, "word": word, "misplaced": col > 0})
 	return invalid
 
 

@@ -60,14 +60,15 @@ func begin_turn(board: Board) -> void:
 
 
 # What the whole board is worth right now: every valid word's letters
-# (see the top of this file), green ones costing 5 each. `static`: it only
+# (see the top of this file), green ones costing 5 each. Only a word
+# starting in the first column counts (see doc/RULES.md). `static`: it only
 # reads the board, nothing of this class's own (like a C++ static method).
 static func board_value(board: Board, dictionary: FrenchDictionary) -> int:
 	var total := 0
 	for row in range(Board.ROWS):
 		for segment in board.segments_in_row(row):
 			var col: int = segment[0]
-			if not dictionary.is_word_valid(board.word_at(row, col)):
+			if col > 0 or not dictionary.is_word_valid(board.word_at(row, col)):
 				continue
 			var columns := board.word_columns_at(row, col)
 			var length := columns.size()

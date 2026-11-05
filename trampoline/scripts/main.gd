@@ -902,8 +902,14 @@ func _format_end_turn_error() -> String:
 	var messages: Array[String] = []
 
 	var words: Array[String] = []
+	var misplaced := false
 	for entry in _session.invalid_words():
-		words.append(entry["word"])
+		if entry["misplaced"]:
+			misplaced = true
+		else:
+			words.append(entry["word"])
+	if misplaced:
+		messages.append("Les mots commencent à la première colonne.")
 	if words.size() == 1:
 		messages.append("Mot invalide : %s" % words[0])
 	elif words.size() > 1:

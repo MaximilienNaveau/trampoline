@@ -66,8 +66,10 @@ func scored_cells(board: Board, dictionary: FrenchDictionary) -> Array[Vector2i]
 		if not _row_changed(board, row):
 			continue
 		for segment in board.segments_in_row(row):
-			if dictionary.is_word_valid(board.word_at(row, segment[0])):
-				for col in board.word_columns_at(row, segment[0]):
+			# Only a word starting in the first column counts (see
+			# scoring.gd's `board_value`).
+			if segment[0] == 0 and dictionary.is_word_valid(board.word_at(row, 0)):
+				for col in board.word_columns_at(row, 0):
 					cells.append(Vector2i(col, row))
 	return cells
 
