@@ -57,9 +57,15 @@ build yet), so Gatekeeper will refuse to open it on first launch —
 right-click the app and choose "Open" once to get past that, or run
 `xattr -cr Trampoline.app` from a terminal first.
 
+### Windows
+
+Download `trampoline-vX.Y.Z-windows.zip` from the
+[releases](https://github.com/MaximilienNaveau/trampoline/releases), unzip
+it, and run `trampoline.exe`. It's unsigned, so Windows SmartScreen may warn
+on first launch ("More info" → "Run anyway").
+
 ### iOS
 
-Each release attaches a `trampoline-vX.Y.Z-ios-xcodeproj.zip` — this is an
-**unsigned Xcode project**, not an installable app. There's no Apple
-Developer account behind this build yet, so getting it onto a device means
-opening the project in Xcode and signing/building it yourself.
+Not built for now: Godot won't export even an unsigned Xcode project without
+an App Store Team ID, and there's no Apple Developer account behind this
+game yet.

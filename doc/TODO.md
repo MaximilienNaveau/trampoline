@@ -29,6 +29,13 @@ each source and licence noted in an assets README.
 
 ### 3. Publishing on the Play Store
 - [ ] A release signing key, kept out of the repo (GitHub secrets).
+- [ ] F-Droid: the magamajo repo (private, F-Droid repo of
+      `com.magamajo.trampoline`) takes the APK attached to each `v*`
+      GitHub Release. Its signing key will come from magamajo: until then
+      the release APK is debug-signed and must not reach F-Droid (it
+      couldn't update the 3.x installs). Needs a release export in the
+      flake (`nix build .#android` is a debug build), the key as CI
+      secrets, and a version code above 3002000.
 - [ ] The store listing: description, screenshots, the icon at 512 px,
       a privacy note (the game collects nothing).
 - [ ] The version number and code, bumped with each release.
