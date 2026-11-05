@@ -109,9 +109,9 @@ jobs:
           nix run ./trampoline#apksigner -- sign \
             --ks "$keystore" --ks-pass env:ANDROID_KEYSTORE_PASS \
             --ks-key-alias "$ANDROID_KEY_ALIAS_NAME" --key-pass env:ANDROID_KEY_ALIAS_PASS \
-            --out artifacts/trampoline-signed.apk artifacts/android-build/trampoline.apk
+            --out artifacts/android-build/signed.apk artifacts/android-build/trampoline.apk
           rm -f "$keystore"
-          signer=$(nix run ./trampoline#apksigner -- verify --print-certs artifacts/trampoline-signed.apk \
+          signer=$(nix run ./trampoline#apksigner -- verify --print-certs artifacts/android-build/signed.apk \
             | sed -n 's/^Signer #1 certificate SHA-256 digest: //p')
           echo "signed by $signer"
           if [ "$signer" != "$FDROID_SIGNER_SHA256" ]; then
@@ -128,8 +128,10 @@ jobs:
           (cd windows-build && zip -r "../trampoline-${{ github.ref_name }}-windows.zip" .)
           (cd web-build && zip -r "../trampoline-${{ github.ref_name }}-web.zip" .)
           cp macos-build/trampoline.zip "trampoline-${{ github.ref_name }}-macos.zip"
-          # The only .apk of the release: F-Droid takes exactly one.
-          cp trampoline-signed.apk "trampoline-${{ github.ref_name }}-android.apk"
+          # The only .apk of the release: F-Droid takes exactly one. (The
+          # signing leftovers stay in android-build/, which isn't uploaded:
+          # only artifacts/trampoline-* is.)
+          cp android-build/signed.apk "trampoline-${{ github.ref_name }}-android.apk"
 
       # A dry run (workflow_dispatch) keeps its result as a private workflow
       # artifact instead, to inspect without publishing anything.
