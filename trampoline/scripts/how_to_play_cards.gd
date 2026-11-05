@@ -11,6 +11,10 @@
 #   "hand":    the tiles in the hand, left to right ("" = no hand).
 #   "tray":    true to show the "À rendre" tray beside the hand.
 #   "refill":  tiles that slide into the hand after an "end_turn" step.
+#   "slots":   how many tiles the hand makes room for (default: as many
+#              as "hand" has) — more, for tiles swapped into it.
+#   "hand_buttons": true to show "Trier", "Tout jaune", "Tout vert"
+#              under the hand.
 #   "steps":   what happens, in order (see below).
 #
 # Tiles are written as plain letters; each one is a real tile from the
@@ -22,7 +26,16 @@
 # Steps:
 #   {"word": "MAISON", "row": r, "col": c, "backs": {0: "F"}} — tiles
 #       appear at once, popping in one after another ("backs" optional).
-#   {"drag": i, "to": [r, c]}  — the finger drags hand tile i onto a cell.
+#   {"drag": i, "to": [r, c]}  — the finger drags hand tile i onto a cell;
+#       onto a tile, the two swap: that one slides into the hand.
+#   {"box": [[r, c], [r, c]], "grab": [r, c], "to": [r, c]} — the finger
+#       draws the dotted box between two cells (the first one empty), then
+#       drags the tiles inside by the one at "grab" to "to".
+#   {"arrange": i, "before": j} — the finger drags hand tile i to just
+#       before hand tile j (as the hand starts out).
+#   {"button": "Trier"}        — the finger taps a button under the hand.
+#   {"reset": true}            — the finger taps "Recommencer": the card
+#       goes back to how it started.
 #   {"tap": [r, c]}            — the finger taps a board tile: it flips.
 #   {"float": "+21", "at": [r, c]} — a score floats up from a cell.
 #   {"discard": i}             — the finger drags hand tile i to the tray.
@@ -114,6 +127,68 @@ const CARDS := [
 			{"word": "JARdINIER", "row": 2, "col": 0},
 			{"float": "−5", "at": [2, 3]},
 			{"wait": 1.5},
+		],
+	},
+	{
+		"caption": "Posée sur une lettre, elle l'échange : l'autre revient dans la main",
+		"rows": 3,
+		"hand": "R",
+		"slots": 2,
+		"steps":
+		[
+			{"word": "MAISON", "row": 1, "col": 0},
+			{"wait": 0.6},
+			{"drag": 0, "to": [1, 0]},
+			{"wait": 1.5},
+		],
+	},
+	{
+		"caption": "Encadrez des lettres pour les déplacer, puis remplissez les cases vidées",
+		"rows": 3,
+		"hand": "PAR",
+		"steps":
+		[
+			{"word": "TOUT", "row": 1, "col": 0},
+			{"wait": 0.6},
+			{"box": [[0, 0], [2, 3]], "grab": [1, 0], "to": [1, 3]},
+			{"drag": 0, "to": [1, 0]},
+			{"drag": 1, "to": [1, 1]},
+			{"drag": 2, "to": [1, 2]},
+			{"float": "+18", "at": [1, 3]},
+			{"wait": 1.5},
+		],
+	},
+	{
+		"caption": "« Recommencer » remet tout comme au début du tour",
+		"rows": 3,
+		"hand": "RT",
+		"slots": 3,
+		"steps":
+		[
+			{"word": "MAISON", "row": 1, "col": 0},
+			{"wait": 0.5},
+			{"drag": 0, "to": [1, 0]},
+			{"tap": [1, 1]},
+			{"wait": 0.4},
+			{"reset": true},
+			{"wait": 1.2},
+		],
+	},
+	{
+		"caption": "Rangez votre main : glissez, triez, tout en jaune ou en vert",
+		"rows": 1,
+		"hand": "TRAMPOLI",
+		"hand_buttons": true,
+		"steps":
+		[
+			{"arrange": 7, "before": 0},
+			{"wait": 0.4},
+			{"button": "Trier"},
+			{"wait": 0.6},
+			{"button": "Tout vert"},
+			{"wait": 0.8},
+			{"button": "Tout jaune"},
+			{"wait": 1.2},
 		],
 	},
 	{

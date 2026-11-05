@@ -30,9 +30,12 @@ const _HAND_GAP := 24.0
 const _TILE_GAP := 4.0
 # Tiles in the tray are a little smaller, as in the game (discard_tray.gd).
 const _TRAY_SCALE := 0.72
-# Height kept free at the top of the stage for the "Fin du tour" button,
-# on a card that uses it.
+# Height kept free at the top of the stage for the "Fin du tour" or
+# "Recommencer" button, on a card that uses it.
 const _BUTTON_ROOM := 44.0
+# The buttons under the hand, on a card that uses them (see main.tscn's
+# HandTools).
+const _HAND_BUTTONS := ["Trier", "Tout jaune", "Tout vert"]
 const _FINGER_RADIUS := 13.0
 
 # Which card is showing.
@@ -56,17 +59,19 @@ var _tray_rect := Rect2()
 var _board_tiles := {}
 var _hand_tiles: Array = []
 var _tray_tiles: Array = []
+# The buttons under the hand, by label (see `_HAND_BUTTONS`).
+var _hand_buttons := {}
 # The real tiles the current card's tiles are drawn from (see `_make_tile`).
 var _unused: Array[Tile] = []
 
-# Everything that belongs to the current card — its tiles and floating
-# scores — sits on this layer of the stage, so starting a card simply
-# clears it. The ghost finger (a translucent fingertip drawn as a circle)
-# and the "Fin du tour" button some cards tap stay on the stage for good,
-# above it.
+# Everything that belongs to the current card — its tiles, floating
+# scores, hand buttons — sits on this layer of the stage, so starting a
+# card simply clears it. The ghost finger (a translucent fingertip drawn
+# as a circle) and the button at the top some cards tap ("Fin du tour" or
+# "Recommencer") stay on the stage for good, above it.
 var _card_layer := Control.new()
 var _finger := Control.new()
-var _end_turn_button := Button.new()
+var _top_button := Button.new()
 
 @onready var _caption: Label = $Layout/Caption
 # The animation area: drawn on through its `draw` signal (board, holes,
@@ -88,11 +93,10 @@ func _ready() -> void:
 	_finger.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_finger.size = Vector2.ONE * 2 * _FINGER_RADIUS
 	_finger.pivot_offset = _finger.size / 2
-	_end_turn_button.text = "Fin du tour"
-	_end_turn_button.theme_type_variation = &"PrimaryButton"
-	_end_turn_button.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_end_turn_button.focus_mode = Control.FOCUS_NONE
-	_stage.add_child(_end_turn_button)
+	_top_button.theme_type_variation = &"PrimaryButton"
+	_top_button.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_top_button.focus_mode = Control.FOCUS_NONE
+	_stage.add_child(_top_button)
 	_stage.add_child(_finger)
 	_back_button.pressed.connect(_show_card.bind(-1))
 	_next_button.pressed.connect(_on_next_pressed)
@@ -167,14 +171,19 @@ func _reset(card: Dictionary) -> void:
 	_board_tiles.clear()
 	_hand_tiles.clear()
 	_tray_tiles.clear()
+	_hand_buttons.clear()
+	_card_layer.modulate.a = 1.0
 	_unused = TilePool.new().tiles
+	_top_button.text = _top_label(card)
 	_layout(card)
 	for i in range(card["hand"].length()):
 		var node := _new_tile_node(_make_tile(card["hand"][i]), _hand_side)
 		node.position = _hand_slot(i)
 		_hand_tiles.append(node)
-	_end_turn_button.visible = card["steps"].any(func(s): return s.has("end_turn"))
-	_end_turn_button.scale = Vector2.ONE
+	if card.get("hand_buttons", false):
+		_add_hand_buttons()
+	_top_button.visible = _top_label(card) != ""
+	_top_button.scale = Vector2.ONE
 	_finger.position = Vector2(_stage.size.x * 0.75, _stage.size.y + 20)
 	_finger.scale = Vector2.ONE
 	_stage.queue_redraw()
@@ -186,21 +195,23 @@ func _reset(card: Dictionary) -> void:
 func _layout(card: Dictionary) -> void:
 	var rows: int = card["rows"]
 	var has_hand: bool = card["hand"] != ""
-	var top := _BUTTON_ROOM if card["steps"].any(func(s): return s.has("end_turn")) else 0.0
+	var top := _BUTTON_ROOM if _top_label(card) != "" else 0.0
 	var width := _stage.size.x - 2 * _FRAME
 	var height := _stage.size.y - 2 * _FRAME - top
-	# With a hand, it takes one more row of cells plus the gap above it.
-	var height_rows := rows + (1 if has_hand else 0)
+	# With a hand, it takes one more row of cells plus the gap above it —
+	# and one more for the buttons under it, if any.
+	var below := (1 if has_hand else 0) + (1 if card.get("hand_buttons", false) else 0)
+	var height_rows := rows + below
 	var spare := _HAND_GAP if has_hand else 0.0
 	_cell = floorf(minf(minf(width / Board.COLUMNS, (height - spare) / height_rows), _MAX_CELL))
 	var board_size := Vector2(Board.COLUMNS, rows) * _cell
-	var content_height := board_size.y + (spare + _cell if has_hand else 0.0)
+	var content_height := board_size.y + (spare + _cell * below if has_hand else 0.0)
 	var origin_y := top + _FRAME + (height - content_height) / 2
 	_board_rect = Rect2(Vector2((_stage.size.x - board_size.x) / 2, origin_y), board_size)
 
 	# The hand: one row of tiles under the board, shrunk if the tray needs
-	# room beside it.
-	var count: int = card["hand"].length()
+	# room beside it; "slots" leaves room for tiles swapped into it.
+	var count: int = card.get("slots", card["hand"].length())
 	var tray_width := 0.0
 	if card.get("tray", false):
 		tray_width = 2 * _cell * _TRAY_SCALE + 3 * _TILE_GAP
@@ -210,15 +221,55 @@ func _layout(card: Dictionary) -> void:
 	_tray_rect = Rect2(
 		Vector2(_board_rect.end.x - tray_width, _hand_origin.y), Vector2(tray_width, _hand_side)
 	)
-	_end_turn_button.reset_size()
-	_end_turn_button.position = Vector2(
-		_board_rect.end.x - _end_turn_button.size.x, (top - _end_turn_button.size.y) / 2
+	_top_button.reset_size()
+	_top_button.position = Vector2(
+		_board_rect.end.x - _top_button.size.x, (top - _top_button.size.y) / 2
 	)
 
 
 # Where hand slot `i`'s tile sits.
 func _hand_slot(i: int) -> Vector2:
 	return _hand_origin + Vector2(i * (_hand_side + _TILE_GAP), 0)
+
+
+# Where `node`'s `position` goes for it to sit in hand slot `i`, scaled to
+# the hand's tile size — a tile scales around its centre (see
+# `_new_tile_node`), so its centre is what lines up.
+func _slot_position(node: Control, i: int) -> Vector2:
+	return _hand_slot(i) + Vector2.ONE * _hand_side / 2 - node.size / 2
+
+
+# The label of the button at the top of `card`'s stage: "Recommencer" if
+# it resets, "Fin du tour" if it ends a turn, "" for none.
+func _top_label(card: Dictionary) -> String:
+	if card["steps"].any(func(s): return s.has("reset")):
+		return "Recommencer"
+	if card["steps"].any(func(s): return s.has("end_turn")):
+		return "Fin du tour"
+	return ""
+
+
+# The centre of board cell [row, col].
+func _cell_center(at: Array) -> Vector2:
+	return _cell_tile_rect(at[0], at[1]).get_center()
+
+
+# Adds the buttons under the hand (see `_HAND_BUTTONS`). They're only
+# pictures here: the finger "taps" them (see `_tap_hand_button`).
+func _add_hand_buttons() -> void:
+	var x := _hand_origin.x
+	for label: String in _HAND_BUTTONS:
+		var button := Button.new()
+		button.text = label
+		button.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		button.focus_mode = Control.FOCUS_NONE
+		button.add_theme_font_size_override("font_size", int(_cell * 0.32))
+		_card_layer.add_child(button)
+		button.reset_size()
+		button.position = Vector2(x, _hand_origin.y + _hand_side + 2 * _TILE_GAP)
+		button.pivot_offset = button.size / 2
+		x += button.size.x + 2 * _TILE_GAP
+		_hand_buttons[label] = button
 
 
 # The rectangle a tile fills in board cell (row, col): its hole, minus a
@@ -280,16 +331,40 @@ func _do(step: Dictionary, card: Dictionary, run: int) -> bool:
 		still_playing = await _drag_to_tray(step["discard"], run)
 	elif step.has("end_turn"):
 		still_playing = await _end_turn(card, run)
+	elif step.has("box"):
+		still_playing = await _box_move(step, run)
+	elif step.has("arrange"):
+		still_playing = await _arrange(step["arrange"], step["before"], run)
+	elif step.has("button"):
+		still_playing = await _tap_hand_button(step["button"], run)
+	elif step.has("reset"):
+		still_playing = await _reset_turn(card, run)
 	return still_playing
 
 
 # The finger drags hand tile `index` into the board cell `to` = [row, col].
+# On a tile, the two swap: that one slides into the hand's first free
+# slot (see GameSession.place_tile).
 func _drag_to_board(index: int, to: Array, run: int) -> bool:
 	var rect := _cell_tile_rect(to[0], to[1])
+	var key := "%d,%d" % [to[0], to[1]]
+	var displaced: Control = _board_tiles.get(key)
 	var node: Control = await _carry(index, rect.position, rect.size.x, run)
 	if node == null:
 		return false
-	_board_tiles["%d,%d" % [to[0], to[1]]] = node
+	_board_tiles[key] = node
+	if displaced != null:
+		var slot := _hand_tiles.find(null)
+		if slot == -1:
+			slot = _hand_tiles.size()
+			_hand_tiles.append(null)
+		_hand_tiles[slot] = displaced
+		var tween := _tween().set_parallel()
+		tween.tween_property(displaced, "position", _slot_position(displaced, slot), 0.4).set_trans(
+			Tween.TRANS_SINE
+		)
+		tween.tween_property(displaced, "scale", Vector2.ONE * _hand_side / displaced.size.x, 0.4)
+		return await _pause(0.45, run)
 	return true
 
 
@@ -433,19 +508,30 @@ func _tap(at: Array, run: int) -> bool:
 	var node: Control = _board_tiles[key]
 	if not await _press_at(node.position + node.size / 2, run):
 		return false
+	var flipped: Control = await _flip(node, run)
+	if flipped == null:
+		return false
+	_board_tiles[key] = flipped
+	_release()
+	return await _pause(0.15, run)
+
+
+# Turns `node`'s tile over: it narrows to a sliver, turns to its other
+# face, and widens again. Returns the new picture (the old one goes), or
+# null if the card was stopped meanwhile.
+func _flip(node: Control, run: int) -> Control:
+	var scale_y := node.scale.y
 	_tween().tween_property(node, "scale:x", 0.0, 0.1)
 	if not await _pause(0.1, run):
-		return false
+		return null
 	var tile: Tile = node.get_meta("tile")
 	tile.flip()
 	var flipped := _new_tile_node(tile, node.size.x)
 	flipped.position = node.position
-	flipped.scale.x = 0.0
+	flipped.scale = Vector2(0.0, scale_y)
 	node.queue_free()
-	_board_tiles[key] = flipped
-	_tween().tween_property(flipped, "scale:x", 1.0, 0.1)
-	_release()
-	return await _pause(0.15, run)
+	_tween().tween_property(flipped, "scale:x", scale_y, 0.1)
+	return flipped
 
 
 # A score floating up from board cell `at` and fading out.
@@ -470,14 +556,14 @@ func _float_text(text: String, at: Array) -> void:
 # The finger taps "Fin du tour": the tray's tiles go back to the bag
 # (shrinking away), and new ones slide up into the hand's gaps.
 func _end_turn(card: Dictionary, run: int) -> bool:
-	if not await _press_at(_end_turn_button.position + _end_turn_button.size / 2, run):
+	if not await _press_at(_top_button.position + _top_button.size / 2, run):
 		return false
-	_end_turn_button.pivot_offset = _end_turn_button.size / 2
-	_tween().tween_property(_end_turn_button, "scale", Vector2.ONE * 0.92, 0.08)
+	_top_button.pivot_offset = _top_button.size / 2
+	_tween().tween_property(_top_button, "scale", Vector2.ONE * 0.92, 0.08)
 	_release()
 	if not await _pause(0.1, run):
 		return false
-	_tween().tween_property(_end_turn_button, "scale", Vector2.ONE, 0.08)
+	_tween().tween_property(_top_button, "scale", Vector2.ONE, 0.08)
 	for node: Control in _tray_tiles:
 		var tween := _tween().set_parallel()
 		tween.tween_property(node, "scale", Vector2.ZERO, 0.3).set_trans(Tween.TRANS_BACK).set_ease(
@@ -511,3 +597,177 @@ func _end_turn(card: Dictionary, run: int) -> bool:
 		if not await _pause(0.12, run):
 			return false
 	return true
+
+
+# The finger draws the selection box from cell `step["box"][0]` (an empty
+# one) to `step["box"][1]`, then drags the tiles inside it by the one at
+# `step["grab"]` to `step["to"]`: they all move together (see
+# board_view.gd's selection box and block_move.gd).
+func _box_move(step: Dictionary, run: int) -> bool:
+	var corners: Array = step["box"]
+	var start := _cell_center(corners[0])
+	if not await _press_at(start, run):
+		return false
+	# The dotted box: a Control drawing its own dashed outline, growing
+	# with the finger. Godot redraws a Control whenever its size changes.
+	var box := Control.new()
+	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	box.draw.connect(func() -> void: _draw_dashed_rect(box))
+	box.position = start
+	_card_layer.add_child(box)
+	var end := _cell_center(corners[1])
+	var tween := _tween().set_parallel()
+	tween.tween_property(box, "size", end - start, 0.6)
+	tween.tween_property(_finger, "position", end - _finger.size / 2, 0.6)
+	if not await _pause(0.65, run):
+		return false
+	_release()
+	# On release, the box snaps round the cells it covers.
+	var first := Vector2i(mini(corners[0][1], corners[1][1]), mini(corners[0][0], corners[1][0]))
+	var last := Vector2i(maxi(corners[0][1], corners[1][1]), maxi(corners[0][0], corners[1][0]))
+	var selected: Array[Vector2i] = []
+	for key: String in _board_tiles:
+		var cell := Vector2i(int(key.get_slice(",", 1)), int(key.get_slice(",", 0)))
+		if cell.x >= first.x and cell.x <= last.x and cell.y >= first.y and cell.y <= last.y:
+			selected.append(cell)
+	var snapped := Rect2(
+		_board_rect.position + Vector2(first) * _cell, Vector2(last - first + Vector2i.ONE) * _cell
+	)
+	tween = _tween().set_parallel()
+	tween.tween_property(box, "position", snapped.position, 0.15)
+	tween.tween_property(box, "size", snapped.size, 0.15)
+	if not await _pause(0.4, run):
+		return false
+
+	# Then the finger drags them all by the grabbed one.
+	var grab: Array = step["grab"]
+	var to: Array = step["to"]
+	if not await _press_at(_cell_center(grab), run):
+		return false
+	var offset := Vector2(to[1] - grab[1], to[0] - grab[0]) * _cell
+	var moved := {}
+	tween = _tween().set_parallel()
+	for cell in selected:
+		var node: Control = _board_tiles["%d,%d" % [cell.y, cell.x]]
+		_board_tiles.erase("%d,%d" % [cell.y, cell.x])
+		tween.tween_property(node, "position", node.position + offset, 0.45)
+		moved["%d,%d" % [cell.y + to[0] - grab[0], cell.x + to[1] - grab[1]]] = node
+	tween.tween_property(box, "position", snapped.position + offset, 0.45)
+	tween.tween_property(_finger, "position", _finger.position + offset, 0.45)
+	if not await _pause(0.5, run):
+		return false
+	_board_tiles.merge(moved)
+	_release()
+	_tween().tween_property(box, "modulate:a", 0.0, 0.3)
+	return await _pause(0.3, run)
+
+
+# `box`'s outline, dashed, in ink — like the game's selection box (see
+# board_view.gd's `_dotted_rect`).
+func _draw_dashed_rect(box: Control) -> void:
+	var r := Rect2(Vector2.ZERO, box.size).abs()
+	var corners := [
+		r.position, Vector2(r.end.x, r.position.y), r.end, Vector2(r.position.x, r.end.y)
+	]
+	for i in range(4):
+		box.draw_dashed_line(corners[i], corners[(i + 1) % 4], _INK, 2.0, 6.0)
+
+
+# The finger drags hand tile `index` to just before tile `before` (both
+# slots as the card's hand starts out), the others sliding aside — the
+# player arranging their hand (see hand_row.gd).
+func _arrange(index: int, before: int, run: int) -> bool:
+	var node: Control = _hand_tiles[index]
+	var target: Control = _hand_tiles[before]
+	if not await _press_at(node.position + node.size / 2, run):
+		return false
+	_hand_tiles.erase(node)
+	_hand_tiles.insert(_hand_tiles.find(target), node)
+	node.z_index = 1
+	var tween := _tween().set_parallel()
+	_slide_hand(tween)
+	var center := _hand_slot(_hand_tiles.find(node)) + Vector2.ONE * _hand_side / 2
+	tween.tween_property(_finger, "position", center - _finger.size / 2, 0.4)
+	if not await _pause(0.45, run):
+		return false
+	node.z_index = 0
+	_release()
+	return true
+
+
+# Adds to `tween` every hand tile sliding to its slot.
+func _slide_hand(tween: Tween) -> void:
+	for i in range(_hand_tiles.size()):
+		var node: Control = _hand_tiles[i]
+		if node != null:
+			tween.tween_property(node, "position", _slot_position(node, i), 0.4).set_trans(
+				Tween.TRANS_SINE
+			)
+
+
+# The finger taps the hand button `label` (see `_HAND_BUTTONS`), and the
+# hand follows: sorted A to Z, or every tile turned yellow or green (see
+# hand_tiles.gd).
+func _tap_hand_button(label: String, run: int) -> bool:
+	var button: Button = _hand_buttons[label]
+	if not await _press_at(button.position + button.size / 2, run):
+		return false
+	_tween().tween_property(button, "scale", Vector2.ONE * 0.92, 0.08)
+	_release()
+	if not await _pause(0.1, run):
+		return false
+	_tween().tween_property(button, "scale", Vector2.ONE, 0.08)
+	var nodes := _hand_tiles.filter(func(n): return n != null)
+	if label == "Trier":
+		nodes.sort_custom(
+			func(a: Control, b: Control) -> bool:
+				return (
+					HandTiles.sort_key(a.get_meta("tile")) < HandTiles.sort_key(b.get_meta("tile"))
+				)
+		)
+		_hand_tiles = nodes
+		_slide_hand(_tween().set_parallel())
+		return await _pause(0.45, run)
+	var green := label == "Tout vert"
+	for i in range(_hand_tiles.size()):
+		var node: Control = _hand_tiles[i]
+		if node == null:
+			continue
+		var tile: Tile = node.get_meta("tile")
+		var turn := (
+			tile.back_is_green() and tile.is_showing_front()
+			if green
+			else not tile.is_showing_front()
+		)
+		if turn:
+			var flipped: Control = await _flip(node, run)
+			if flipped == null:
+				return false
+			_hand_tiles[i] = flipped
+	return await _pause(0.15, run)
+
+
+# The finger taps "Recommencer": the card's tiles fade out and come back
+# as they were when the turn began — the hand as the card starts, and the
+# card's "word" steps, the words already on the board (see
+# GameSession.reset_turn).
+func _reset_turn(card: Dictionary, run: int) -> bool:
+	if not await _press_at(_top_button.position + _top_button.size / 2, run):
+		return false
+	_top_button.pivot_offset = _top_button.size / 2
+	_tween().tween_property(_top_button, "scale", Vector2.ONE * 0.92, 0.08)
+	_release()
+	_tween().tween_property(_card_layer, "modulate:a", 0.0, 0.25)
+	if not await _pause(0.3, run):
+		return false
+	var finger_at := _finger.position
+	_reset(card)
+	# `_reset` sent the finger off the stage; it stays by the button.
+	_finger.position = finger_at
+	_card_layer.modulate.a = 0.0
+	_tween().tween_property(_card_layer, "modulate:a", 1.0, 0.25)
+	# The words already on the board as the turn began come back too.
+	for step: Dictionary in card["steps"]:
+		if step.has("word") and not await _place_word(step, run):
+			return false
+	return await _pause(0.3, run)

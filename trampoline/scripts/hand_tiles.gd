@@ -43,6 +43,7 @@ static func show_faces(hand: Array[Tile], green: bool) -> void:
 
 
 # What `sort` orders a tile by: the letter it shows — "~" for a blank,
-# which comes after "Z" in character order, putting blanks last.
+# which comes after "Z" in character order, putting blanks last. Also
+# used by how_to_play_view.gd to sort its pictures the same way.
 static func sort_key(tile: Tile) -> String:
 	return "~" if tile.is_blank() else tile.current_letter()
