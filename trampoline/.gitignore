@@ -5,3 +5,10 @@
 # Exported games (see export_presets.cfg) and `nix build` results.
 build/
 result
+
+# Python's bytecode cache, left by the audio generators in tools/audio/.
+__pycache__/
+
+# Music candidates tools/audio/make_music.py makes but the game doesn't use
+# (Godot's .import files for them too); rebuild them to listen again.
+assets/audio/music/folk_*
