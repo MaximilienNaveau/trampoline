@@ -73,3 +73,5 @@ crashlytics-build.properties
 
 # IDE vscode
 .vscode
+# PDFs compiled from doc/*.typ (typst compile doc/<name>.typ).
+doc/*.pdf
