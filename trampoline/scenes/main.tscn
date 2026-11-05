@@ -153,7 +153,7 @@ theme_override_constants/margin_bottom=12
 [node name="Content" type="VBoxContainer" parent="Layout/Margin"]
 layout_mode=2
 size_flags_horizontal=3
-theme_override_constants/separation=14
+theme_override_constants/separation=8
 
 [node name="TopBar" type="HBoxContainer" parent="Layout/Margin/Content"]
 layout_mode=2
@@ -231,7 +231,6 @@ visible=false
 [node name="PlayArea" type="BoxContainer" parent="Layout/Margin/Content"]
 layout_mode=2
 size_flags_vertical=3
-alignment=1
 vertical=true
 theme_override_constants/separation=10
 

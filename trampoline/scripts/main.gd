@@ -307,6 +307,15 @@ func _on_board_cell_size_changed(_side: float) -> void:
 # hood, `BoxContainer.vertical` is just normally locked once you pick one.
 func _update_play_area_orientation() -> void:
 	_play_area.vertical = _is_portrait()
+	# On a phone, room at the top for the status bar or camera cutout:
+	# the screen's "safe area" (what the system keeps clear of them, in
+	# screen pixels, turned into the game's own by the stretch's scale),
+	# and at least 36 px. The spare room at the bottom stays free for
+	# Android's back/home buttons.
+	if OS.has_feature("mobile"):
+		var scale := get_viewport().get_final_transform().get_scale().y
+		var inset := DisplayServer.get_display_safe_area().position.y / scale
+		_margin.add_theme_constant_override("margin_top", int(maxf(36.0, inset + 12.0)))
 
 
 # Tells BoardView how much of the screen's height isn't its own (see its
