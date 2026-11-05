@@ -19,3 +19,10 @@ work, no third-party source.
 
 `menu_icon.svg` — the "☰" menu button's icon: three rounded bars in
 `cream_text` (see doc/ART_DIRECTION.md). Hand-written SVG, original work.
+
+`godot_logo.svg` — the Godot Engine logo, by Andrea Calabró, under the
+Creative Commons Attribution 4.0 International licence (CC BY 4.0,
+https://creativecommons.org/licenses/by/4.0/), copied unchanged from
+Godot 4.7.1's own files. Shown small, with "Fait avec Godot", in the
+corner of the image seen while the game loads (see tools/build_splash.gd),
+to credit the engine the game is made with.

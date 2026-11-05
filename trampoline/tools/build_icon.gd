@@ -14,6 +14,10 @@
 #     just its M and C, small enough to stay inside any crop.
 #   icon_monochrome.png — Android 13's themed icon: only the shapes count
 #     (the launcher colors them), so it's just the letters M and C.
+#   splash_icon.png — the icon Android 12+ shows while the app starts (see
+#     export_presets.cfg's `splash_screen/icon`), on the felt's color: the
+#     whole tile, small enough that its corners stay inside the circle the
+#     system crops it to (two thirds of the image).
 extends SceneTree
 
 const _DIR := "res://assets/icon/"
@@ -35,6 +39,7 @@ func _draw_all() -> void:
 	await _draw("app_icon.png", _SIZE, _SIZE - 2 * _MARGIN, true, true)
 	await _draw("icon_foreground.png", _LAYER_SIZE, _LAYER_TILE, false, true)
 	await _draw("icon_monochrome.png", _LAYER_SIZE, _LAYER_TILE, false, false)
+	await _draw("splash_icon.png", _LAYER_SIZE, _LAYER_TILE, true, true)
 	# The background: the tile's yellow, nothing drawn on it.
 	var background := Image.create(_LAYER_SIZE, _LAYER_SIZE, false, Image.FORMAT_RGBA8)
 	background.fill(TileView.YELLOW_COLOR)
