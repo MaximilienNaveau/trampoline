@@ -1,4 +1,4 @@
-[gd_scene load_steps=25 format=3]
+[gd_scene load_steps=27 format=3]
 
 [ext_resource type="Script" path="res://scripts/main.gd" id="1"]
 [ext_resource type="PackedScene" path="res://scenes/board_view.tscn" id="2"]
@@ -20,6 +20,7 @@
 [ext_resource type="Script" path="res://scripts/scoreboard.gd" id="18"]
 [ext_resource type="Script" path="res://scripts/drag_steady_scroll.gd" id="19"]
 [ext_resource type="Script" path="res://scripts/quit_game_button.gd" id="20"]
+[ext_resource type="Script" path="res://scripts/end_screen.gd" id="21"]
 
 [sub_resource type="StyleBoxFlat" id="EndTurnBannerStyle"]
 bg_color = Color(0.75, 0.16, 0.16, 1)
@@ -56,6 +57,20 @@ width = 4
 height = 32
 fill_to = Vector2(0, 1)
 
+
+[sub_resource type="StyleBoxFlat" id="EndCardStyle"]
+content_margin_left = 24.0
+content_margin_top = 20.0
+content_margin_right = 24.0
+content_margin_bottom = 24.0
+bg_color = Color(0.17, 0.18, 0.19, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+shadow_color = Color(0, 0, 0, 0.45)
+shadow_size = 12
+shadow_offset = Vector2(0, 4)
 
 [sub_resource type="StyleBoxFlat" id="TrayStyle"]
 content_margin_left = 4.0
@@ -365,6 +380,71 @@ layout_mode=2
 layout_mode=2
 theme_override_constants/separation=10
 script=ExtResource("17")
+
+[node name="EndScreen" type="Panel" parent="."]
+visible=false
+layout_mode=1
+anchors_preset=15
+anchor_right=1.0
+anchor_bottom=1.0
+grow_horizontal=2
+grow_vertical=2
+script=ExtResource("21")
+
+[node name="Center" type="CenterContainer" parent="EndScreen"]
+layout_mode=1
+anchors_preset=15
+anchor_right=1.0
+anchor_bottom=1.0
+grow_horizontal=2
+grow_vertical=2
+
+[node name="Card" type="PanelContainer" parent="EndScreen/Center"]
+layout_mode=2
+theme_override_styles/panel=SubResource("EndCardStyle")
+
+[node name="Items" type="VBoxContainer" parent="EndScreen/Center/Card"]
+layout_mode=2
+theme_override_constants/separation=16
+
+[node name="Title" type="Label" parent="EndScreen/Center/Card/Items"]
+layout_mode=2
+horizontal_alignment=1
+
+[node name="Winners" type="Label" parent="EndScreen/Center/Card/Items"]
+custom_minimum_size=Vector2(380, 0)
+layout_mode=2
+theme_override_font_sizes/font_size=34
+horizontal_alignment=1
+autowrap_mode=3
+
+[node name="Note" type="Label" parent="EndScreen/Center/Card/Items"]
+visible=false
+custom_minimum_size=Vector2(380, 0)
+layout_mode=2
+horizontal_alignment=1
+autowrap_mode=3
+
+[node name="ScoreRecap" type="VBoxContainer" parent="EndScreen/Center/Card/Items"]
+layout_mode=2
+theme_override_constants/separation=10
+script=ExtResource("17")
+
+[node name="Buttons" type="HBoxContainer" parent="EndScreen/Center/Card/Items"]
+layout_mode=2
+size_flags_horizontal=4
+theme_override_constants/separation=16
+
+[node name="ReplayButton" type="Button" parent="EndScreen/Center/Card/Items/Buttons"]
+theme_type_variation=&"PrimaryButton"
+custom_minimum_size=Vector2(140, 52)
+layout_mode=2
+text="Rejouer"
+
+[node name="MenuButton" type="Button" parent="EndScreen/Center/Card/Items/Buttons"]
+custom_minimum_size=Vector2(140, 52)
+layout_mode=2
+text="Menu"
 
 [node name="BoxLid" type="Control" parent="."]
 layout_mode=1

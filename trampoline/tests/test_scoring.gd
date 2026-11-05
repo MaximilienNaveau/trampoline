@@ -21,6 +21,7 @@ func _initialize() -> void:
 	_test_line_bonus()
 	_test_board_bonus()
 	_test_board_value_adds_up_words()
+	_test_green_faces_and_perfect_board()
 
 	if _failures == 0:
 		print("\nAll checks passed.")
@@ -174,3 +175,17 @@ func _test_board_value_adds_up_words() -> void:
 	)
 	_place_word(board, 8, "maison")
 	_check(Scoring.board_value(board, _dictionary) == 45 + 21, "...and with MAISON beside: +21")
+
+
+func _test_green_faces_and_perfect_board() -> void:
+	var board := Board.new()
+	for row in range(Board.ROWS):
+		_place_word(board, row, "ETUDIANTE")
+	_check(Scoring.green_face_count(board) == 0, "an all-yellow board has no green face")
+	_check(Scoring.is_perfect(board), "...and, finished, it's perfect")
+	board.tile_at(5, 3).flip()  # its back face: a green "Z"
+	_check(Scoring.green_face_count(board) == 1, "one tile flipped to green is counted")
+	_check(not Scoring.is_perfect(board), "...and the board is no longer perfect")
+	board.tile_at(5, 3).flip()
+	board.remove(12, 8)
+	_check(not Scoring.is_perfect(board), "an unfinished board isn't perfect, even all yellow")

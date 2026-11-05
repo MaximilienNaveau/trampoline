@@ -99,6 +99,8 @@ var _discard_tray: DiscardTray = $Layout/Margin/Content/PlayArea/HandArea/HandBa
 # scoreboard.gd).
 @onready var _scoreboard: Scoreboard = $Layout/Margin/Content/Scoreboard
 @onready var _game_over_banner: Label = $Layout/Margin/Content/GameOverBanner
+# Shown once a turn-based game is over (see end_screen.gd).
+@onready var _end_screen: EndScreen = $EndScreen
 # A floating notification, not part of the page's normal top-to-bottom
 # flow — declared as a direct child of Main in main.tscn (a sibling of
 # Layout, not nested inside it) so it draws OVER the header instead of
@@ -262,6 +264,8 @@ func _ready() -> void:
 		_on_turn_action.bind(func() -> void: HandTiles.show_faces(_hand(), true))
 	)
 	_resume_button.pressed.connect(_on_resume_pressed)
+	_end_screen.replay_pressed.connect(_on_replay_pressed)
+	_end_screen.menu_pressed.connect(_start_new_game)
 	_new_game_button.pressed.connect(_on_new_game_pressed)
 	_how_to_play_button.pressed.connect(_how_to_play.open)
 	_game_clock.is_running = _is_play_clock_running
@@ -438,6 +442,14 @@ func _on_names_confirmed() -> void:
 	var session := GameSession.new(_pending_player_count, _dictionary())
 	for i in range(_pending_player_count):
 		session.player_names.append(_name_edits[i].text.strip_edges())
+	_start_session(session)
+
+
+# "Rejouer" on the end screen: a new game, with the same players.
+func _on_replay_pressed() -> void:
+	var session := GameSession.new(_session.turns.number_of_players, _dictionary())
+	session.player_names = _session.player_names
+	_end_screen.hide()
 	_start_session(session)
 
 
@@ -713,16 +725,18 @@ func _on_tile_unmarked_for_discard(tile: Tile) -> void:
 # next player's hand must stay hidden from the one who just played, so
 # this first covers the screen with HandoffScreen showing who's up next —
 # the real turn (and its timer) only starts once they press "C'est moi !" (see
-# `_on_handoff_play_pressed`). Solo play, and a game that just ended,
-# have nobody to hand over to, so they skip straight to the timer.
+# `_on_handoff_play_pressed`). Solo play has nobody to hand over to, so it
+# skips straight to the timer. A game that just ended shows the end screen.
 func _begin_turn() -> void:
 	# Saved as each turn begins, for "Reprendre la partie"; once the game
 	# is over, there's nothing left to pick up again.
 	if _session.is_game_over():
 		DirAccess.remove_absolute(SaveGame.AUTOSAVE_PATH)
-	else:
-		SaveGame.save(_session, SaveGame.AUTOSAVE_PATH)
-	if _session.turns.number_of_players == 1 or _session.is_game_over():
+		_turn_timer.stop()
+		_end_screen.show_result(_session, _all_player_names())
+		return
+	SaveGame.save(_session, SaveGame.AUTOSAVE_PATH)
+	if _session.turns.number_of_players == 1:
 		_restart_turn_timer()
 		return
 	_handoff_player_name.text = _player_name(_session.turns.current_player_id())
@@ -920,6 +934,7 @@ func _return_to_start_menu() -> void:
 	_name_entry_menu.visible = false
 	_options_panel.visible = false
 	_handoff_screen.visible = false
+	_end_screen.visible = false
 	_set_end_turn_message("")
 	_set_status_text(_game_over_banner, "")
 	_scoreboard.hide_scores()
@@ -928,27 +943,8 @@ func _return_to_start_menu() -> void:
 	_game_clock.session = null
 
 
-# Shows a winner announcement once the game is over (see
-# game_session.gd's `is_game_over`/`winner_id` — either every player is
-# exhausted, or the board itself filled up), and disables the End Turn
-# button since there's no longer a turn to end. Blank/enabled otherwise.
+# Once the game is over (see game_session.gd's `is_game_over`), there's
+# no turn left to end: "Fin du tour" is disabled. The end screen says the
+# rest (see `_begin_turn`).
 func _update_game_over_banner() -> void:
-	if not _session.is_game_over():
-		_set_status_text(_game_over_banner, "")
-		_end_turn_button.disabled = false
-		return
-	var winners := _session.winner_ids()
-	var names: Array[String] = []
-	for player_id in winners:
-		names.append(_player_name(player_id))
-	var score := _session.turns.player_score(winners[0])
-	var ending := "Temps écoulé ! " if _session.ended_by_time else "Partie terminée ! "
-	# One winner: "Alice gagne"; a tie: "Alice et Bruno gagnent" (see
-	# GameSession.winner_ids for how ties are broken first).
-	var who := (
-		"%s gagne" % names[0]
-		if names.size() == 1
-		else "%s et %s gagnent" % [", ".join(names.slice(0, -1)), names[-1]]
-	)
-	_set_status_text(_game_over_banner, ending + "%s avec %d points." % [who, score])
-	_end_turn_button.disabled = true
+	_end_turn_button.disabled = _session.is_game_over()

@@ -159,6 +159,26 @@ func restore_state(data: Dictionary) -> void:
 		_filled_count_at_turn_start.append(int(filled))
 
 
+# How many tiles on the whole board show a green face — letters and
+# blanks alike (a blank is a tile's green side, see tile_pool.gd). None
+# on a finished board (see `is_perfect`) is the best a game can end on.
+static func green_face_count(board: Board) -> int:
+	var count := 0
+	for row in range(Board.ROWS):
+		for col in range(Board.COLUMNS):
+			var tile := board.tile_at(row, col)
+			if tile != null and tile.current_is_green():
+				count += 1
+	return count
+
+
+# Whether `board` is the best a game can end on: finished (see
+# Board.is_complete) without a single green face — so 13 all-yellow words
+# of 9 letters, the highest score there is.
+static func is_perfect(board: Board) -> bool:
+	return board.is_complete() and green_face_count(board) == 0
+
+
 # How many letters in `columns` of `row` are green.
 static func _green_letter_count(board: Board, row: int, columns: Array) -> int:
 	var count := 0

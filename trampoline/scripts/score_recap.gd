@@ -65,6 +65,40 @@ func show_scores(session: GameSession, names: Array[String]) -> void:
 	)
 
 
+# The final ranking, for the end screen (see end_screen.gd): each player
+# (`names[i]`) best first — by score, then fewest tiles left in hand, the
+# tie-break (see GameSession.winner_ids) — with their score and tiles
+# left, the winners in orange.
+func show_final(session: GameSession, names: Array[String]) -> void:
+	for child in _grid.get_children():
+		child.queue_free()
+	var winners := session.winner_ids()
+	var ranking := range(names.size())
+	# Sorted with a comparison function, like C++'s `std::sort(begin, end,
+	# less)`: `a` goes first if it has more points, or as many and fewer
+	# tiles left.
+	ranking.sort_custom(
+		func(a: int, b: int) -> bool:
+			var score_a := session.turns.player_score(a)
+			var score_b := session.turns.player_score(b)
+			if score_a != score_b:
+				return score_a > score_b
+			return session.bag.hand(a).size() < session.bag.hand(b).size()
+	)
+	for player_id: int in ranking:
+		var color := _GAIN_COLOR if winners.has(player_id) else _TEXT_COLOR
+		_add_cell(names[player_id], color, HORIZONTAL_ALIGNMENT_LEFT)
+		_add_cell(
+			"%d pts" % session.turns.player_score(player_id), color, HORIZONTAL_ALIGNMENT_RIGHT
+		)
+		_add_cell(
+			"%d en main" % session.bag.hand(player_id).size(),
+			_FAINT_COLOR,
+			HORIZONTAL_ALIGNMENT_LEFT
+		)
+	_footer.text = ""
+
+
 func _add_cell(text: String, color: Color, alignment: HorizontalAlignment) -> void:
 	var label := Label.new()
 	label.text = text
