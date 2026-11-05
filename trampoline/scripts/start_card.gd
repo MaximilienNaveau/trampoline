@@ -10,7 +10,8 @@ extends VBoxContainer
 # A game for `names.size()` players, `names[i]` what player i entered
 # (maybe empty: see main.gd's `_player_name`).
 signal game_chosen(names: Array[String])
-# "Reprendre la partie": the game saved as its last turn began.
+# "Reprendre la partie": whatever was played last (see main.gd's
+# `_on_resume_chosen`).
 signal resume_chosen
 # Free play (`puzzle_index` -1), or crossword number `puzzle_index + 1`.
 signal free_play_chosen(puzzle_index: int)
@@ -64,16 +65,34 @@ func _ready() -> void:
 		)
 
 
-# Shows the title and the start menu — with "Reprendre la partie" only
-# while a game is saved (see SaveGame.AUTOSAVE_PATH), "Charger une partie"
-# only while one was saved by hand.
+# Shows the title and the start menu: "Reprendre la partie" only while
+# something is saved, saying what (see `_describe_resume`); "Charger une
+# partie" only while a game was saved by hand; the crosswords already
+# solved marked (cream, framed in green: the theme's DoneButton). The
+# green buttons below "Reprendre la partie" always start afresh.
 func show_menu() -> void:
 	for node: Control in [$Title, $Tagline, _start_menu]:
 		node.visible = true
 	_name_entry.visible = false
 	_saved_games.visible = false
-	_resume_button.visible = FileAccess.file_exists(SaveGame.AUTOSAVE_PATH)
+	var last := SaveGame.summary(SaveGame.newest([SaveGame.AUTOSAVE_PATH, SaveGame.FREE_PLAY_PATH]))
+	_resume_button.visible = not last.is_empty()
+	if not last.is_empty():
+		_resume_button.text = "Reprendre la partie\n" + _describe_resume(last)
 	_load_button.visible = not SaveGame.saved_games(SaveGame.SAVES_DIR).is_empty()
+	var solved := SaveGame.solved_crosswords()
+	for i in range(CrosswordPuzzles.PUZZLES.size()):
+		var button: Button = get_node("StartMenu/CrosswordGrid/CrosswordPuzzle%dButton" % (i + 1))
+		button.theme_type_variation = &"DoneButton" if solved.has(i) else &""
+
+
+# What "Reprendre la partie" would pick up (a SaveGame.summary): "Jeu
+# libre", "Mots croisés n° 3", or a game's players and scores.
+static func _describe_resume(last: Dictionary) -> String:
+	if last["kind"] == "free_play":
+		var index: int = last["puzzle_index"]
+		return "Jeu libre" if index < 0 else "Mots croisés n° %d" % (index + 1)
+	return _describe_players(last)
 
 
 # Hides it all, as the lid opens on a game.
@@ -123,15 +142,21 @@ static func _describe(game: Dictionary) -> String:
 	var local: int = game["time"] + Time.get_time_zone_from_system()["bias"] * 60
 	var date := Time.get_datetime_dict_from_unix_time(local)
 	var when := "%02d/%02d %02d:%02d" % [date["day"], date["month"], date["hour"], date["minute"]]
+	return "%s · %s" % [when, _describe_players(game)]
+
+
+# A turn-based game's players and points (a SaveGame.summary): "Alice 45,
+# Bruno 30", or, alone, "Seul · 77 pts".
+static func _describe_players(game: Dictionary) -> String:
 	var names: Array = game["names"]
 	var scores: Array = game["scores"]
 	if names.size() == 1:
-		return "%s · Seul · %d pts" % [when, scores[0]]
+		return "Seul · %d pts" % scores[0]
 	var players: Array[String] = []
 	for i in range(names.size()):
 		var player_name: String = names[i] if names[i] != "" else "Joueur %d" % (i + 1)
 		players.append("%s %d" % [player_name, scores[i]])
-	return "%s · %s" % [when, ", ".join(players)]
+	return ", ".join(players)
 
 
 # A player-count button: shows the name fields, exactly `count` of them.

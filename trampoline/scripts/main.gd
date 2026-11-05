@@ -392,16 +392,24 @@ func _on_replay_pressed() -> void:
 	_start_session(session)
 
 
-# "Reprendre la partie": the game saved at the start of its last turn
-# (see `_begin_turn`). Should the file be unreadable, it's deleted, and
-# the button goes with it.
+# "Reprendre la partie": whatever was played last — the turn-based game
+# saved as its last turn began (see `_begin_turn`), or free play or a
+# crossword, saved on every change (see `_refresh_views`). Should the
+# file be unreadable, it's deleted, and the button goes with it.
 func _on_resume_chosen() -> void:
-	var loaded := SaveGame.load(SaveGame.AUTOSAVE_PATH, _dictionary())
-	if loaded == null:
-		DirAccess.remove_absolute(SaveGame.AUTOSAVE_PATH)
-		_start_card.show_menu()
-		return
-	_start_session(loaded)
+	var path := SaveGame.newest([SaveGame.AUTOSAVE_PATH, SaveGame.FREE_PLAY_PATH])
+	if path == SaveGame.FREE_PLAY_PATH:
+		var session := SaveGame.load_free_play(path, _dictionary())
+		if session != null:
+			_show_free_play(session, SaveGame.summary(path).get("puzzle_index", -1))
+			return
+	else:
+		var loaded := SaveGame.load(path, _dictionary())
+		if loaded != null:
+			_start_session(loaded)
+			return
+	DirAccess.remove_absolute(path)
+	_start_card.show_menu()
 
 
 # A game saved by hand, from the start card's list (see start_card.gd);
@@ -474,13 +482,16 @@ func _is_free_play() -> bool:
 # play's sandbox — all 117 tiles, unrestricted placement, live scoring —
 # plus, for a crossword, its clues; `_refresh_views` checks the puzzle's
 # progress each time something changes. There's no turn to end and no
-# timer to run (EndTurnButton stays hidden). Picks up where that mode was
-# left, if it was saved (see `_refresh_views`).
+# timer to run (EndTurnButton stays hidden). Always a fresh, empty board:
+# picking up a saved one is "Reprendre la partie"'s job (see
+# `_on_resume_chosen`).
 func _start_free_play(puzzle_index: int) -> void:
-	var path := SaveGame.free_play_path(puzzle_index)
-	_free_play_session = SaveGame.load_free_play(path, _dictionary())
-	if _free_play_session == null:
-		_free_play_session = FreePlaySession.new(_dictionary())
+	_show_free_play(FreePlaySession.new(_dictionary()), puzzle_index)
+
+
+# Shows free play `session`, solving crossword `puzzle_index` (-1: none).
+func _show_free_play(session: FreePlaySession, puzzle_index: int) -> void:
+	_free_play_session = session
 	_crossword_puzzle = CrosswordPuzzle.new(puzzle_index) if puzzle_index >= 0 else null
 	_start_card.close()
 	_board_view.visible = true
@@ -766,9 +777,10 @@ func _refresh_views() -> void:
 	# Only a turn-based game is timed; free play has no time limit.
 	_game_clock.session = null if _is_free_play() else _session
 	if _is_free_play():
-		# Saved on every change, for next time (see `_start_free_play`).
+		# Saved on every change, for "Reprendre la partie" (see
+		# `_on_resume_chosen`).
 		var puzzle_index := _crossword_puzzle.puzzle_index if _is_crossword() else -1
-		SaveGame.save_free_play(_free_play_session, SaveGame.free_play_path(puzzle_index))
+		SaveGame.save_free_play(_free_play_session, puzzle_index)
 		_board_view.refresh(_free_play_session.board)
 		_palette_view.refresh(_free_play_session.available_tiles(), _board_view.cell_side())
 		_scoreboard.show_score(_free_play_session.current_score())
@@ -793,6 +805,8 @@ func _refresh_views() -> void:
 			_clue_markers.refresh(_crossword_puzzle.clues, solved, row_rects)
 			if _crossword_puzzle.is_solved(_free_play_session.board):
 				_set_status_text(_game_over_banner, "Mots croisés résolus !")
+				# Marked on the start card from now on (see start_card.gd).
+				SaveGame.mark_crossword_solved(puzzle_index)
 			else:
 				_set_status_text(_game_over_banner, "")
 		return

@@ -29,6 +29,11 @@ const AUTOSAVE_PATH := "user://autosave.json"
 # Where the games saved by hand (the ☰ menu's "Sauvegarder la partie") are
 # kept, one file each, named after when they were saved.
 const SAVES_DIR := "user://saves/"
+# Where free play — or the crossword being solved — is saved, on every
+# change (see `save_free_play`).
+const FREE_PLAY_PATH := "user://free_play.json"
+# The crosswords solved so far (see `mark_crossword_solved`).
+const SOLVED_PATH := "user://crosswords_solved.json"
 
 
 # Keeps a copy of the game saved at `autosave` — the game in progress, as
@@ -50,40 +55,83 @@ static func keep_copy(autosave: String, dir: String) -> bool:
 
 
 # The games kept in the folder `dir` (see `keep_copy`), newest first, each
-# a `{path, time, names, scores}` dictionary: its file, when it was saved
-# (seconds since 1970, UTC), and each player's entered name (maybe empty)
-# and score. Files that can't be read are left out.
+# described by `summary`. Files that can't be read are left out.
 static func saved_games(dir: String) -> Array[Dictionary]:
 	var games: Array[Dictionary] = []
 	if not DirAccess.dir_exists_absolute(dir):  # nothing saved yet
 		return games
 	for file in DirAccess.get_files_at(dir):
-		if not file.ends_with(".json"):
-			continue
-		var path := dir + file
-		var data = JSON.parse_string(FileAccess.get_file_as_string(path))
-		if data == null or not data.has("turns"):
-			continue
-		var names: Array[String] = []
-		var scores: Array[int] = []
-		for i in range(int(data["number_of_players"])):
-			var entered: Array = data.get("player_names", [])
-			names.append(entered[i] if i < entered.size() else "")
-			scores.append(int(data["turns"]["scores"][i]))
-		var time := FileAccess.get_modified_time(path)
-		games.append({"path": path, "time": time, "names": names, "scores": scores})
+		var game := summary(dir + file)
+		if file.ends_with(".json") and game.get("kind") == "game":
+			games.append(game)
 	games.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return a["time"] > b["time"])
 	return games
 
 
-# Where free play is saved (`puzzle_index` -1), or crossword number
-# `puzzle_index + 1` (see crossword_puzzle.gd): each its own file, so
-# every crossword keeps its own progress. Saved on every change, picked
-# up again when that mode is chosen (see main.gd's `_start_free_play`).
-static func free_play_path(puzzle_index: int) -> String:
-	if puzzle_index < 0:
-		return "user://free_play.json"
-	return "user://crossword_%d.json" % (puzzle_index + 1)
+# What the save at `path` holds, to show it without loading it: `{path,
+# time}` (when it was written, in seconds since 1970, UTC) plus, for a
+# turn-based game (`kind` "game"), each player's entered name (maybe
+# empty) and score; for free play (`kind` "free_play"), its
+# `puzzle_index` (-1: no crossword). Empty if it can't be read.
+static func summary(path: String) -> Dictionary:
+	if not FileAccess.file_exists(path):
+		return {}
+	var data = JSON.parse_string(FileAccess.get_file_as_string(path))
+	if not data is Dictionary:
+		return {}
+	var game := {"path": path, "time": FileAccess.get_modified_time(path)}
+	if data.has("turns"):
+		var names: Array[String] = []
+		var scores: Array[int] = []
+		var entered: Array = data.get("player_names", [])
+		for i in range(int(data["number_of_players"])):
+			names.append(entered[i] if i < entered.size() else "")
+			scores.append(int(data["turns"]["scores"][i]))
+		game.merge({"kind": "game", "names": names, "scores": scores})
+	elif data.has("board"):
+		game.merge({"kind": "free_play", "puzzle_index": int(data.get("puzzle_index", -1))})
+	else:
+		return {}
+	return game
+
+
+# The one of `paths` written last — the game played last, for "Reprendre
+# la partie" (see start_card.gd) — or "" if none of them exists.
+static func newest(paths: Array[String]) -> String:
+	var found := ""
+	for path in paths:
+		if not FileAccess.file_exists(path):
+			continue
+		if found == "" or FileAccess.get_modified_time(path) > FileAccess.get_modified_time(found):
+			found = path
+	return found
+
+
+# The crosswords solved so far, as their indexes in CrosswordPuzzles.PUZZLES,
+# read from `path`.
+static func solved_crosswords(path := SOLVED_PATH) -> Array[int]:
+	var solved: Array[int] = []
+	var data = (
+		JSON.parse_string(FileAccess.get_file_as_string(path))
+		if FileAccess.file_exists(path)
+		else null
+	)
+	if data is Array:
+		for index in data:
+			solved.append(int(index))
+	return solved
+
+
+# Notes down, in `path`, that crossword `puzzle_index` was solved (see
+# main.gd's `_refresh_views`), once.
+static func mark_crossword_solved(puzzle_index: int, path := SOLVED_PATH) -> void:
+	var solved := solved_crosswords(path)
+	if solved.has(puzzle_index):
+		return
+	solved.append(puzzle_index)
+	var file := FileAccess.open(path, FileAccess.WRITE)
+	if file != null:
+		file.store_string(JSON.stringify(solved))
 
 
 # Writes `session`'s entire state to `path` — e.g. "user://save1.json".
@@ -197,13 +245,16 @@ static func load(path: String, dictionary: FrenchDictionary = null) -> GameSessi
 	return session
 
 
-# Writes free play's board (see free_play_session.gd) to `path` (see
-# `free_play_path`). Free play has no bag/hands/turns to save at all
+# Writes free play's board (see free_play_session.gd) to `path`, with
+# which crossword it's solving (`puzzle_index`, -1 for none). Free play
+# has no bag/hands/turns to save at all
 # (every tile not on the board is simply "available" — see
 # FreePlaySession.available_tiles), so this is a smaller version of
 # `save` above: just tile flip-state and the board (the score is read off
 # the board). Returns false if the file couldn't be opened for writing.
-static func save_free_play(session: FreePlaySession, path: String) -> bool:
+static func save_free_play(
+	session: FreePlaySession, puzzle_index: int, path := FREE_PLAY_PATH
+) -> bool:
 	var tile_index := _build_tile_index(session.pool)
 	var tile_states := []
 	for tile in session.pool.tiles:
@@ -215,7 +266,12 @@ static func save_free_play(session: FreePlaySession, path: String) -> bool:
 			var tile := session.board.tile_at(row, col)
 			row_data.append(tile_index[tile] if tile != null else -1)
 		board_data.append(row_data)
-	var data := {"version": SAVE_VERSION, "tile_states": tile_states, "board": board_data}
+	var data := {
+		"version": SAVE_VERSION,
+		"tile_states": tile_states,
+		"board": board_data,
+		"puzzle_index": puzzle_index,
+	}
 	var file := FileAccess.open(path, FileAccess.WRITE)
 	if file == null:
 		return false
@@ -223,9 +279,12 @@ static func save_free_play(session: FreePlaySession, path: String) -> bool:
 	return true
 
 
-# The free play written to `path` by `save_free_play`, or null if the
-# file is missing or isn't valid JSON.
-static func load_free_play(path: String, dictionary: FrenchDictionary = null) -> FreePlaySession:
+# The free play written to `path` by `save_free_play` (which crossword it
+# was solving: see `summary`), or null if the file is missing or isn't
+# valid JSON.
+static func load_free_play(
+	path := FREE_PLAY_PATH, dictionary: FrenchDictionary = null
+) -> FreePlaySession:
 	if not FileAccess.file_exists(path):
 		return null
 	var data = JSON.parse_string(FileAccess.get_file_as_string(path))

@@ -1,4 +1,4 @@
-[gd_resource type="Theme" load_steps=14 format=3]
+[gd_resource type="Theme" load_steps=16 format=3]
 
 [ext_resource type="FontVariation" path="res://assets/fonts/jost_semibold.tres" id="1_wl1kw"]
 [ext_resource type="FontVariation" path="res://assets/fonts/jost_medium.tres" id="2_lu33j"]
@@ -143,6 +143,38 @@ corner_radius_top_right = 6
 corner_radius_bottom_right = 6
 corner_radius_bottom_left = 6
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_done_normal"]
+content_margin_left = 10.0
+content_margin_top = 6.0
+content_margin_right = 10.0
+content_margin_bottom = 6.0
+bg_color = Color(0.953, 0.937, 0.847, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.235, 0.498, 0.361, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_done_pressed"]
+content_margin_left = 10.0
+content_margin_top = 8.0
+content_margin_right = 10.0
+content_margin_bottom = 4.0
+bg_color = Color(0.86, 0.85, 0.76, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.17, 0.36, 0.25, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
 [resource]
 default_font = ExtResource("2_lu33j")
 default_font_size = 16
@@ -179,3 +211,10 @@ PrimaryButton/colors/font_pressed_color = Color(1, 0.97, 0.93, 1)
 PrimaryButton/styles/hover = SubResource("StyleBoxFlat_primary_hover")
 PrimaryButton/styles/normal = SubResource("StyleBoxFlat_primary_normal")
 PrimaryButton/styles/pressed = SubResource("StyleBoxFlat_primary_pressed")
+DoneButton/base_type = &"Button"
+DoneButton/colors/font_color = Color(0.17, 0.36, 0.25, 1)
+DoneButton/colors/font_hover_color = Color(0.17, 0.36, 0.25, 1)
+DoneButton/colors/font_pressed_color = Color(0.17, 0.36, 0.25, 1)
+DoneButton/styles/hover = SubResource("StyleBoxFlat_done_normal")
+DoneButton/styles/normal = SubResource("StyleBoxFlat_done_normal")
+DoneButton/styles/pressed = SubResource("StyleBoxFlat_done_pressed")
