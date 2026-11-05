@@ -37,6 +37,26 @@
           buildInputs = [ pkgs.godot_4 pkgs.gdtoolkit_4 ];
         };
 
+        # `nix develop .#audio` gives the tools to make the game's music
+        # and sound effects from scripts, all open source:
+        # - python3 with mido (writes MIDI) and numpy/scipy (synthesises
+        #   sound effects sample by sample, writes .wav),
+        # - lilypond: music as text, rendered to MIDI and sheet music,
+        # - fluidsynth + two free General MIDI soundfonts: MIDI -> .wav,
+        # - sox and ffmpeg: trim, mix, normalise, encode to .ogg.
+        # The soundfont paths are exported so scripts needn't hunt for them.
+        devShells.audio = pkgs.mkShell {
+          buildInputs = [
+            (pkgs.python3.withPackages (ps: [ ps.mido ps.numpy ps.scipy ]))
+            pkgs.lilypond
+            pkgs.fluidsynth
+            pkgs.sox
+            pkgs.ffmpeg
+          ];
+          SF2_FLUID = "${pkgs.soundfont-fluid}/share/soundfonts/FluidR3_GM2-2.sf2";
+          SF2_GENERALUSER = "${pkgs.soundfont-generaluser-gs}/share/soundfonts/GeneralUser-GS.sf2";
+        };
+
         # `nix run` launches the game. Godot writes its import cache
         # (.godot/) into the project folder, so it can't run straight from
         # the read-only Nix store: use the checkout you're in when there is
