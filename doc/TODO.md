@@ -57,7 +57,9 @@ hand, then a shared win.
       Fixed on the way: the layout sat against the top of a tall screen.
 - [x] Automatic save at the start of every turn (names included), and a
       "Reprendre la partie" button on the start card; the Save/Load
-      buttons and their file dialogs are gone. Free play isn't saved.
+      buttons and their file dialogs are gone.
+- [x] Free play and each crossword save on every change, each to its own
+      file, and pick up where they were left when chosen again.
 - [x] The dictionary loads in ~50 ms instead of ~3 s: the word list ships
       pre-normalized and sorted (`data/dictionaries/fr-words.txt`, rebuilt
       by `tools/build_word_list.gd`, checked up to date by the tests).
@@ -90,6 +92,9 @@ hand, then a shared win.
 - [x] Hand, tray and dragged tiles drawn as 2.5D blocks with their cork
       sides (like the tiles off the board in the "Comment jouer" cards),
       matching the board.
+- [x] The whole game screen on the desk felt, and the screens over it
+      (between turns, end, "Comment jouer") too; the "À rendre" tray a
+      dark felt pocket instead of a green box.
 
 ### 6. In-game motion
 From `ART_DIRECTION.md` → "Motion" (each ≤ 250 ms, never blocking input):
@@ -107,7 +112,9 @@ From `ART_DIRECTION.md` → "Motion" (each ≤ 250 ms, never blocking input):
 - [x] "☰" replaced by a small drawn icon.
 - [x] Scoreboard: the current player underlined in orange instead of
       "(à vous de jouer)".
-- [ ] Scores easier to read at a glance (one chip per player?).
+- [x] Scores easier to read at a glance: one rounded chip per player,
+      the name small and the score big; the current player's framed in
+      orange.
 
 ### 8. End of game
 - [x] A proper end screen instead of the text banner: final scores
@@ -117,6 +124,13 @@ From `ART_DIRECTION.md` → "Motion" (each ≤ 250 ms, never blocking input):
 - [x] Solo: a finished board with no green face at all ("Grille
       parfaite !") rains yellow tiles and pulses the score; otherwise the
       screen counts the green faces left, the next game's target.
+
+### 10. Later
+- [ ] Colour-blind players: the yellow and green faces differ mostly by
+      hue (the corner square helps). A pattern, or a lightness gap between
+      the two, would make them tell apart without colour.
+- [ ] Starting a fresh free play or crossword: today it always picks up
+      the saved one (clear the board, or offer "Recommencer").
 
 ### 9. Sound
 Last: needs research for open-source sound effects and music first.
