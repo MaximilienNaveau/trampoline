@@ -52,29 +52,10 @@ var _dictionary_thread := Thread.new()
 # GameSession (it survives a New Game).
 var _timer_enabled: bool = false
 
-# Set while waiting for a save (triggered from the New Game confirmation
-# dialog's "Sauvegarder d'abord" button, see
-# `_on_save_and_restart_pressed`) to actually finish, so
-# `_on_save_file_selected` knows to follow it up with `_start_new_game`
-# — but only THAT save, not an ordinary standalone one from SaveButton.
-var _pending_new_game_after_save: bool = false
-
 # How many players StartMenu's count buttons picked, remembered between
 # that click and `_on_names_confirmed` actually creating the session —
 # NameEntry needs to know how many name fields to show in between.
 var _pending_player_count: int = 0
-
-# The names entered in NameEntry for the CURRENT turn-based session,
-# index 0 = player 0, etc. — used by `_player_name` below instead of the
-# plain "Joueur N" fallback. Not saved/loaded (see save_game.gd — a
-# loaded session has no names of its own), and irrelevant to free
-# play/crossword mode, which never shows per-player names at all.
-var _player_names: Array[String] = []
-
-# `ConfirmationDialog` only comes with two buttons (OK/Cancel) built in —
-# this third one is added in code below (see `_ready()`), not declared in
-# the scene, so it needs a plain `var` here instead of `@onready`.
-var _save_and_restart_button: Button
 
 # `$Layout/Margin/Content/...` look up the child nodes declared in scenes/main.tscn —
 # the same shorthand board_view.gd itself uses for its own "Grid" child.
@@ -124,11 +105,9 @@ var _discard_tray: DiscardTray = $Layout/Margin/Content/PlayArea/HandArea/HandBa
 @onready var _end_turn_banner: PanelContainer = $EndTurnMessage
 @onready var _end_turn_message: Label = $EndTurnMessage/Text
 @onready var _end_turn_message_timer: Timer = $EndTurnMessageTimer
-# Save/Load/New Game live inside the "☰" dropdown menu (OptionsPanel)
+# "Quitter la partie" lives inside the "☰" dropdown menu (OptionsPanel)
 # instead of a permanently-visible row, to leave more of a small phone
 # screen for the board itself — see `_on_options_pressed`.
-@onready var _save_button: Button = $Layout/Margin/Content/OptionsPanel/MenuItems/SaveButton
-@onready var _load_button: Button = $Layout/Margin/Content/OptionsPanel/MenuItems/LoadButton
 @onready var _new_game_button: Button = $Layout/Margin/Content/OptionsPanel/MenuItems/NewGameButton
 # "Comment jouer": the animated rules (see how_to_play_view.gd), opened
 # from the start menu or the ☰ menu, drawn over everything else.
@@ -142,8 +121,11 @@ var _discard_tray: DiscardTray = $Layout/Margin/Content/PlayArea/HandArea/HandBa
 # The game's one-hour clock in the header (see game_clock.gd).
 @onready var _game_clock: GameClock = $Layout/Margin/Content/TopBar/GameClock
 @onready var _turn_timer: Timer = $TurnTimer
-@onready var _save_file_dialog: FileDialog = $SaveFileDialog
-@onready var _load_file_dialog: FileDialog = $LoadFileDialog
+# Puts the board and hand back as they were when the turn began (see
+# GameSession.reset_turn).
+@onready var _reset_turn_button: Button = $Layout/Margin/Content/TopBar/ResetTurnButton
+# On the start card, while a game is saved (see `_return_to_start_menu`).
+@onready var _resume_button: Button = %StartMenu/ResumeButton
 @onready var _new_game_confirm_dialog: ConfirmationDialog = $NewGameConfirmDialog
 # `%Name` finds a node marked "unique name in owner" in main.tscn (shown
 # with a % in the editor) wherever it sits in the scene — shorter than
@@ -259,8 +241,10 @@ func _ready() -> void:
 	_discard_tray.tile_marked.connect(_on_tile_marked_for_discard)
 	_hand_view.tile_unmarked.connect(_on_tile_unmarked_for_discard)
 	_handoff_play_button.pressed.connect(_on_handoff_play_pressed)
-	_save_button.pressed.connect(_on_save_pressed)
-	_load_button.pressed.connect(_on_load_pressed)
+	# Each button runs its own small anonymous function (`func() -> void:
+	# ...`, like a Python `lambda`), see `_on_turn_action`.
+	_reset_turn_button.pressed.connect(_on_turn_action.bind(func() -> void: _session.reset_turn()))
+	_resume_button.pressed.connect(_on_resume_pressed)
 	_new_game_button.pressed.connect(_on_new_game_pressed)
 	_how_to_play_button.pressed.connect(_how_to_play.open)
 	_game_clock.is_running = _is_play_clock_running
@@ -268,22 +252,9 @@ func _ready() -> void:
 	_options_button.pressed.connect(_on_options_pressed)
 	_timer_toggle.toggled.connect(_on_timer_toggle_toggled)
 	_end_turn_message_timer.timeout.connect(_on_end_turn_message_timer_timeout)
-	_save_file_dialog.file_selected.connect(_on_save_file_selected)
-	_load_file_dialog.file_selected.connect(_on_load_file_selected)
-	# Cancelling the save dialog must also cancel a pending "save and
-	# restart" (see `_pending_new_game_after_save`'s own comment) — a
-	# FileDialog emits `canceled` when closed without picking a file,
-	# the same way `file_selected` fires when one WAS picked.
-	_save_file_dialog.canceled.connect(_on_save_file_dialog_canceled)
 	# `confirmed` fires when the dialog's own built-in OK button (relabeled
 	# "Quitter" — see scenes/main.tscn) is pressed.
 	_new_game_confirm_dialog.confirmed.connect(_start_new_game)
-	# `add_button` is how a ConfirmationDialog gets a THIRD button beyond
-	# its built-in OK/Cancel — it returns the new Button itself, the same
-	# as if it had been declared in the scene, so its `pressed` signal
-	# connects the usual way.
-	_save_and_restart_button = _new_game_confirm_dialog.add_button("Sauvegarder d'abord", true)
-	_save_and_restart_button.pressed.connect(_on_save_and_restart_pressed)
 	# `Callable.bind(n)` hands the same method one extra fixed argument
 	# per button (n itself), rather than writing four near-identical
 	# handler functions that only differ by which number they pass on.
@@ -389,13 +360,13 @@ func _update_board_height_budget() -> void:
 	overhead += _margin.get_theme_constant("margin_bottom")
 	if _options_panel.visible:
 		overhead -= _options_panel.size.y + _content.get_theme_constant("separation")
-	_board_view.vertical_overhead = overhead
 	# 2 rows hold about 20 tiles on a phone — a whole hand, which starts at
 	# 9-14 tiles (see draw_plan.gd). Only in turn-based portrait: free
 	# play's palette holds all 117 tiles and scrolls anyway, and in
 	# landscape the hand sits beside the board instead of below it.
 	var hand_below := _session != null and _is_portrait()
 	_board_view.reserved_bottom_rows = 2 if hand_below else 0
+	_board_view.vertical_overhead = overhead
 
 
 # Whether the window is at least as tall as it is wide (a phone held
@@ -436,13 +407,28 @@ func _on_player_count_chosen(count: int) -> void:
 # does the actual GameSession get created — nothing before this point
 # could show real game state anyway, since GameSession would build its
 # own French dictionary and starting hands. A blank name field falls
-# back to the plain "Joueur N" (see `_player_name`).
+# back to the plain "Joueur N" (see GameSession.player_name).
 func _on_names_confirmed() -> void:
-	_player_names = []
+	var session := GameSession.new(_pending_player_count, _dictionary())
 	for i in range(_pending_player_count):
-		var entered := _name_edits[i].text.strip_edges()
-		_player_names.append(entered if entered != "" else "Joueur %d" % (i + 1))
-	_session = GameSession.new(_pending_player_count, _dictionary())
+		session.player_names.append(_name_edits[i].text.strip_edges())
+	_start_session(session)
+
+
+# "Reprendre la partie": the game saved at the start of its last turn
+# (see `_begin_turn`). Should the file be unreadable, the button goes.
+func _on_resume_pressed() -> void:
+	var loaded := SaveGame.load(SaveGame.AUTOSAVE_PATH, _dictionary())
+	if loaded == null:
+		_resume_button.visible = false
+		return
+	_start_session(loaded)
+
+
+# Shows `session`, a new or resumed turn-based game, and starts its turn.
+func _start_session(session: GameSession) -> void:
+	_session = session
+	_start_menu.visible = false
 	_name_entry_menu.visible = false
 	_title.visible = false
 	_tagline.visible = false
@@ -450,8 +436,7 @@ func _on_names_confirmed() -> void:
 	_hand_view.visible = true
 	_end_turn_button.visible = true
 	_discard_tray.visible = true
-	_save_button.visible = true
-	_load_button.visible = true
+	_reset_turn_button.visible = true
 	_new_game_button.visible = true
 	_refresh_views()
 	_begin_turn()
@@ -495,8 +480,7 @@ func _is_free_play() -> bool:
 
 # Called when StartMenu's "Jeu libre" button is pressed. Unlike
 # `_on_player_count_chosen`, there's no turn to end and no timer to run
-# (EndTurnButton stays hidden), but Save/Load do work here — see
-# save_game.gd's `save_free_play`/`load_free_play`.
+# (EndTurnButton stays hidden), and nothing is saved.
 func _on_free_play_chosen() -> void:
 	_free_play_session = FreePlaySession.new(_dictionary())
 	_start_menu.visible = false
@@ -505,8 +489,6 @@ func _on_free_play_chosen() -> void:
 	_board_view.visible = true
 	_palette_view.visible = true
 	_new_game_button.visible = true
-	_save_button.visible = true
-	_load_button.visible = true
 	_refresh_views()
 	_box_lid.open()
 
@@ -534,27 +516,27 @@ func _on_crossword_chosen(puzzle_index: int) -> void:
 	_board_view.visible = true
 	_palette_view.visible = true
 	_new_game_button.visible = true
-	_save_button.visible = true
-	_load_button.visible = true
 	_refresh_views()
 	_box_lid.open()
 
 
 # Called when "Quitter la partie" is pressed — asks first, rather than
-# abandoning the current session outright (see `_start_new_game`,
-# `_on_save_and_restart_pressed`, and NewGameConfirmDialog in
-# scenes/main.tscn for the actual 3-way choice: quit without saving,
-# save first then quit, or cancel and keep playing). Closes the "☰"
-# dropdown first — otherwise it would stay open, floating over the
-# confirmation dialog.
+# abandoning the current session outright (see `_start_new_game`, and
+# NewGameConfirmDialog in scenes/main.tscn). A turn-based game is saved
+# at the start of every turn (see `_begin_turn`), so it isn't lost; free
+# play isn't saved. Closes the "☰" dropdown first — otherwise it would
+# stay open, floating over the confirmation dialog.
 func _on_new_game_pressed() -> void:
 	_options_panel.visible = false
+	_new_game_confirm_dialog.dialog_text = "Quitter la partie et revenir au menu ?"
+	if not _is_free_play():
+		_new_game_confirm_dialog.dialog_text += " « Reprendre la partie » la retrouve."
+
 	_new_game_confirm_dialog.popup_centered()
 
 
-# Actually abandons the current session (unsaved progress is lost unless
-# the player chose "Sauvegarder d'abord" first — see
-# `_on_save_and_restart_pressed`) and goes back to `StartMenu`. Connected
+# Actually leaves the current session (see `_on_new_game_pressed`) and
+# goes back to `StartMenu`. Connected
 # to NewGameConfirmDialog's `confirmed` signal (its built-in OK button,
 # relabeled "Quitter" in scenes/main.tscn).
 func _start_new_game() -> void:
@@ -564,28 +546,10 @@ func _start_new_game() -> void:
 	_return_to_start_menu()
 
 
-# Called when NewGameConfirmDialog's extra "Sauvegarder d'abord"
-# button is pressed. Closes this dialog and opens the ordinary save
-# FileDialog instead — `_on_save_file_selected` is what actually follows
-# through with `_start_new_game` once that save completes, via
-# `_pending_new_game_after_save`.
-func _on_save_and_restart_pressed() -> void:
-	_new_game_confirm_dialog.hide()
-	_pending_new_game_after_save = true
-	_save_file_dialog.popup_centered()
-
-
-# Called if the save FileDialog is dismissed without picking a file —
-# clears a pending "save and restart" so it doesn't wrongly fire on
-# some LATER, unrelated save (see `_pending_new_game_after_save`).
-func _on_save_file_dialog_canceled() -> void:
-	_pending_new_game_after_save = false
-
-
 # Called when the options button ("☰") is pressed — just shows/hides
-# OptionsPanel, the dropdown menu holding Save/Load/New Game/the timer
-# toggle. Showing the button itself doesn't need `_session` to exist, but
-# Save/Load/New Game inside the menu are hidden individually until a game
+# OptionsPanel, the dropdown menu holding "Quitter la partie", "Comment
+# jouer" and the timer toggle. Showing the button itself doesn't need
+# `_session` to exist, but "Quitter la partie" is hidden until a game
 # actually starts, the same as before (see `_on_names_confirmed`/
 # `_return_to_start_menu`).
 func _on_options_pressed() -> void:
@@ -647,69 +611,8 @@ func _is_play_clock_running() -> bool:
 		and not _options_panel.visible
 		and not _how_to_play.visible
 		and not _box_lid.visible
-		and not _save_file_dialog.visible
-		and not _load_file_dialog.visible
 		and not _new_game_confirm_dialog.visible
 	)
-
-
-# Called when the Save button is pressed — opens the save FileDialog (see
-# scenes/main.tscn) rather than saving straight away, so the player picks
-# where. The actual write happens in `_on_save_file_selected` once they
-# confirm a path. Closes the "☰" dropdown first, the same reasoning as
-# `_on_new_game_pressed`.
-func _on_save_pressed() -> void:
-	_options_panel.visible = false
-	_save_file_dialog.popup_centered()
-
-
-# Called when the Load button is pressed — same idea as `_on_save_pressed`,
-# for the load FileDialog.
-func _on_load_pressed() -> void:
-	_options_panel.visible = false
-	_load_file_dialog.popup_centered()
-
-
-# Called once the player confirms a path in the save FileDialog. Free
-# play/crossword mode save through `_free_play_session` instead of
-# `_session` — see save_game.gd's `save_free_play`, which also records
-# which crossword puzzle (if any) was active, so it can be shown again
-# on load (see `_on_load_file_selected` below).
-func _on_save_file_selected(path: String) -> void:
-	if _is_free_play():
-		var puzzle_index := _crossword_puzzle.puzzle_index if _is_crossword() else -1
-		SaveGame.save_free_play(_free_play_session, path, puzzle_index)
-	else:
-		SaveGame.save(_session, path)
-	if _pending_new_game_after_save:
-		_pending_new_game_after_save = false
-		_start_new_game()
-
-
-# Called once the player confirms a path in the load FileDialog. Reuses
-# whichever session's dictionary is already loaded (see save_game.gd)
-# rather than paying to reload the ~421,000-word list again. Does nothing
-# if the file turns out missing, unreadable, or the wrong format for the
-# CURRENT mode (see `SaveGame.load`/`load_free_play` — a turn-based save
-# can't be loaded from within free play/crossword mode, or vice versa;
-# start that other mode first, the same way Save/Load themselves are
-# only ever available once a mode is already chosen).
-func _on_load_file_selected(path: String) -> void:
-	if _is_free_play():
-		var loaded = SaveGame.load_free_play(path, _free_play_session.dictionary)
-		if loaded != null:
-			_free_play_session = loaded["session"]
-			var puzzle_index: int = loaded["puzzle_index"]
-			_crossword_puzzle = (CrosswordPuzzle.new(puzzle_index) if puzzle_index != -1 else null)
-			_refresh_views()
-		return
-	var loaded_session := SaveGame.load(path, _session.dictionary)
-	if loaded_session != null:
-		_session = loaded_session
-		_player_names = []  # a loaded session has no names of its own
-		_set_end_turn_message("")
-		_refresh_views()
-		_begin_turn()
 
 
 # Called when the End Turn button is pressed. `end_turn()` itself refuses
@@ -739,6 +642,18 @@ func _on_end_turn_pressed() -> void:
 	_refresh_views()
 
 
+# Runs `action`, what one of the turn's buttons does (see `_ready`), then
+# redraws.
+func _on_turn_action(action: Callable) -> void:
+	action.call()
+	_refresh_views()
+
+
+# The current player's hand (see TileBag.hand), the live array.
+func _hand() -> Array[Tile]:
+	return _session.bag.hand(_session.turns.current_player_id())
+
+
 # "Comment jouer" from the ☰ menu: closes the menu, then shows the rules.
 func _on_how_to_play_menu_pressed() -> void:
 	_options_panel.visible = false
@@ -766,6 +681,12 @@ func _on_tile_unmarked_for_discard(tile: Tile) -> void:
 # `_on_handoff_play_pressed`). Solo play, and a game that just ended,
 # have nobody to hand over to, so they skip straight to the timer.
 func _begin_turn() -> void:
+	# Saved as each turn begins, for "Reprendre la partie"; once the game
+	# is over, there's nothing left to pick up again.
+	if _session.is_game_over():
+		DirAccess.remove_absolute(SaveGame.AUTOSAVE_PATH)
+	else:
+		SaveGame.save(_session, SaveGame.AUTOSAVE_PATH)
 	if _session.turns.number_of_players == 1 or _session.is_game_over():
 		_restart_turn_timer()
 		return
@@ -885,7 +806,7 @@ func _refresh_views() -> void:
 	# ones marked to give back.
 	var kept: Array[Tile] = []
 	var marked := _session.marked_for_discard()
-	for tile in _session.bag.hand(_session.turns.current_player_id()):
+	for tile in _hand():
 		if not marked.has(tile):
 			kept.append(tile)
 	_hand_view.refresh(kept, _board_view.cell_side())
@@ -894,12 +815,12 @@ func _refresh_views() -> void:
 	_update_game_over_banner()
 
 
-# `_player_names[player_id]` if the player actually entered one (see
-# `_on_names_confirmed`), else the plain "Joueur N" default — also what
-# every player shows as once a LOADED session has no names of its own.
+# `player_id`'s name: what they entered (see GameSession.player_names),
+# or "Joueur N" if they left it empty (N counting from 1).
 func _player_name(player_id: int) -> String:
-	if player_id < _player_names.size():
-		return _player_names[player_id]
+	var names := _session.player_names
+	if player_id < names.size() and names[player_id] != "":
+		return names[player_id]
 	return "Joueur %d" % (player_id + 1)
 
 
@@ -953,8 +874,8 @@ func _return_to_start_menu() -> void:
 	_hand_view.visible = false
 	_end_turn_button.visible = false
 	_discard_tray.visible = false
-	_save_button.visible = false
-	_load_button.visible = false
+	_reset_turn_button.visible = false
+	_resume_button.visible = FileAccess.file_exists(SaveGame.AUTOSAVE_PATH)
 	_new_game_button.visible = false
 	_palette_view.visible = false
 	_clue_list_view.visible = false
@@ -963,7 +884,6 @@ func _return_to_start_menu() -> void:
 	_name_entry_menu.visible = false
 	_options_panel.visible = false
 	_handoff_screen.visible = false
-	_player_names = []
 	_set_end_turn_message("")
 	_set_status_text(_game_over_banner, "")
 	_scoreboard.hide_scores()

@@ -160,6 +160,11 @@ horizontal_alignment=1
 vertical_alignment=1
 visible=false
 
+[node name="ResetTurnButton" type="Button" parent="Layout/Margin/Content/TopBar"]
+visible=false
+layout_mode=2
+text="Recommencer"
+
 [node name="EndTurnButton" type="Button" parent="Layout/Margin/Content/TopBar"]
 theme_type_variation=&"PrimaryButton"
 layout_mode=2
@@ -173,14 +178,6 @@ visible=false
 [node name="MenuItems" type="VBoxContainer" parent="Layout/Margin/Content/OptionsPanel"]
 layout_mode=2
 theme_override_constants/separation=6
-
-[node name="SaveButton" type="Button" parent="Layout/Margin/Content/OptionsPanel/MenuItems"]
-layout_mode=2
-text="Sauvegarder"
-
-[node name="LoadButton" type="Button" parent="Layout/Margin/Content/OptionsPanel/MenuItems"]
-layout_mode=2
-text="Charger"
 
 [node name="NewGameButton" type="Button" parent="Layout/Margin/Content/OptionsPanel/MenuItems" node_paths=PackedStringArray("blocked_by")]
 layout_mode=2
@@ -282,24 +279,6 @@ visible=false
 wait_time=180.0
 one_shot=true
 
-[node name="SaveFileDialog" type="FileDialog" parent="."]
-title="Sauvegarder la partie"
-initial_position=2
-size=Vector2i(340, 300)
-ok_button_text="Sauvegarder"
-file_mode=4
-access=1
-filters=PackedStringArray("*.json ; Fichier de sauvegarde")
-
-[node name="LoadFileDialog" type="FileDialog" parent="."]
-title="Charger une partie"
-initial_position=2
-size=Vector2i(340, 300)
-ok_button_text="Charger"
-file_mode=0
-access=1
-filters=PackedStringArray("*.json ; Fichier de sauvegarde")
-
 [node name="NewGameConfirmDialog" type="ConfirmationDialog" parent="."]
 title="Quitter la partie"
 initial_position=2
@@ -307,7 +286,7 @@ size=Vector2i(320, 170)
 dialog_autowrap=true
 ok_button_text="Quitter"
 cancel_button_text="Annuler"
-dialog_text="Quitter la partie et revenir au menu ? Elle sera perdue si elle n'est pas sauvegardée."
+dialog_text="Quitter la partie et revenir au menu ?"
 
 [node name="InputBlocker" type="Control" parent="."]
 layout_mode=1
@@ -482,6 +461,13 @@ text="Un jeu pour faire rebondir les mots"
 unique_name_in_owner=true
 layout_mode=2
 theme_override_constants/separation=16
+
+[node name="ResumeButton" type="Button" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/StartMenu"]
+visible=false
+theme_type_variation=&"PrimaryButton"
+layout_mode=2
+size_flags_horizontal=4
+text="Reprendre la partie"
 
 [node name="Prompt" type="Label" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/StartMenu"]
 theme_type_variation=&"InkLabel"

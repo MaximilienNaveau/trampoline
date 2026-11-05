@@ -25,16 +25,17 @@ var play_time := 0.0
 # Whether the game ended because the hour ran out (see `end_turn`) —
 # saved with the game too.
 var ended_by_time := false
-# What the board was worth when the current turn began (see scoring.gd's
-# `board_value`): the turn earns the difference (see `turn_points`).
-# Saved with the game (see save_game.gd).
-var value_at_turn_start := 0
-# The cells holding a letter when the current turn began, as
-# `Vector2i(col, row)`: during a turn any tile may move, but these must be
-# filled again before it ends (see `emptied_cells`). A blank ("-") tile's
-# cell isn't among them: taking a blank off shortens a word on purpose
-# (see doc/RULES.md). Saved with the game too.
-var cells_to_keep_filled: Array[Vector2i] = []
+# How the board and the current player's hand stood when the current
+# turn began (see turn_start.gd): the turn earns the board's change in
+# worth (see `turn_points`), must fill again the cells that held a letter
+# (see `emptied_cells`), and can be started over (see `reset_turn`). Taken
+# again whenever a turn begins, and by save_game.gd once a game is loaded
+# (a game is only ever saved between turns).
+var turn_start: TurnStart
+# What each player entered as their name, in player order — may be
+# shorter than the number of players, or hold empty names (main.gd shows
+# "Joueur N" for those). Saved with the game.
+var player_names: Array[String] = []
 
 # Tiles the current player has put down from their hand since their turn
 # began. What `invalid_cells()` below checks against: a turn's new letters
@@ -216,6 +217,15 @@ func _take_into_hand(tile: Tile) -> void:
 	_placed_this_turn.erase(tile)
 
 
+# Puts the board and the current player's hand back as they were when
+# the turn began (see `turn_start`): every tile in its cell or the
+# hand, showing the same face, nothing marked to give back.
+func reset_turn() -> void:
+	turn_start.restore(board, bag.hand(turns.current_player_id()))
+	_placed_this_turn.clear()
+	_marked_for_discard.clear()
+
+
 # Flips the tile at (row, col) in place, revealing its other face — see
 # doc/RULES.md's "trampoline" mechanic: any tile on the board may be
 # flipped. Scoring doesn't need telling about this separately: `Scoring`
@@ -249,7 +259,7 @@ func can_end_turn() -> bool:
 # the board never loses a letter.
 func emptied_cells() -> Array[Vector2i]:
 	var emptied: Array[Vector2i] = []
-	for cell in cells_to_keep_filled:
+	for cell in turn_start.cells_to_keep_filled:
 		if board.is_empty(cell.y, cell.x):
 			emptied.append(cell)
 	return emptied
@@ -278,7 +288,7 @@ func invalid_cells() -> Array:
 # green or broke a word. Bonuses come separately, see `turn_bonuses`.
 # Changes nothing.
 func turn_points() -> int:
-	return Scoring.board_value(board, dictionary) - value_at_turn_start
+	return Scoring.board_value(board, dictionary) - turn_start.value
 
 
 # The bonuses the current player would win if their turn ended right now
@@ -336,20 +346,13 @@ func end_turn() -> bool:
 func _start_turn() -> void:
 	turns.refill_hand(bag, turns.current_player_id())
 	_note_turn_start()
+
+
+# Notes down how the board and hand stand as a turn begins (see
+# `turn_start`), and, for the bonuses, how full each row is (see
+# scoring.gd's `begin_turn`).
+func _note_turn_start() -> void:
+	turn_start = TurnStart.new(board, bag.hand(turns.current_player_id()), dictionary)
+	scoring.begin_turn(board)
 	_placed_this_turn.clear()
 	_marked_for_discard.clear()
-
-
-# Notes down how the board stands as a turn begins: what it's worth
-# (`value_at_turn_start`), which cells must stay filled
-# (`cells_to_keep_filled`), and, for the bonuses, how full each row is
-# (see scoring.gd's `begin_turn`).
-func _note_turn_start() -> void:
-	value_at_turn_start = Scoring.board_value(board, dictionary)
-	cells_to_keep_filled.clear()
-	for row in range(Board.ROWS):
-		for col in range(Board.COLUMNS):
-			var tile := board.tile_at(row, col)
-			if tile != null and not tile.is_blank():
-				cells_to_keep_filled.append(Vector2i(col, row))
-	scoring.begin_turn(board)

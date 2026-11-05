@@ -50,6 +50,7 @@ func _initialize() -> void:
 	_test_flip_tile()
 	_test_flip_earlier_tile()
 	_test_flip_tile_refuses_empty_cell()
+	_test_reset_turn()
 
 	if _failures == 0:
 		print("\nAll checks passed.")
@@ -592,3 +593,23 @@ func _test_flip_earlier_tile() -> void:
 func _test_flip_tile_refuses_empty_cell() -> void:
 	var session := GameSession.new(1, _dictionary)
 	_check(not session.flip_tile(5, 5), "flipping an empty cell is refused")
+
+
+# Everything a turn does — placing, flipping a board tile, taking one
+# back, marking one to give back — is undone by `reset_turn`.
+func _test_reset_turn() -> void:
+	var session := GameSession.new(2, _dictionary)
+	_play_word(session, 4, 0, "MAISON")  # player 0; player 1 is now current
+	var hand_before := session.bag.hand(1).duplicate()
+	var hand_tile: Tile = hand_before[0]
+	session.place_tile(6, 0, hand_tile)
+	session.flip_tile(4, 0)
+	var taken := session.remove_tile(4, 5)
+	session.set_marked_for_discard(hand_before[1], true)
+	session.reset_turn()
+	_check(session.board.word_at(4, 0) == "MAISON", "reset: the board's words are back")
+	_check(session.board.is_empty(6, 0), "...the placed tile is off the board")
+	_check(session.bag.hand(1) == hand_before, "...the hand is as it was, in order")
+	_check(not session.bag.hand(1).has(taken), "...without the tile taken off the board")
+	_check(session.marked_for_discard().is_empty(), "...nothing marked to give back")
+	_check(session.turn_points() == 0 and session.can_end_turn(), "...and the turn is clean")

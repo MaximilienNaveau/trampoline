@@ -1,6 +1,6 @@
 # The "☰" menu's "Quitter la partie" button, which Android's back button
-# also presses: during a game, back asks to quit it (the same dialog,
-# with "Sauvegarder d'abord") instead of killing the app. Outside a game
+# also presses: during a game, back asks to quit it (the same dialog)
+# instead of killing the app. Outside a game
 # (the start menu), back quits the app as usual.
 #
 # Godot's own "quit on back" is turned off for this

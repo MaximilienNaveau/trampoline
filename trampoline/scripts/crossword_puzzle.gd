@@ -8,9 +8,7 @@
 class_name CrosswordPuzzle
 extends RefCounted
 
-# Which entry of CrosswordPuzzles.PUZZLES this is — kept, not just used
-# once in `_init`, so save_game.gd can record it and recreate the exact
-# same puzzle on load (see SaveGame.save_free_play/load_free_play).
+# Which entry of CrosswordPuzzles.PUZZLES this is.
 var puzzle_index: int
 
 var clues: Array[String] = []

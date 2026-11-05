@@ -15,10 +15,17 @@
 # an explicit int(...) cast back), and Dictionary keys round-trip as
 # strings (so int keys like column or player IDs need explicit str()/
 # int() conversions on the way out and back in).
+#
+# A game is saved on its own, between turns, to `AUTOSAVE_PATH` (see
+# main.gd), and picked up again from the start card's "Reprendre la
+# partie" — always at the start of a turn.
 class_name SaveGame
 extends RefCounted
 
 const SAVE_VERSION := 1
+# Where the game in progress is saved. "user://" is Godot's own writable,
+# per-user data folder (on Android, the app's private storage).
+const AUTOSAVE_PATH := "user://autosave.json"
 
 
 # Writes `session`'s entire state to `path` — e.g. "user://save1.json".
@@ -52,11 +59,6 @@ static func save(session: GameSession, path: String) -> bool:
 			hand_indices.append(tile_index[tile])
 		hands_data[str(player_id)] = hand_indices
 
-	# `Vector2i` isn't JSON: each cell is saved as a `[col, row]` pair.
-	var cells_to_keep_filled := []
-	for cell in session.cells_to_keep_filled:
-		cells_to_keep_filled.append([cell.x, cell.y])
-
 	var data := {
 		"version": SAVE_VERSION,
 		"number_of_players": session.turns.number_of_players,
@@ -68,8 +70,7 @@ static func save(session: GameSession, path: String) -> bool:
 		"scoring": session.scoring.export_state(),
 		"play_time": session.play_time,
 		"ended_by_time": session.ended_by_time,
-		"value_at_turn_start": session.value_at_turn_start,
-		"cells_to_keep_filled": cells_to_keep_filled,
+		"player_names": session.player_names,
 	}
 
 	var file := FileAccess.open(path, FileAccess.WRITE)
@@ -127,89 +128,15 @@ static func load(path: String, dictionary: FrenchDictionary = null) -> GameSessi
 	# Saves from before the one-hour limit have neither: no time played.
 	session.play_time = data.get("play_time", 0.0)
 	session.ended_by_time = data.get("ended_by_time", false)
-	# How the board stood when the saved turn began (see GameSession's
-	# `value_at_turn_start`/`cells_to_keep_filled`). Older saves have
-	# neither: the turn is taken as starting from the board as loaded,
-	# with no cell held to stay filled. JSON reads every number back as a
-	# float, hence `int()`.
-	session.value_at_turn_start = int(
-		data.get("value_at_turn_start", Scoring.board_value(session.board, session.dictionary))
-	)
-	if data.has("cells_to_keep_filled"):
-		session.cells_to_keep_filled.clear()
-		for pair in data["cells_to_keep_filled"]:
-			session.cells_to_keep_filled.append(Vector2i(int(pair[0]), int(pair[1])))
+	for player_name in data.get("player_names", []):
+		session.player_names.append(player_name)
+	# The saved turn starts now, from the board and hand as loaded (see
+	# GameSession.turn_start); the scoring's own note of it was restored
+	# above.
+	var hand := session.bag.hand(session.turns.current_player_id())
+	session.turn_start = TurnStart.new(session.board, hand, session.dictionary)
 
 	return session
-
-
-# Writes `session`'s entire state to `path`, for the free-play sandbox
-# (see free_play_session.gd) — including an in-progress crossword puzzle
-# built on top of it (see crossword_puzzle.gd), if any. Free play has no
-# bag/hands/turns to save at all (every tile not on the board is simply
-# "available" — see FreePlaySession.available_tiles), so this is a
-# smaller version of `save` above: just tile flip-state and the board
-# (the score is read off the board). `puzzle_index` is
-# CrosswordPuzzle.puzzle_index when saving mid-puzzle, or -1 for plain
-# free play (no puzzle active).
-static func save_free_play(session: FreePlaySession, path: String, puzzle_index: int = -1) -> bool:
-	var tile_index := _build_tile_index(session.pool)
-
-	var tile_states := []
-	for tile in session.pool.tiles:
-		tile_states.append(tile.is_showing_front())
-
-	var board_data := []
-	for row in range(Board.ROWS):
-		var row_data := []
-		for col in range(Board.COLUMNS):
-			var tile := session.board.tile_at(row, col)
-			row_data.append(tile_index[tile] if tile != null else -1)
-		board_data.append(row_data)
-
-	var data := {
-		"version": SAVE_VERSION,
-		"tile_states": tile_states,
-		"board": board_data,
-		"puzzle_index": puzzle_index,
-	}
-
-	var file := FileAccess.open(path, FileAccess.WRITE)
-	if file == null:
-		return false
-	file.store_string(JSON.stringify(data))
-	return true
-
-
-# Reconstructs a free-play session from a file written by `save_free_play`
-# above — returns a Dictionary `{"session": FreePlaySession, "puzzle_index":
-# int}` (GDScript has no multi-return, so this is the plain way to hand
-# back two results at once), or null if the file is missing, isn't valid
-# JSON, or isn't actually a free-play save (checked via the `puzzle_index`
-# key below, which only ever appears in this format — see `save` above
-# for the turn-based format, which has no such key).
-static func load_free_play(path: String, dictionary: FrenchDictionary = null) -> Variant:
-	if not FileAccess.file_exists(path):
-		return null
-	var file := FileAccess.open(path, FileAccess.READ)
-	if file == null:
-		return null
-
-	var data = JSON.parse_string(file.get_as_text())
-	if data == null or not data.has("puzzle_index"):
-		return null
-
-	var session := FreePlaySession.new(dictionary)
-	for i in range(session.pool.tiles.size()):
-		session.pool.tiles[i].set_showing_front(data["tile_states"][i])
-
-	for row in range(Board.ROWS):
-		for col in range(Board.COLUMNS):
-			var index: int = int(data["board"][row][col])
-			if index != -1:
-				session.board.place(row, col, session.pool.tiles[index])
-
-	return {"session": session, "puzzle_index": int(data["puzzle_index"])}
 
 
 # Maps each Tile object in `pool` to its fixed position in `pool.tiles` —
