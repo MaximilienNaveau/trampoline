@@ -54,6 +54,7 @@ func _initialize() -> void:
 	_test_sort_hand()
 	_test_show_hand_faces()
 	_test_reset_turn()
+	_test_scored_cells()
 
 	if _failures == 0:
 		print("\nAll checks passed.")
@@ -655,3 +656,20 @@ func _test_reset_turn() -> void:
 	_check(not session.bag.hand(1).has(taken), "...without the tile taken off the board")
 	_check(session.marked_for_discard().is_empty(), "...nothing marked to give back")
 	_check(session.turn_points() == 0 and session.can_end_turn(), "...and the turn is clean")
+
+
+# The cells a turn's points come from (see TurnStart.scored_cells): the
+# valid words of the rows it changed, not the untouched ones.
+func _test_scored_cells() -> void:
+	var session := GameSession.new(2, _dictionary)
+	_play_word(session, 4, 0, "MAISON")  # player 0; player 1 is now current
+	_check(
+		session.turn_start.scored_cells(session.board, _dictionary).is_empty(),
+		"nothing changed yet: no word to hop"
+	)
+	for i in range(5):  # player 1 puts TABLE down, turn not ended yet
+		var tile := Tile.new("TABLE"[i], "Z", true)
+		_give_hand_tile(session, 1, tile)
+		session.place_tile(6, i, tile)
+	var cells := session.turn_start.scored_cells(session.board, _dictionary)
+	_check(cells.size() == 5 and cells[0] == Vector2i(0, 6), "the new word's 5 cells, left first")

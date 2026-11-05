@@ -54,3 +54,31 @@ func restore(board: Board, hand: Array[Tile]) -> void:
 	hand.append_array(_hand)
 	for tile in _faces:
 		tile.set_showing_front(_faces[tile])
+
+
+# The cells of every valid word in a row this turn has changed (a tile
+# put down, moved, swapped, flipped or taken away), row by row, left to
+# right — the words a turn's points come from, for the board to make them
+# hop as the turn ends (see board_view.gd's `hop`).
+func scored_cells(board: Board, dictionary: FrenchDictionary) -> Array[Vector2i]:
+	var cells: Array[Vector2i] = []
+	for row in range(Board.ROWS):
+		if not _row_changed(board, row):
+			continue
+		for segment in board.segments_in_row(row):
+			if dictionary.is_word_valid(board.word_at(row, segment[0])):
+				for col in board.word_columns_at(row, segment[0]):
+					cells.append(Vector2i(col, row))
+	return cells
+
+
+# Whether any cell of `row` holds another tile than when the turn began,
+# or the same one showing its other face.
+func _row_changed(board: Board, row: int) -> bool:
+	for col in range(Board.COLUMNS):
+		var tile := board.tile_at(row, col)
+		if tile != _board[row][col]:
+			return true
+		if tile != null and tile.is_showing_front() != _faces[tile]:
+			return true
+	return false

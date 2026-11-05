@@ -663,6 +663,7 @@ func _on_end_turn_pressed() -> void:
 	if not _session.can_end_turn():
 		_set_end_turn_message(_format_end_turn_error())
 		_refresh_views()
+		_board_view.shake_errors()
 		return
 	# So the recap between turns can show what this turn changed.
 	_score_recap.remember_scores(_session)
@@ -673,6 +674,8 @@ func _on_end_turn_pressed() -> void:
 	# until the next player presses "C'est moi !".
 	_input_blocker.visible = true
 	_input_blocker.grab_focus()
+	# The words the points come from hop, letter after letter.
+	_board_view.hop(_session.turn_start.scored_cells(_session.board, _session.dictionary), 0.03)
 	await _scoreboard.play_turn_end(_session.turn_points(), _session.turn_bonuses())
 	_input_blocker.visible = false
 	_session.end_turn()
@@ -733,6 +736,14 @@ func _begin_turn() -> void:
 	if _session.is_game_over():
 		DirAccess.remove_absolute(SaveGame.AUTOSAVE_PATH)
 		_turn_timer.stop()
+		if _session.board.is_complete():
+			# A full board: every tile hops, row after row, top to bottom.
+			var cells: Array[Vector2i] = []
+			for row in range(Board.ROWS):
+				for col in range(Board.COLUMNS):
+					cells.append(Vector2i(col, row))
+			_board_view.hop(cells, 0.012)
+			await get_tree().create_timer(1.8).timeout
 		_end_screen.show_result(_session, _all_player_names())
 		return
 	SaveGame.save(_session, SaveGame.AUTOSAVE_PATH)

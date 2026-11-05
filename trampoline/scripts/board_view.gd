@@ -425,6 +425,25 @@ func refresh(
 	_overlay.queue_redraw()
 
 
+# Each of `cells`' tiles hops, one after another, `stagger` seconds apart
+# — a scored word's letters left to right, or the whole board row by row
+# (see board_cell.gd's `hop`).
+func hop(cells: Array[Vector2i], stagger: float) -> void:
+	for i in range(cells.size()):
+		get_cell(cells[i].y, cells[i].x).hop(i * stagger)
+
+
+# Every tile framed in red (see `refresh`) shakes: why the turn can't end.
+func shake_errors() -> void:
+	for row in range(Board.ROWS):
+		for col in range(Board.COLUMNS):
+			if get_cell(row, col).invalid:
+				get_cell(row, col).shake()
+	for cells in _error_frames:
+		for cell: Vector2i in cells:
+			get_cell(cell.y, cell.x).shake()
+
+
 # Starts the dotted box at `at`, in the grid's coordinates (which are
 # `_overlay`'s too): called by the empty cell just pressed (see
 # board_cell.gd's `_gui_input`).

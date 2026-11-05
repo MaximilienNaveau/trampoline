@@ -65,6 +65,17 @@ var _press_position: Vector2 = Vector2.ZERO
 # cell (a drag draws the selection box, see board_view.gd's `begin_box`).
 var _pressed_on_tile := false
 
+# The tile this cell showed at its last `refresh`, and whether it showed
+# its front: what tells the next refresh a tile just landed here (it
+# bounces) from the same tile just flipped (it turns over).
+var _shown_tile: Tile
+var _shown_front := true
+# The face's running animations (see doc/ART_DIRECTION.md's "Motion"):
+# its scale (bounce, turn over), and its position (hop, shake) — kept
+# apart so a hop can run during a bounce.
+var _scale_tween: Tween
+var _move_tween: Tween
+
 
 # A "virtual" function: Godot calls this itself (we never call it
 # directly) once per frame while something is being dragged over this
@@ -147,14 +158,104 @@ func hide_tile() -> void:
 # Redraws this single cell from `board`'s current state — used by
 # BoardView.refresh() for every cell (see board_view.gd), and by this cell
 # itself once a drag that started here ends (see `_notification` below),
-# to restore its look if the drag didn't actually carry its tile away.
+# to restore its look if the drag didn't actually carry its tile away. A
+# tile that just landed here bounces; one just flipped turns over.
 func refresh() -> void:
 	var tile := board.tile_at(row, col)
+	var landed := tile != null and tile != _shown_tile
+	var flipped := tile != null and tile == _shown_tile and tile.is_showing_front() != _shown_front
+	_shown_tile = tile
+	_shown_front = tile.is_showing_front() if tile != null else true
 	face.visible = tile != null
-	if tile != null:
-		label.text = tile.current_letter()
-		face.add_theme_stylebox_override("panel", TileView.board_face_style(tile, invalid))
-		TileView.update_corner_badge(corner_badge, tile)
+	if tile == null:
+		return
+	if flipped:
+		_turn_over()
+		return
+	_show_tile()
+	if landed:
+		_bounce()
+
+
+# Shows this cell's tile as it is now: its letter, its face, and its other
+# face's letter in the corner.
+func _show_tile() -> void:
+	var tile := board.tile_at(row, col)
+	if tile == null:
+		return
+	label.text = tile.current_letter()
+	face.add_theme_stylebox_override("panel", TileView.board_face_style(tile, invalid))
+	TileView.update_corner_badge(corner_badge, tile)
+
+
+# A new scale animation of the face, replacing any still running, the
+# face scaling around its centre (`pivot_offset`).
+func _new_scale_tween() -> Tween:
+	if _scale_tween != null:
+		_scale_tween.kill()
+	face.pivot_offset = face.size / 2
+	_scale_tween = create_tween()
+	return _scale_tween
+
+
+# The "trampoline" bounce of a tile landing: it drops in from above (big,
+# as if still held up), squashes a little too small on impact, and springs
+# back (TRANS_BACK + EASE_OUT overshoots before settling). About 0.3 s:
+# longer than the art direction's 250 ms, so it's seen on a phone.
+func _bounce() -> void:
+	face.scale = Vector2.ONE * 1.3
+	var tween := _new_scale_tween()
+	(
+		tween
+		. tween_property(face, "scale", Vector2.ONE * 0.88, 0.12)
+		. set_trans(Tween.TRANS_QUAD)
+		. set_ease(Tween.EASE_IN)
+	)
+	tween.tween_property(face, "scale", Vector2.ONE, 0.18).set_trans(Tween.TRANS_BACK).set_ease(
+		Tween.EASE_OUT
+	)
+
+
+# A flipped tile turning over: it narrows to a sliver, shows its other
+# face, and widens again — 120 ms in all.
+func _turn_over() -> void:
+	var tween := _new_scale_tween()
+	tween.tween_property(face, "scale:x", 0.0, 0.06)
+	tween.tween_callback(_show_tile)
+	tween.tween_property(face, "scale:x", 1.0, 0.06)
+
+
+# A new position animation of the face, replacing any still running and
+# putting the face back in its place first (see TileView.face_rect).
+func _new_move_tween() -> Tween:
+	if _move_tween != null:
+		_move_tween.kill()
+	face.position = TileView.face_rect(size.x).position
+	_move_tween = create_tween()
+	return _move_tween
+
+
+# The tile hops up and lands back, after `delay` seconds — a scored word's
+# letters hop one after another (see board_view.gd's `hop`).
+func hop(delay: float) -> void:
+	if face.visible:
+		var tween := _new_move_tween()
+		var y := face.position.y
+		tween.tween_interval(delay)
+		tween.tween_property(face, "position:y", y - size.y * 0.3, 0.1).set_ease(Tween.EASE_OUT)
+		tween.tween_property(face, "position:y", y, 0.12).set_trans(Tween.TRANS_BOUNCE).set_ease(
+			Tween.EASE_OUT
+		)
+
+
+# The tile shakes sideways — a turn refused because of it (see
+# board_view.gd's `shake_errors`).
+func shake() -> void:
+	if face.visible:
+		var tween := _new_move_tween()
+		var x := face.position.x
+		for offset in [5.0, -5.0, 3.0, -2.0, 0.0]:
+			tween.tween_property(face, "position:x", x + offset, 0.04)
 
 
 # Godot calls this when this cell needs redrawing (like Qt's paintEvent);

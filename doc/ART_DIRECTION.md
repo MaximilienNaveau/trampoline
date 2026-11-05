@@ -133,9 +133,9 @@ Keep it short (≤ 250 ms) and never block input.
 
 | Event | Animation |
 |---|---|
-| Tile dropped on a cell | Scale 1.12 → 0.94 → 1.0 with ease-out-back (the "trampoline" bounce) |
+| Tile dropped on a cell | Scale 1.3 → 0.88 → 1.0 with ease-out-back, ~300 ms (the "trampoline" bounce; 1.12 → 0.94 was too subtle to see on a phone) |
 | Tile flipped | Scale X 1 → 0, swap face, 0 → 1 (120 ms total); the corner square swaps too |
-| Drag | Tile lifts: scale 1.08, soft drop shadow, slight tilt (±3°) |
+| Drag | Tile lifts: 1.08× bigger (drawn at that size, not scaled) and a soft drop shadow; no tilt (a rotated tile's letters blur) |
 | Valid word scored | Letters hop one after another, left to right (30 ms stagger), and `+N` floats up in `ribbon` |
 | Broken turn | Offending tiles shake twice horizontally, `error` border (already in place, keep it) |
 | Board complete | Every row hops top-to-bottom; the ribbon bow comes back |

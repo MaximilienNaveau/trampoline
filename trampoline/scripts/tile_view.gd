@@ -274,9 +274,11 @@ static func hide_corner_badge(badge: Panel) -> void:
 # where Godot moves the root.
 static func build_drag_preview(tile: Tile, tile_size: Vector2) -> Control:
 	var root := Control.new()
-	var visual := build_tile_visual(tile, tile_size)
-	visual.position = -tile_size / 2
+	var side := _lifted(tile_size)
+	var visual := build_tile_visual(tile, side)
+	visual.position = -side / 2
 	root.add_child(visual)
+	_cast_shadow(visual)
 	return root
 
 
@@ -287,13 +289,34 @@ static func build_block_drag_preview(
 	tiles: Array[Tile], offsets: Array[Vector2i], tile_size: Vector2
 ) -> Control:
 	var root := Control.new()
+	var side := _lifted(tile_size)
 	for i in range(tiles.size()):
-		var visual := build_tile_visual(tiles[i], tile_size)
+		var visual := build_tile_visual(tiles[i], side)
 		# `Vector2(offsets[i])` turns the whole-number cell offset into a
 		# float one, to scale by the tile's size in pixels.
-		visual.position = Vector2(offsets[i]) * tile_size - tile_size / 2
+		visual.position = Vector2(offsets[i]) * side - side / 2
 		root.add_child(visual)
+		_cast_shadow(visual)
 	return root
+
+
+# A picked-up tile looks a little bigger (see doc/ART_DIRECTION.md's
+# "Motion"): the size of a dragged tile `tile_size` big, in whole pixels.
+# Drawn at that size rather than scaled up afterwards (or tilted), so its
+# letters stay sharp: scaling or rotating a drawn tile smooths, so blurs,
+# its text.
+static func _lifted(tile_size: Vector2) -> Vector2:
+	return (tile_size * 1.08).round()
+
+
+# A dragged tile's soft shadow, as if held above the table: a copy of the
+# tile's style (see `style_for_tile`), so only this preview gets it.
+static func _cast_shadow(visual: Control) -> void:
+	var style: StyleBoxFlat = visual.get_theme_stylebox("panel").duplicate()
+	style.shadow_color = Color(0, 0, 0, 0.3)
+	style.shadow_size = 10
+	style.shadow_offset = Vector2(2, 6)
+	visual.add_theme_stylebox_override("panel", style)
 
 
 # The actual colored, lettered rectangle both preview builders above
