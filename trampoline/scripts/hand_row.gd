@@ -18,19 +18,41 @@ extends Container
 
 signal tile_returned(from_row: int, from_col: int)
 signal tile_unmarked(tile: Tile)
+# A tile of this row dropped elsewhere in it, just before `before` (null:
+# after the last one) — the player arranging their hand.
+signal tile_reordered(tile: Tile, before: Tile)
 
 
 # Accepts drops that came from a BoardCell (see board_cell.gd's
 # `_get_drag_data`, the only source that adds "from_row" to the dragged
 # data), or from the discard tray (see tile_panel.gd, which adds
-# "from_tray") — a drag starting from within the hand itself has nothing
-# to do here.
+# "from_tray"), or from this row itself (its drag carries nothing but the
+# tile, see tile_panel.gd), to move it.
 func _can_drop_data(_at_position: Vector2, data: Variant) -> bool:
-	return data is Dictionary and (data.has("from_row") or data.has("from_tray"))
+	return (
+		data is Dictionary
+		and (data.has("from_row") or data.has("from_tray") or data.keys() == ["tile"])
+	)
 
 
-func _drop_data(_at_position: Vector2, data: Variant) -> void:
+func _drop_data(at_position: Vector2, data: Variant) -> void:
 	if data.has("from_tray"):
 		tile_unmarked.emit(data["tile"])
-	else:
+	elif data.has("from_row"):
 		tile_returned.emit(data["from_row"], data["from_col"])
+	else:
+		tile_reordered.emit(data["tile"], _tile_after(at_position))
+
+
+# The tile a drop at `at_position` lands just before: the first one, in
+# reading order, lying on a later row, or on the same row but further
+# right than the drop (past its middle) — null if the drop is after them
+# all. Each child is a TilePanel (see tile_panel.gd); its `position` is
+# where it sits in this row.
+func _tile_after(at_position: Vector2) -> Tile:
+	for panel: TilePanel in get_children():
+		var below := at_position.y < panel.position.y
+		var on_row := at_position.y < panel.position.y + panel.size.y
+		if below or (on_row and at_position.x < panel.position.x + panel.size.x / 2):
+			return panel.tile
+	return null

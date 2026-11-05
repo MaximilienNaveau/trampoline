@@ -264,6 +264,26 @@ mouse_filter=1
 theme_override_constants/h_separation=4
 theme_override_constants/v_separation=4
 
+[node name="HandTools" type="HBoxContainer" parent="Layout/Margin/Content/PlayArea/HandArea"]
+visible=false
+layout_mode=2
+theme_override_constants/separation=8
+
+[node name="SortButton" type="Button" parent="Layout/Margin/Content/PlayArea/HandArea/HandTools"]
+layout_mode=2
+theme_override_font_sizes/font_size=14
+text="Trier"
+
+[node name="AllYellowButton" type="Button" parent="Layout/Margin/Content/PlayArea/HandArea/HandTools"]
+layout_mode=2
+theme_override_font_sizes/font_size=14
+text="Tout jaune"
+
+[node name="AllGreenButton" type="Button" parent="Layout/Margin/Content/PlayArea/HandArea/HandTools"]
+layout_mode=2
+theme_override_font_sizes/font_size=14
+text="Tout vert"
+
 [node name="PaletteView" parent="Layout/Margin/Content/PlayArea/HandArea" instance=ExtResource("4")]
 layout_mode=2
 size_flags_horizontal=4

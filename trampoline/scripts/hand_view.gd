@@ -31,6 +31,8 @@ signal tile_returned(from_row: int, from_col: int)
 # A tile dragged back out of the discard tray into this hand (see
 # discard_tray.gd): the player no longer wants to give it back.
 signal tile_unmarked(tile: Tile)
+# A hand tile dropped elsewhere in the hand (see hand_row.gd).
+signal tile_reordered(tile: Tile, before: Tile)
 
 # `$Row` looks up the child node named "Row" declared in hand_view.tscn,
 # same `@onready`/`$Name` pattern as BoardView's `_grid`.
@@ -42,6 +44,7 @@ func _ready() -> void:
 	# A signal can be connected straight to another signal's `emit`,
 	# re-broadcasting it unchanged.
 	_row.tile_unmarked.connect(tile_unmarked.emit)
+	_row.tile_reordered.connect(tile_reordered.emit)
 
 
 func _on_row_tile_returned(from_row: int, from_col: int) -> void:

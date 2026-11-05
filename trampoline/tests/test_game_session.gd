@@ -50,6 +50,9 @@ func _initialize() -> void:
 	_test_flip_tile()
 	_test_flip_earlier_tile()
 	_test_flip_tile_refuses_empty_cell()
+	_test_move_in_hand()
+	_test_sort_hand()
+	_test_show_hand_faces()
 	_test_reset_turn()
 
 	if _failures == 0:
@@ -593,6 +596,45 @@ func _test_flip_earlier_tile() -> void:
 func _test_flip_tile_refuses_empty_cell() -> void:
 	var session := GameSession.new(1, _dictionary)
 	_check(not session.flip_tile(5, 5), "flipping an empty cell is refused")
+
+
+func _test_move_in_hand() -> void:
+	var session := GameSession.new(1, _dictionary)
+	var hand := session.bag.hand(0)
+	var first := hand[0]
+	var last := hand[hand.size() - 1]
+	_check(HandTiles.move(hand, last, first), "a hand tile can move within the hand")
+	_check(hand[0] == last and hand[1] == first, "...to just before the tile it's dropped on")
+	_check(HandTiles.move(hand, last, null), "...or to the end")
+	_check(hand[hand.size() - 1] == last, "...landing last")
+	_check(not HandTiles.move(hand, Tile.new("A", "B", true), null), "a tile not in hand can't")
+
+
+func _test_sort_hand() -> void:
+	var session := GameSession.new(1, _dictionary)
+	var hand := session.bag.hand(0)
+	hand.clear()
+	var blank := Tile.new("", "A", true)
+	hand.append_array([Tile.new("M", "Z", true), blank, Tile.new("A", "Z", true)])
+	HandTiles.sort(hand)
+	_check(
+		hand[0].current_letter() == "A" and hand[1].current_letter() == "M" and hand[2] == blank,
+		"the hand sorts A to Z, blanks last"
+	)
+
+
+func _test_show_hand_faces() -> void:
+	var session := GameSession.new(1, _dictionary)
+	var hand := session.bag.hand(0)
+	hand.clear()
+	var green_back := Tile.new("A", "B", true)
+	var yellow_back := Tile.new("C", "D", false)
+	hand.append_array([green_back, yellow_back])
+	HandTiles.show_faces(hand, true)
+	_check(green_back.current_is_green(), "all green: a tile with a green face shows it")
+	_check(yellow_back.is_showing_front(), "...one without stays as it was")
+	HandTiles.show_faces(hand, false)
+	_check(green_back.is_showing_front(), "all yellow: every tile shows its yellow front")
 
 
 # Everything a turn does — placing, flipping a board tile, taking one

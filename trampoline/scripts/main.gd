@@ -124,6 +124,8 @@ var _discard_tray: DiscardTray = $Layout/Margin/Content/PlayArea/HandArea/HandBa
 # Puts the board and hand back as they were when the turn began (see
 # GameSession.reset_turn).
 @onready var _reset_turn_button: Button = $Layout/Margin/Content/TopBar/ResetTurnButton
+# Under the hand: "Trier", "Tout jaune", "Tout vert" (see hand_tiles.gd).
+@onready var _hand_tools: HBoxContainer = $Layout/Margin/Content/PlayArea/HandArea/HandTools
 # On the start card, while a game is saved (see `_return_to_start_menu`).
 @onready var _resume_button: Button = %StartMenu/ResumeButton
 @onready var _new_game_confirm_dialog: ConfirmationDialog = $NewGameConfirmDialog
@@ -241,9 +243,20 @@ func _ready() -> void:
 	_discard_tray.tile_marked.connect(_on_tile_marked_for_discard)
 	_hand_view.tile_unmarked.connect(_on_tile_unmarked_for_discard)
 	_handoff_play_button.pressed.connect(_on_handoff_play_pressed)
+	_hand_view.tile_reordered.connect(_on_hand_tile_reordered)
 	# Each button runs its own small anonymous function (`func() -> void:
 	# ...`, like a Python `lambda`), see `_on_turn_action`.
 	_reset_turn_button.pressed.connect(_on_turn_action.bind(func() -> void: _session.reset_turn()))
+	var tools := _hand_tools
+	tools.get_node("SortButton").pressed.connect(
+		_on_turn_action.bind(func() -> void: HandTiles.sort(_hand()))
+	)
+	tools.get_node("AllYellowButton").pressed.connect(
+		_on_turn_action.bind(func() -> void: HandTiles.show_faces(_hand(), false))
+	)
+	tools.get_node("AllGreenButton").pressed.connect(
+		_on_turn_action.bind(func() -> void: HandTiles.show_faces(_hand(), true))
+	)
 	_resume_button.pressed.connect(_on_resume_pressed)
 	_new_game_button.pressed.connect(_on_new_game_pressed)
 	_how_to_play_button.pressed.connect(_how_to_play.open)
@@ -366,6 +379,10 @@ func _update_board_height_budget() -> void:
 	# landscape the hand sits beside the board instead of below it.
 	var hand_below := _session != null and _is_portrait()
 	_board_view.reserved_bottom_rows = 2 if hand_below else 0
+	# ...and the row of buttons under it (see `_hand_tools`).
+	if hand_below:
+		overhead += _hand_tools.get_combined_minimum_size().y
+		overhead += _hand_tools.get_parent().get_theme_constant("separation")
 	_board_view.vertical_overhead = overhead
 
 
@@ -437,6 +454,7 @@ func _start_session(session: GameSession) -> void:
 	_end_turn_button.visible = true
 	_discard_tray.visible = true
 	_reset_turn_button.visible = true
+	_hand_tools.visible = true
 	_new_game_button.visible = true
 	_refresh_views()
 	_begin_turn()
@@ -652,6 +670,14 @@ func _on_turn_action(action: Callable) -> void:
 # The current player's hand (see TileBag.hand), the live array.
 func _hand() -> Array[Tile]:
 	return _session.bag.hand(_session.turns.current_player_id())
+
+
+# A hand tile dropped elsewhere in the hand, just before `before` (null:
+# at the end) — see hand_row.gd. Free play's palette has no order to keep.
+func _on_hand_tile_reordered(tile: Tile, before: Tile) -> void:
+	if not _is_free_play():
+		HandTiles.move(_hand(), tile, before)
+		_refresh_views()
 
 
 # "Comment jouer" from the ☰ menu: closes the menu, then shows the rules.
@@ -875,6 +901,7 @@ func _return_to_start_menu() -> void:
 	_end_turn_button.visible = false
 	_discard_tray.visible = false
 	_reset_turn_button.visible = false
+	_hand_tools.visible = false
 	_resume_button.visible = FileAccess.file_exists(SaveGame.AUTOSAVE_PATH)
 	_new_game_button.visible = false
 	_palette_view.visible = false
