@@ -24,8 +24,8 @@ hand, then a shared win.
       Alice" / "C'est moi !".
 - [x] That screen recaps the scores: every player's score, what the
       last turn changed (in orange), and the time left.
-- [ ] Maybe: end early when every player passes two rounds in a row
-      (not decided).
+- Won't do (decided 2026-11-05): ending early when every player passes
+  two rounds in a row.
 
 ### 2. Score feedback during the turn
 - [x] A live "+N" next to the current player's score while they build
@@ -84,27 +84,27 @@ hand, then a shared win.
 ## Polish
 
 ### 5. The hand on a play mat
-- [ ] The hand (and the "À rendre" tray) sits on the background, drawn as
+- [x] The hand (and the "À rendre" tray) sits on the background, drawn as
       a **play mat** (felt, like the desk mat in `doc/real-game/`), not on
       the plain dark page.
-- [ ] Hand, tray and dragged tiles drawn as 2.5D blocks with their cork
+- [x] Hand, tray and dragged tiles drawn as 2.5D blocks with their cork
       sides (like the tiles off the board in the "Comment jouer" cards),
       matching the board.
 
 ### 6. In-game motion
 From `ART_DIRECTION.md` → "Motion" (each ≤ 250 ms, never blocking input):
-- [ ] Tile dropped on a cell: squash-and-bounce.
-- [ ] Tile flipped: the turn-over animation (narrow, swap face, widen),
+- [x] Tile dropped on a cell: squash-and-bounce.
+- [x] Tile flipped: the turn-over animation (narrow, swap face, widen),
       as in the "Comment jouer" cards.
-- [ ] Drag: the tile lifts (slightly bigger, soft shadow, slight tilt).
-- [ ] Valid word scored: letters hop left to right, `+N` floats up.
-- [ ] Broken turn: offending tiles shake (keep the red border).
-- [ ] Board complete: rows hop top to bottom, the ribbon bow comes back.
+- [x] Drag: the tile lifts (slightly bigger, soft shadow, slight tilt).
+- [x] Valid word scored: letters hop left to right, `+N` floats up.
+- [x] Broken turn: offending tiles shake (keep the red border).
+- [x] Board complete: rows hop top to bottom, before the end screen (the
+      ribbon bow left out).
 
 ### 7. Header
-- [ ] Buttons in Jost (the theme still uses Baloo 2), per the art
-      direction.
-- [ ] "☰" replaced by a small drawn icon.
+- [x] Buttons and text in Jost (Baloo 2 removed), per the art direction.
+- [x] "☰" replaced by a small drawn icon.
 - [x] Scoreboard: the current player underlined in orange instead of
       "(à vous de jouer)".
 - [ ] Scores easier to read at a glance (one chip per player?).
@@ -119,6 +119,7 @@ From `ART_DIRECTION.md` → "Motion" (each ≤ 250 ms, never blocking input):
       screen counts the green faces left, the next game's target.
 
 ### 9. Sound
+Last: needs research for open-source sound effects and music first.
 - [ ] Sound effects: pick up a tile, drop it (wooden "tok"), flip it
       (card "flick"). Free-licence sources noted in an assets README.
 - [ ] Background music, quiet, looping; on/off in the ☰ menu (and sound
