@@ -16,6 +16,10 @@ extends Control
 # `_set_end_turn_message` below) — snapping straight to full opacity read
 # as too abrupt for something popping up over the header.
 const _END_TURN_MESSAGE_FADE_SECONDS := 0.25
+# How many hand tiles fit on one row on a phone held upright: the board's
+# 9 columns, minus the "À rendre" tray's room beside the hand (see
+# `_update_board_height_budget`).
+const _HAND_TILES_PER_ROW := 7
 
 # Kept as a field (not a local var in _ready()) now that other methods
 # below — `_on_board_tile_dropped`, `_on_end_turn_pressed` — need to reach
@@ -373,12 +377,17 @@ func _update_board_height_budget() -> void:
 	overhead += _margin.get_theme_constant("margin_bottom")
 	if _options_panel.visible:
 		overhead -= _options_panel.size.y + _content.get_theme_constant("separation")
-	# 2 rows hold about 20 tiles on a phone — a whole hand, which starts at
-	# 9-14 tiles (see draw_plan.gd). Only in turn-based portrait: free
-	# play's palette holds all 117 tiles and scrolls anyway, and in
-	# landscape the hand sits beside the board instead of below it.
+	# As many rows as the hand needs, at least 2 (the tray's height): a
+	# hand starts at 9-14 tiles (see draw_plan.gd), but swaps and tiles
+	# taken back off the board can make it longer. Only in turn-based
+	# portrait: free play's palette holds all 117 tiles and scrolls anyway,
+	# and in landscape the hand sits beside the board instead of below it.
 	var hand_below := _session != null and _is_portrait()
-	_board_view.reserved_bottom_rows = 2 if hand_below else 0
+	var hand_rows := 0
+	if hand_below:
+		var kept := _hand().size() - _session.marked_for_discard().size()
+		hand_rows = maxi(2, ceili(kept / float(_HAND_TILES_PER_ROW)))
+	_board_view.reserved_bottom_rows = hand_rows
 	# ...and the row of buttons under it (see `_hand_tools`).
 	if hand_below:
 		overhead += _hand_tools.get_combined_minimum_size().y
