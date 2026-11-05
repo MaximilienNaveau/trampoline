@@ -54,8 +54,13 @@ hand, then a shared win.
       a store release.
 - [ ] Test on a real phone: touch drag and drop, flipping, the tray's
       sideways scroll, performance, the screen fitting with no scrolling.
-- [ ] Replace the save/load file dialogs on Android: automatic save after
-      every turn, and a "Reprendre la partie" button on the start card.
+- [x] Automatic save at the start of every turn (names included), and a
+      "Reprendre la partie" button on the start card; the Save/Load
+      buttons and their file dialogs are gone. Free play isn't saved.
+- [x] The dictionary loads in ~50 ms instead of ~3 s: the word list ships
+      pre-normalized and sorted (`data/dictionaries/fr-words.txt`, rebuilt
+      by `tools/build_word_list.gd`, checked up to date by the tests).
+- [x] Thinner page margins and board rim, for bigger tiles on a phone.
 
 ### 4. To think about further
 - [x] Moving tiles (2015 rules, see `RULES.md` "Moving and swapping
@@ -63,13 +68,17 @@ hand, then a shared win.
       with a dotted selection box; dropping a tile on another swaps it into
       the hand; the turn can't end with a cell emptied that held a letter;
       each turn earns the board's change in worth.
-- [ ] A "Comment jouer" card for the selection box and swapping.
-- [ ] A game saved mid-turn forgets which tiles were put down from the
-      hand that turn (so the one-row rule can't flag them after loading).
+- [x] "Comment jouer" cards for swapping, the selection box,
+      "Recommencer", and arranging the hand.
+- [x] "Recommencer" in the header: the board and hand back as they were
+      when the turn began.
+- [x] Under the hand: "Trier" (A to Z), "Tout jaune", "Tout vert"; a hand
+      tile can be dragged to another place in the hand.
 - [ ] A hand over 14 tiles (tiles taken back off the board) overflows its
       two rows: decide (cap? third row? scroll?).
-- [ ] `tests/test_save_game.gd` fails now and then: find the cause and
-      fix it.
+- [x] `tests/test_save_game.gd` failed now and then: it looked for given
+      letters only in the undrawn pile, which the deal had sometimes
+      emptied of them. It now looks in the hands too.
 
 ## Polish
 
