@@ -11,7 +11,8 @@
 # Purely visual: it only reads the session it's given, and reports the
 # buttons through its signals.
 class_name EndScreen
-extends Panel
+# On the same felt as the game (see play_mat.gd).
+extends PlayMat
 
 signal replay_pressed
 signal menu_pressed
@@ -36,6 +37,9 @@ var _pulse: Tween
 
 
 func _ready() -> void:
+	# The felt's own setup first (see play_mat.gd), like Python's
+	# `super().__init__()`.
+	super()
 	# Re-broadcasts each button's own `pressed` signal as this screen's.
 	$Center/Card/Items/Buttons/ReplayButton.pressed.connect(replay_pressed.emit)
 	$Center/Card/Items/Buttons/MenuButton.pressed.connect(menu_pressed.emit)

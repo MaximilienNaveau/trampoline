@@ -2,13 +2,16 @@
 # doc/real-game/ and doc/ART_DIRECTION.md's `felt`): a base color with a
 # fine grain, round corners, and optionally a padded rim.
 #
-# Used twice in main.tscn: as the whole page's background (Background:
-# the dark desk felt, edge to edge), and under the hand, the "À rendre"
-# tray and the buttons below them (HandArea: a brighter mat with a padded
-# rim, setting the player's tiles apart from the board). A Control
+# Used in main.tscn as the whole page's background (Background: the dark
+# desk felt, edge to edge), under the hand, the "À rendre" tray and the
+# buttons below them (HandArea: a brighter mat with a padded rim, setting
+# the player's tiles apart from the board), and as the background of the
+# screens drawn over the game (HandoffScreen, and end_screen.gd and
+# how_to_play_view.gd, which build on this script: `extends PlayMat`). A Control
 # draws itself before its children, so the mat lies under them. Purely
 # visual. `extends Control`: it fits any Control node, here a Panel and a
 # VBoxContainer.
+class_name PlayMat
 extends Control
 
 # The grain, made once and shared by every mat: a NoiseTexture2D is an

@@ -79,13 +79,13 @@ content_margin_left = 4.0
 content_margin_top = 4.0
 content_margin_right = 4.0
 content_margin_bottom = 4.0
-bg_color = Color(0.122, 0.165, 0.133, 1)
-border_width_top = 3
-border_color = Color(0.067, 0.09, 0.075, 1)
-corner_radius_top_left = 4
-corner_radius_top_right = 4
-corner_radius_bottom_right = 4
-corner_radius_bottom_left = 4
+bg_color = Color(0.16, 0.17, 0.18, 1)
+border_width_top = 4
+border_color = Color(0.07, 0.075, 0.08, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
 
 [node name="Main" type="Control"]
 layout_mode=3
@@ -354,6 +354,7 @@ anchor_bottom=1.0
 grow_horizontal=2
 grow_vertical=2
 visible=false
+script=ExtResource("23")
 
 [node name="Center" type="CenterContainer" parent="HandoffScreen"]
 layout_mode=1

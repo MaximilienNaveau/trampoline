@@ -7,7 +7,8 @@
 # Purely visual: it plays with its own throwaway tiles, never a real game
 # session. main.gd only calls `open()`; the screen closes itself.
 class_name HowToPlayView
-extends Panel
+# On the same felt as the game (see play_mat.gd).
+extends PlayMat
 
 # The painted wood of the box and board (see board_view.tscn): its plain
 # painted middle.
@@ -84,6 +85,9 @@ var _top_button := Button.new()
 
 
 func _ready() -> void:
+	# The felt's own setup first (see play_mat.gd), like Python's
+	# `super().__init__()`.
+	super()
 	_stage.draw.connect(_draw_stage)
 	# Anything sliding in from outside the stage is cut off at its edges.
 	_stage.clip_contents = true
