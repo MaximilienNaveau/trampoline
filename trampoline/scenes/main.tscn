@@ -125,6 +125,7 @@ one_shot=true
 [node name="Margin" type="MarginContainer" parent="Layout"]
 layout_mode=2
 size_flags_horizontal=3
+size_flags_vertical=3
 theme_override_constants/margin_left=4
 theme_override_constants/margin_top=12
 theme_override_constants/margin_right=4
@@ -209,6 +210,7 @@ visible=false
 [node name="PlayArea" type="BoxContainer" parent="Layout/Margin/Content"]
 layout_mode=2
 size_flags_vertical=3
+alignment=1
 vertical=true
 theme_override_constants/separation=10
 
@@ -225,7 +227,6 @@ visible=false
 [node name="HandArea" type="VBoxContainer" parent="Layout/Margin/Content/PlayArea"]
 layout_mode=2
 size_flags_horizontal=3
-size_flags_vertical=3
 theme_override_constants/separation=10
 
 [node name="HandBar" type="HBoxContainer" parent="Layout/Margin/Content/PlayArea/HandArea"]
