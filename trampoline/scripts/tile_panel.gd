@@ -68,6 +68,8 @@ static func create(a_tile: Tile, side: float) -> TilePanel:
 	panel.corner_badge = badge
 	# Same letter/corner proportions as on the board, at this size.
 	TileView.fit_to_side(a_label, badge, side)
+	# Off the board, a tile shows its cork base (see tile_view.gd).
+	TileView.add_cork(panel, side)
 	return panel
 
 

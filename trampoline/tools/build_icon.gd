@@ -58,6 +58,9 @@ func _draw(file_name: String, canvas: int, tile_side: int, face: bool, badge: bo
 	# `Tile.new(front, back, back_is_green)`: a yellow M, a green C.
 	var tile := TileView.build_tile_visual(Tile.new("M", "C", true), Vector2.ONE * tile_side)
 	tile.position = Vector2.ONE * (canvas - tile_side) / 2
+	# Flat, without the cork base a tile off the board shows (see
+	# tile_view.gd's `add_cork`).
+	tile.get_node("Cork").free()
 	if not face:
 		# StyleBoxEmpty draws nothing: the Panel itself becomes invisible.
 		tile.add_theme_stylebox_override("panel", StyleBoxEmpty.new())

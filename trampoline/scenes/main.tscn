@@ -1,4 +1,4 @@
-[gd_scene load_steps=28 format=3]
+[gd_scene load_steps=29 format=3]
 
 [ext_resource type="Script" path="res://scripts/main.gd" id="1"]
 [ext_resource type="PackedScene" path="res://scenes/board_view.tscn" id="2"]
@@ -22,6 +22,7 @@
 [ext_resource type="Script" path="res://scripts/quit_game_button.gd" id="20"]
 [ext_resource type="Script" path="res://scripts/end_screen.gd" id="21"]
 [ext_resource type="Texture2D" path="res://assets/textures/menu_icon.svg" id="22"]
+[ext_resource type="Script" path="res://scripts/play_mat.gd" id="23"]
 
 [sub_resource type="StyleBoxFlat" id="EndTurnBannerStyle"]
 bg_color = Color(0.75, 0.16, 0.16, 1)
@@ -104,6 +105,7 @@ anchor_bottom=1.0
 grow_horizontal=2
 grow_vertical=2
 mouse_filter=2
+script=ExtResource("23")
 
 [node name="Layout" type="ScrollContainer" parent="."]
 layout_mode=1
@@ -245,6 +247,13 @@ visible=false
 [node name="HandArea" type="VBoxContainer" parent="Layout/Margin/Content/PlayArea"]
 layout_mode=2
 size_flags_horizontal=3
+script=ExtResource("23")
+felt_color=Color(0.235, 0.25, 0.26, 1)
+grain=0.07
+corner_radius=12
+bleed=Vector2(4, 10)
+rim_width=6.0
+rim_color=Color(0.07, 0.075, 0.08, 1)
 theme_override_constants/separation=10
 
 [node name="HandBar" type="HBoxContainer" parent="Layout/Margin/Content/PlayArea/HandArea"]
@@ -524,7 +533,7 @@ region_rect=Rect2(40, 40, 460, 880)
 
 [node name="CardArea" type="VBoxContainer" parent="BoxLid/Box/Hinge/Lid"]
 layout_mode=1
-anchor_top=0.18
+anchor_top=0.11
 anchor_right=1.0
 anchor_bottom=1.0
 offset_left=10.0
@@ -564,7 +573,7 @@ text="Un jeu pour faire rebondir les mots"
 [node name="StartMenu" type="VBoxContainer" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items"]
 unique_name_in_owner=true
 layout_mode=2
-theme_override_constants/separation=16
+theme_override_constants/separation=12
 
 [node name="ResumeButton" type="Button" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/StartMenu"]
 visible=false
@@ -766,9 +775,9 @@ mouse_filter=2
 
 [node name="Band" type="TextureRect" parent="BoxLid/Ribbon"]
 layout_mode=1
-anchor_top=0.18
+anchor_top=0.11
 anchor_right=1.0
-anchor_bottom=0.18
+anchor_bottom=0.11
 offset_top=-7.0
 offset_bottom=7.0
 grow_horizontal=2
@@ -779,9 +788,9 @@ expand_mode=1
 [node name="Bow" type="TextureRect" parent="BoxLid/Ribbon"]
 layout_mode=1
 anchor_left=0.5
-anchor_top=0.18
+anchor_top=0.11
 anchor_right=0.5
-anchor_bottom=0.18
+anchor_bottom=0.11
 offset_left=-60.0
 offset_top=-34.0
 offset_right=60.0

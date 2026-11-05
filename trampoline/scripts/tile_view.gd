@@ -15,6 +15,11 @@ extends RefCounted
 const YELLOW_COLOR := Color("eae5a0")
 const GREEN_COLOR := Color("9cb46b")
 const LETTER_COLOR := Color("363a42")
+# The cork base under a tile's printed face, seen on its sides once it's
+# off the board (`tile_edge` in doc/ART_DIRECTION.md's palette); the right
+# side, facing away from the light, a little darker.
+const CORK_COLOR := Color("c9b98a")
+const _CORK_SHADE := 0.25
 # An empty hole cut into the board's painted wood: its walls and floor
 # are that same paint (the plain painted middle of the box's lid texture,
 # like the Tray around the holes in board_view.tscn), tinted by how much
@@ -84,8 +89,8 @@ static func style_for_tile(tile: Tile) -> StyleBoxFlat:
 
 
 # The style for the face of a tile sunk into a board hole: just the
-# matte face color, flush with the board — no fake bottom edge or shadow
-# like `_make_style`'s, since nothing of its thickness shows.
+# matte face color, flush with the board — its cork sides (see
+# `add_cork`) are hidden in the hole.
 # `invalid` adds a red border (see `INVALID_BORDER_COLOR`).
 static func board_face_style(tile: Tile, invalid: bool) -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
@@ -337,7 +342,35 @@ static func build_tile_visual(tile: Tile, tile_size: Vector2) -> Control:
 	update_corner_badge(corner, tile)
 	visual.add_child(corner)
 	fit_to_side(label, corner, tile_size.x)
+	add_cork(visual, tile_size.x)
 	return visual
+
+
+# Gives `tile` (a tile's face, `side` px wide) the cork base a tile off
+# the board shows: a little block, as thick as a board hole is deep (see
+# `_HOLE_DEPTH_RATIO`), seen in the game's oblique view (see oblique.gd).
+# It's a child named "Cork" drawn BEHIND its parent (`show_behind_parent`):
+# a stack of the face's own rounded shape, shifted step by step down and
+# to the right, from the far edge (darker) up to the face — so the block
+# keeps the face's round corners.
+static func add_cork(tile: Control, side: float) -> void:
+	var cork := Control.new()
+	cork.name = "Cork"
+	cork.show_behind_parent = true
+	cork.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	tile.add_child(cork)
+	var depth := -Oblique.UP * side * _HOLE_DEPTH_RATIO
+	# One shape per pixel of depth, so the edge stays smooth; their styles
+	# made once, here, not on every redraw.
+	var steps := ceili(depth.length())
+	var styles: Array[StyleBoxFlat] = []
+	for i in range(steps + 1):
+		styles.append(_make_style(CORK_COLOR.darkened(_CORK_SHADE * i / steps)))
+	cork.draw.connect(
+		func() -> void:
+			for i in range(steps, 0, -1):
+				cork.draw_style_box(styles[i], Rect2(depth * i / steps, Vector2.ONE * side))
+	)
 
 
 # A StyleBoxFlat is Godot's simplest drawable: a solid-colored (optionally
@@ -345,19 +378,10 @@ static func build_tile_visual(tile: Tile, tile_size: Vector2) -> Control:
 # embossed/beveled — a stronger "3D" look (tried and rejected earlier)
 # reads fine on one isolated tile but turns into a busy, repetitive
 # waffle pattern once tiled edge-to-edge 117 times across the board. The
-# real tiles are flat printed card on a thin cork base, so: a matte face,
-# a 2px darker bottom edge standing in for that base's thickness, and a
-# small shadow to lift it off the board.
+# real tiles are flat printed card on a thin cork base, so: a matte face
+# — the base's sides are drawn apart, see `add_cork`.
 static func _make_style(color: Color) -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
 	style.bg_color = color
-	# `darkened()` returns the same hue at a lower brightness — cheaper
-	# than a second color constant per caller, and always stays in sync
-	# with whichever color this style was actually built for.
-	style.border_color = color.darkened(0.3)
-	style.border_width_bottom = 2
 	style.set_corner_radius_all(_CORNER_RADIUS)
-	style.shadow_color = Color(0, 0, 0, 0.25)
-	style.shadow_size = 2
-	style.shadow_offset = Vector2(0, 1)
 	return style
