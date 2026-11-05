@@ -131,15 +131,18 @@
           # No iOS: Godot refuses to export even the unsigned Xcode project
           # without an App Store Team ID, which needs an Apple account.
 
-          # result/trampoline.apk, signed with the project's own debug key
-          # (keys/debug.keystore), so each build installs over the previous
+          # result/trampoline.apk: a release build (not debuggable, as it
+          # ships), signed with the project's own debug key
+          # (keys/debug.keystore) so each build installs over the previous
           # one: adb install -r result/trampoline.apk
-          # TODO: a release build signed with the F-Droid key (doc/TODO.md).
+          # The real key never enters a Nix build (the store is pushed to a
+          # public cache): release.yml re-signs this APK with
+          # `nix run .#apksigner`, outside Nix, for the GitHub Release and
+          # F-Droid.
           android = godotExport {
             name = "android";
             preset = "Android";
             file = "trampoline.apk";
-            mode = "debug";
             extraInputs = [ pkgs.jdk17_headless ];
             setup = ''
               # Read by Godot as the default Android SDK and Java paths.
@@ -150,9 +153,13 @@
                 echo "keys/debug.keystore is missing: is it tracked by git?" >&2
                 exit 1
               fi
-              export GODOT_ANDROID_KEYSTORE_DEBUG_PATH="$PWD/keys/debug.keystore"
-              export GODOT_ANDROID_KEYSTORE_DEBUG_USER=androiddebugkey
-              export GODOT_ANDROID_KEYSTORE_DEBUG_PASSWORD=android
+              # A release export reads the RELEASE key variables: point them
+              # at the debug key too.
+              for kind in DEBUG RELEASE; do
+                export GODOT_ANDROID_KEYSTORE_''${kind}_PATH="$PWD/keys/debug.keystore"
+                export GODOT_ANDROID_KEYSTORE_''${kind}_USER=androiddebugkey
+                export GODOT_ANDROID_KEYSTORE_''${kind}_PASSWORD=android
+              done
             '';
           };
         };
@@ -250,6 +257,18 @@
                 exec godot4 --path "$project" "$@"
               '';
             }}/bin/trampoline";
+          };
+
+          # `nix run .#apksigner -- <args>`: Android's APK signing tool
+          # (from the same SDK the build uses), to re-sign an APK with the
+          # release key outside of Nix.
+          apksigner = {
+            type = "app";
+            meta.description = "Android's apksigner";
+            program = "${pkgs.writeShellScript "apksigner" ''
+              export JAVA_HOME=${pkgs.jdk17_headless.home}
+              exec ${androidSdk}/libexec/android-sdk/build-tools/36.0.0/apksigner "$@"
+            ''}";
           };
 
           # `nix run .#audio` (from trampoline/): copies the built music and
