@@ -1,6 +1,7 @@
-# Shows a CrosswordPuzzle's 13 clues, one per board row, lined up
-# alongside it (see scenes/main.tscn) so a clue at position N reads
-# next to the board row it describes. Holds no puzzle state itself —
+# Shows a CrosswordPuzzle's 13 clues, one per board row, numbered like the
+# rows (in landscape, under the palette beside the board — see
+# play_area.gd; in portrait the board shows them as "?" markers instead,
+# see clue_markers_view.gd). Holds no puzzle state itself —
 # `refresh()` is just handed what to show every time (see main.gd),
 # the same read-only relationship every other view has with its session.
 class_name ClueListView
@@ -25,9 +26,6 @@ func refresh(clues: Array[String], solved: Array[bool]) -> void:
 
 	for i in range(clues.size()):
 		var label := Label.new()
-		# Matches the board's own 32px row height, so clue N lines up
-		# with board row N.
-		label.custom_minimum_size = Vector2(0, 32)
 		label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		# Wraps a long clue onto a second line, breaking at word
 		# boundaries, instead of letting it overflow this view's width.
