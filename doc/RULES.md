@@ -6,8 +6,8 @@ settled, cross-validated reference for anyone (human or agent) implementing
 or porting the game — it supersedes the raw legacy files below as the
 source to read first.
 
-**Provenance**: extracted from the legacy design documents in this folder
-(`Trampoline.doc`, `" Trampoline Version 2015.doc"`, `Compter les points
+**Provenance**: extracted from Michel Cheenne's legacy design documents
+(kept privately since 2026-11-06, not in this repository: `Trampoline.doc`, `" Trampoline Version 2015.doc"`, `Compter les points
 .ods`, the `GRILLE *.xls` puzzle booklet, `Une lettre.xls`, `testtonio.xls`)
 and cross-validated against the existing Unity/C# implementation in
 `../trampoline-unity/Assets/Scripts/` (`TokenPool.cs`, `BasicToken.cs`,
@@ -180,7 +180,7 @@ second row in the same turn, and never splitting that one row's own
 letters into more than one disconnected group either. This was missing
 from an earlier version of this document and from the Godot implementation
 until 2026-08-05; see `TurnValidity` in
-`trampoline/scripts/turn_validity.gd` for the current enforcement.
+`scripts/turn_validity.gd` for the current enforcement.
 
 **Every word starts in the first column. Decided by Maximilien
 (2026-11-05):** a row's word is read from its leftmost cell, and grows to
@@ -268,7 +268,7 @@ proven wrong, it's removed from the board and the offending player loses
 their turn. **Simplified for the current implementation** (confirmed by
 Maximilien): rather than building the full challenge/penalty flow now, a
 player simply cannot end their turn while any word on the board is
-invalid (`WordChallenge.can_end_turn`, in `trampoline/scripts/`) —
+invalid (`WordChallenge.can_end_turn`, in `scripts/`) —
 every turn must leave only valid words behind, no challenging needed. The
 fuller challenge/penalty mechanic — including several open questions
 (where removed tiles go, what the penalty actually is, who can challenge
@@ -313,7 +313,7 @@ live board, if/when this gets revisited.
 
 ## The example puzzles ("GRILLE" files)
 
-The 11 `GRILLE nn&mmr.xls` files in this folder are **not board variants**
+The 11 `GRILLE nn&mmr.xls` files (Michel Cheenne's, kept privately) are **not board variants**
 — all 11 use the identical 13x9 board and letter set. They're a
 crossword-style example-puzzle booklet: each sheet has 13 clues (one per
 row) for puzzle N with no letters given, plus the answer key (13 clues +

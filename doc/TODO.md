@@ -91,10 +91,10 @@ hand, then a shared win.
 - [x] Android export preset (portrait, icon, package name), committed;
       fixed so it actually exports (no Gradle build, ETC2/ASTC textures,
       the dictionary included — it was missing from every export).
-- [x] A reproducible APK build: `nix build .#android` from `trampoline/`
+- [x] A reproducible APK build: `nix build .#android` from the repository root
       (Godot export templates + Android SDK from nixpkgs, in the Nix
       sandbox), also used by the release workflow on tags. Signed with a
-      committed debug key (`trampoline/keys/`).
+      committed debug key (`keys/`).
 - [x] Tested on a real phone (2026-11-05): drag and drop, flipping,
       swapping, arranging the hand, the selection box, the screen fitting.
       Fixed on the way: the layout sat against the top of a tall screen.
@@ -139,7 +139,7 @@ hand, then a shared win.
 
 #### 5. The hand on a play mat
 - [x] The hand (and the "À rendre" tray) sits on the background, drawn as
-      a **play mat** (felt, like the desk mat in `doc/real-game/`), not on
+      a **play mat** (felt, like the real game's desk mat), not on
       the plain dark page.
 - [x] Hand, tray and dragged tiles drawn as 2.5D blocks with their cork
       sides (like the tiles off the board in the "Comment jouer" cards),

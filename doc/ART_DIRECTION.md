@@ -4,8 +4,8 @@ The visual reference for the Godot game, the same way `RULES.md` is the
 rules reference. If a visual choice isn't covered here, follow the
 pillars below and don't invent a new style.
 
-Source material: the handmade original in `doc/real-game/` (photos taken
-2026-08-03).
+Source material: the handmade original game (photos taken 2026-08-03,
+kept privately, not in this repository).
 
 ## The idea in one line
 

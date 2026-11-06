@@ -1,10 +1,12 @@
 # trampoline
 
-"Un jeu pour faire rebondir les mots" par Michel Cheenne.
-Implementation par Maximilien Naveau
+"Un jeu pour faire rebondir les mots", par Michel Cheenne et
+Maximilien Naveau.
 
 Built with [Godot](https://godotengine.org/) (an earlier Unity version,
 no longer released, lives on in `trampoline-unity/` for reference).
+
+<p align="center"><img src="doc/how_to_play.gif" alt="Comment jouer : les règles en animations" width="300"></p>
 
 ## Installation
 
@@ -66,3 +68,11 @@ on first launch ("More info" → "Run anyway").
 Not built for now: Godot won't export even an unsigned Xcode project without
 an App Store Team ID, and there's no Apple Developer account behind this
 game yet.
+
+## License
+
+Copyright (C) 2020-2026 Michel Cheenne and Maximilien Naveau.
+
+[GPL-3.0-only](LICENSE): free to use, study, change, share and sell, as
+long as every copy keeps this licence and comes with its source code. The
+fonts and the dictionary keep their own terms: see [NOTICE](NOTICE).
