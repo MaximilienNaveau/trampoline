@@ -1,10 +1,31 @@
-Trampoline — "Un jeu pour faire rebondir les mots", a word game by
-Michel Chéenne, implemented by Maximilien Naveau.
+Trampoline — "Un jeu pour faire rebondir les mots"
+A game by Michel Cheenne and Maximilien Naveau.
 
-Everything in this repository is under the MIT License (see LICENSE) —
-the code, the art (textures, icons, splash), the music and sound effects
-and the scripts that make them — EXCEPT the files below, which keep their
-own terms.
+Copyright (C) 2020-2026 Michel Cheenne and Maximilien Naveau
+
+This program is free software: you can redistribute it and/or modify it
+under the terms of the GNU General Public License as published by the
+Free Software Foundation, version 3 only (GPL-3.0-only).
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
+Public License for more details: the LICENSE file, or
+<https://www.gnu.org/licenses/gpl-3.0.html>.
+
+What this covers
+----------------
+The game and everything in this repository — the code, the rules and
+crosswords as the game plays them, the art (textures, icons, splash), the
+music and sound effects and the scripts that make them — EXCEPT the files
+listed below, which keep their own terms.
+
+Michel Cheenne designed the game: its rules and its crosswords (taken
+from his "GRILLE" sheets, see trampoline/scripts/crossword_puzzles.gd;
+his original documents are kept privately, not in this repository).
+He gave Maximilien Naveau his permission, orally, during his lifetime;
+his heirs' written agreement to these terms is being collected
+(doc/autorisation_ayants_droit.typ).
 
 Third-party files
 -----------------
@@ -17,16 +38,3 @@ Third-party files
   soundfont by S. Christian Collins (GeneralUser GS License v2.0, which
   allows using it to make music, commercial or not). The soundfont itself
   is not in this repository. See trampoline/tools/audio/README.md.
-
-Michel Chéenne's work
----------------------
-Trampoline is Michel Chéenne's game. Its rules are implemented freely
-(game rules as such are not subject to copyright). His own written
-material is NOT under the MIT License: it remains © Michel Chéenne and
-his heirs, and is included with his permission, given orally to
-Maximilien Naveau during his lifetime:
-- the crosswords of the game (trampoline/scripts/crossword_puzzles.gd),
-  taken from his "GRILLE" sheets;
-- his documents in doc/: Trampoline.doc, " Trampoline Version 2015.doc",
-  Trampoline.txt, and the .xls/.ods sheets;
-- doc/real-game/: photos of the original box, board and tiles.

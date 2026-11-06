@@ -1,4 +1,4 @@
-// Autorisation des ayants droit de Michel Chéenne (voir NOTICE).
+// Autorisation des ayants droit de Michel Cheenne (voir NOTICE).
 // PDF à imprimer : typst compile doc/autorisation_ayants_droit.typ
 //   (ou : nix run nixpkgs#typst -- compile doc/autorisation_ayants_droit.typ)
 
@@ -16,12 +16,16 @@
 
 #v(2em)
 
-Nous, soussignés, ayants droit de Michel Chéenne, auteur du jeu
-« Trampoline – un jeu pour faire rebondir les mots », autorisons
-Maximilien Naveau à diffuser les grilles de mots croisés et les documents
-de règles créés par Michel Chéenne sous licence Creative Commons
-Attribution 4.0 (CC BY 4.0), y compris dans des versions commerciales du
-jeu, à condition que Michel Chéenne soit toujours crédité comme auteur.
+Nous, soussignés, ayants droit de Michel Cheenne, co-auteur avec
+Maximilien Naveau du jeu « Trampoline – un jeu pour faire rebondir les
+mots », acceptons que l'œuvre de Michel Cheenne intégrée au jeu (ses
+règles et ses grilles de mots croisés) soit diffusée avec le jeu sous la
+licence GNU General Public License version 3 (GPL-3.0-only), y compris
+dans des versions commerciales, à condition que Michel Cheenne soit
+toujours crédité comme co-auteur.
+
+Nous autorisons en outre Maximilien Naveau à diffuser de futures versions
+du jeu sous une autre licence de son choix, à la même condition.
 
 #v(2.5em)
 
@@ -39,7 +43,7 @@ Noms et signatures :
   inset: 8pt,
   align: (left + top),
   table.header(
-    [*Nom et prénom*], [*Lien avec Michel Chéenne*], [*Signature*],
+    [*Nom et prénom*], [*Lien avec Michel Cheenne*], [*Signature*],
   ),
   [], [], [],
   [], [], [],
