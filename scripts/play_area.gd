@@ -12,6 +12,10 @@ class_name PlayArea
 # `vertical` (stacked or side by side) change at runtime on this base class.
 extends BoxContainer
 
+# True while a re-fit of the mat is waiting for the end of the frame (see
+# `_queue_fit`).
+var _fit_queued := false
+
 # The two children, as main.tscn lays them out, and the "À rendre" tray
 # beside the hand (see discard_tray.gd), which the mat makes room for.
 @onready var _board_view: Control = $BoardView
@@ -26,11 +30,11 @@ func _ready() -> void:
 	# `minimum_size_changed`: a Control's signal, emitted when its own
 	# natural size changes — here the board's (its cells re-fit on every
 	# window resize, see board_view.gd), which the mat copies.
-	_board_view.minimum_size_changed.connect(_fit_hand_area)
+	_board_view.minimum_size_changed.connect(_queue_fit)
 	# The tray only shows during a turn-based game (not in free play).
-	_discard_tray.visibility_changed.connect(_fit_hand_area)
+	_discard_tray.visibility_changed.connect(_queue_fit)
 	# Nor the clue list outside a crossword.
-	_clue_list.visibility_changed.connect(_fit_hand_area)
+	_clue_list.visibility_changed.connect(_queue_fit)
 
 
 # Stacks the board and the mat (`portrait`) or puts them side by side.
@@ -43,7 +47,25 @@ func arrange(portrait: bool) -> void:
 	# this container's: the mat copies that height, and a stretched board
 	# would hold on to an outdated one (a too-tall mat, the page scrolling).
 	_board_view.size_flags_vertical = SIZE_FILL if portrait else SIZE_SHRINK_BEGIN
-	_fit_hand_area()
+	# Likewise this container: as tall as the board side by side, rather
+	# than all the room below the scores — that room, right after a window
+	# resize, can still be the old one, which put the mat (centred on this
+	# container's height) halfway down the page. Stacked, it takes that
+	# room, for the hand under the board.
+	size_flags_vertical = SIZE_EXPAND_FILL if portrait else SIZE_SHRINK_BEGIN
+	_queue_fit()
+
+
+# Re-fits the mat once the current layout pass is over: these signals come
+# while Godot is laying out the page, and sizes changed during that pass
+# aren't laid out again until something else asks for it (a scroll, for
+# instance), which left the page with a stale, too-tall size after a
+# resize. `call_deferred` runs a function at the end of the frame; asked
+# several times in one frame (board, tray, clue list), it runs once.
+func _queue_fit() -> void:
+	if not _fit_queued:
+		_fit_queued = true
+		_fit_hand_area.call_deferred()
 
 
 # Side by side: the mat as tall as the board and as wide — plus the tray
@@ -52,6 +74,7 @@ func arrange(portrait: bool) -> void:
 # other half to the clues — or narrower if the window leaves less room.
 # Stacked: the mat back to the full width.
 func _fit_hand_area() -> void:
+	_fit_queued = false
 	if vertical:
 		_palette_view.fixed_columns = 0
 		_hand_area.custom_minimum_size = Vector2.ZERO
