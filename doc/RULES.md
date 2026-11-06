@@ -6,8 +6,8 @@ settled, cross-validated reference for anyone (human or agent) implementing
 or porting the game — it supersedes the raw legacy files below as the
 source to read first.
 
-**Provenance**: extracted from the legacy design documents in this folder
-(`Trampoline.doc`, `" Trampoline Version 2015.doc"`, `Compter les points
+**Provenance**: extracted from Michel Cheenne's legacy design documents
+(kept privately since 2026-11-06, not in this repository: `Trampoline.doc`, `" Trampoline Version 2015.doc"`, `Compter les points
 .ods`, the `GRILLE *.xls` puzzle booklet, `Une lettre.xls`, `testtonio.xls`)
 and cross-validated against the existing Unity/C# implementation in
 `../trampoline-unity/Assets/Scripts/` (`TokenPool.cs`, `BasicToken.cs`,
@@ -313,7 +313,7 @@ live board, if/when this gets revisited.
 
 ## The example puzzles ("GRILLE" files)
 
-The 11 `GRILLE nn&mmr.xls` files in this folder are **not board variants**
+The 11 `GRILLE nn&mmr.xls` files (Michel Cheenne's, kept privately) are **not board variants**
 — all 11 use the identical 13x9 board and letter set. They're a
 crossword-style example-puzzle booklet: each sheet has 13 clues (one per
 row) for puzzle N with no letters given, plus the answer key (13 clues +

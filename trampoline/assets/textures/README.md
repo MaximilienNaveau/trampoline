@@ -4,8 +4,8 @@
 plain painted middle also paints the board's frame (see board_view.tscn).
 Generated from scratch with ImageMagick (noise smeared into brush strokes,
 mint-green colour ramp, brown dry-brush streaks for the wood showing
-through, mitred bevel frame), matching the real lid's paint in
-`doc/real-game/`. Original work, no third-party source.
+through, mitred bevel frame), matching the real lid's paint (from photos of
+the original game). Original work, no third-party source.
 
 `ribbon_bow.svg` — the orange bow on the lid. Hand-written SVG, original
 work.

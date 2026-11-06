@@ -10,7 +10,7 @@ class_name TileView
 extends RefCounted
 
 # Face colors and letter ink taken from the physical tiles (see
-# doc/ART_DIRECTION.md's palette and the photos in doc/real-game/): a pale
+# doc/ART_DIRECTION.md's palette, from photos of the original): a pale
 # butter-lime yellow, a muted sage green, and slate-charcoal letters.
 const YELLOW_COLOR := Color("eae5a0")
 const GREEN_COLOR := Color("9cb46b")

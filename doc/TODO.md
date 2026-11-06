@@ -139,7 +139,7 @@ hand, then a shared win.
 
 #### 5. The hand on a play mat
 - [x] The hand (and the "À rendre" tray) sits on the background, drawn as
-      a **play mat** (felt, like the desk mat in `doc/real-game/`), not on
+      a **play mat** (felt, like the real game's desk mat), not on
       the plain dark page.
 - [x] Hand, tray and dragged tiles drawn as 2.5D blocks with their cork
       sides (like the tiles off the board in the "Comment jouer" cards),

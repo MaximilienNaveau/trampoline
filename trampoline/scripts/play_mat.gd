@@ -1,5 +1,5 @@
 # A piece of felt, like the dark desk mat the real game sits on (see
-# doc/real-game/ and doc/ART_DIRECTION.md's `felt`): a base color with a
+# doc/ART_DIRECTION.md's `felt`): a base color with a
 # fine grain, round corners, and optionally a padded rim.
 #
 # Used in main.tscn as the whole page's background (Background: the dark

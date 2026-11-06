@@ -1,4 +1,4 @@
-# The start screen: the physical game's closed box (see doc/real-game/),
+# The start screen: the physical game's closed box (see doc/ART_DIRECTION.md),
 # lying on the felt desk mat. The box is the board's painted, mitred
 # frame; the lid is a smaller painted panel set inside that frame, over
 # the game, with Michel Cheenne's signature in its corner and the menu on

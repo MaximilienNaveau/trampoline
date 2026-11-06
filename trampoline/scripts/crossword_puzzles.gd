@@ -1,6 +1,7 @@
 # The crossword-reconstruction puzzle data for doc/RULES.md's third
 # single-player mode: each puzzle is 13 (clue, 9-letter answer) pairs,
-# one per board row. Extracted from doc/GRILLE *.xls — every
+# one per board row. Extracted from Michel Cheenne's `GRILLE *.xls`
+# sheets (kept privately, not in this repository) — every
 # `GRILLE nn&mmr.xls` sheet prints both puzzle nn's own (unanswered)
 # clues AND puzzle mm's answer key (its clues WITH their solutions), so
 # e.g. `02&01r.xls`'s answer-key half is puzzle 1's complete, solved
