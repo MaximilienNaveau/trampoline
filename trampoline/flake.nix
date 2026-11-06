@@ -271,6 +271,79 @@
             ''}";
           };
 
+          # `nix run .#screenshots` (from trampoline/): pictures of the game
+          # for the F-Droid page and the readme, drawn by the game itself
+          # (tools/capture_media.gd) in a virtual screen (Xvfb) with
+          # software OpenGL (Mesa's llvmpipe), so no GPU or display needed:
+          # - ../doc/screenshots/NN_*.jpg: the start card, then a still of
+          #   each "Comment jouer" card (F-Droid's phone screenshots: the
+          #   F-Droid repo takes any picture with "screenshot" in its path);
+          # - ../doc/how_to_play.gif: every card's animation, one after the
+          #   other.
+          # A few minutes: software drawing is slow, the pictures aren't (the
+          # game steps exactly 1/15 s per frame, see capture_media.gd).
+          screenshots = {
+            type = "app";
+            meta.description = "Make the F-Droid screenshots and the how-to-play GIF";
+            program = "${pkgs.writeShellApplication {
+              name = "trampoline-screenshots";
+              runtimeInputs = [ pkgs.godot_4 pkgs.xvfb-run pkgs.imagemagick pkgs.ffmpeg ];
+              text = ''
+                if [ ! -f project.godot ]; then
+                  echo "run this from the trampoline/ folder" >&2
+                  exit 1
+                fi
+                doc="$(cd .. && pwd)/doc"
+                work="$(mktemp -d)"
+                trap 'rm -rf "$work"' EXIT
+                # The project as the exports see it (generated audio
+                # included), drawn at a phone's 1080 x 1920.
+                cp -r --no-preserve=mode ${project}/. "$work/proj"
+                printf '[display]\nwindow/size/window_width_override=1080\nwindow/size/window_height_override=1920\n' \
+                  > "$work/proj/override.cfg"
+                # Godot's OpenGL goes through libglvnd: point it at Mesa.
+                export __EGL_VENDOR_LIBRARY_FILENAMES=${pkgs.mesa}/share/glvnd/egl_vendor.d/50_mesa.json
+                export __GLX_VENDOR_LIBRARY_NAME=mesa
+                export LD_LIBRARY_PATH=${pkgs.mesa}/lib
+                export LIBGL_ALWAYS_SOFTWARE=1
+                # Silent: the "Dummy" audio driver plays nothing (else the
+                # game's music comes out of the speakers while it records).
+                export HOME="$work/home"
+                godot4 --headless --import --path "$work/proj" > /dev/null 2>&1
+                shot() {
+                  xvfb-run -a -s "-screen 0 1080x1920x24" \
+                    godot4 --path "$work/proj" --rendering-driver opengl3 --audio-driver Dummy --fixed-fps 15 \
+                    --script res://tools/capture_media.gd -- "$@" 2>&1 \
+                    | { grep -E "SCRIPT ERROR|^ERROR: [^0-9]" || true; }
+                }
+                mkdir -p "$doc/screenshots"
+                rm -f "$doc/screenshots"/*.jpg
+                echo "start card"
+                shot start "$work/start"
+                magick "$work/start/still.png" -strip -quality 85 "$doc/screenshots/01_start.jpg"
+                # Every card's frames, numbered on, make the GIF's.
+                mkdir "$work/gif"
+                frame=0
+                cards=$(grep -c '^\s*"caption": "' "$work/proj/scripts/how_to_play_cards.gd")
+                for card in $(seq 0 $((cards - 1))); do
+                  echo "card $((card + 1))/$cards"
+                  shot howto "$card" "$work/card$card"
+                  magick "$work/card$card/still.png" -strip -quality 85 \
+                    "$doc/screenshots/$(printf '%02d' $((card + 2)))_comment_jouer.jpg"
+                  for f in "$work/card$card"/[0-9]*.png; do
+                    mv "$f" "$work/gif/$(printf '%05d' "$frame").png"
+                    frame=$((frame + 1))
+                  done
+                done
+                echo "GIF ($frame frames)"
+                ffmpeg -loglevel error -y -framerate 15 -i "$work/gif/%05d.png" -vf \
+                  "fps=10,scale=360:-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=96[p];[b][p]paletteuse=dither=bayer" \
+                  "$doc/how_to_play.gif"
+                ls -l "$doc/screenshots" "$doc/how_to_play.gif"
+              '';
+            }}/bin/trampoline-screenshots";
+          };
+
           # `nix run .#audio` (from trampoline/): copies the built music and
           # sound effects into assets/audio/, for the Godot editor.
           audio = {
