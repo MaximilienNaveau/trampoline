@@ -10,7 +10,8 @@
 #     off the board, a block on its cork base with a lifted tile's soft
 #     shadow, filling about 80% of the square like the desktop's other
 #     icons — app_icon.png's flat, edge-to-edge square looked out of place
-#     in GNOME's dock.
+#     in GNOME's dock. Also F-Droid's store icon, written to
+#     fastlane/metadata/android/en-US/images/icon.png.
 #   app_icon.png — the whole tile, flat: Android's icon before 8.0.
 #   icon_background.png, icon_foreground.png — Android's two layers (8.0
 #     and later, see export_presets.cfg): the launcher crops them to its
@@ -26,6 +27,9 @@
 extends SceneTree
 
 const _DIR := "res://assets/icon/"
+# F-Droid's store icon, in the layout F-Droid reads an app's store page from
+# (fastlane/metadata/android/<language>/).
+const _STORE_ICON := "res://fastlane/metadata/android/en-US/images/icon.png"
 const _SIZE := 512
 # Transparent room left round the whole tile, in pixels.
 const _MARGIN := 16
@@ -77,8 +81,10 @@ func _draw_desktop() -> void:
 	tile.add_theme_stylebox_override("panel", style)
 	viewport.add_child(tile)
 	await RenderingServer.frame_post_draw
-	viewport.get_texture().get_image().save_png(_DIR + "desktop_icon.png")
-	print("Wrote ", _DIR, "desktop_icon.png")
+	var image := viewport.get_texture().get_image()
+	image.save_png(_DIR + "desktop_icon.png")
+	image.save_png(_STORE_ICON)
+	print("Wrote ", _DIR, "desktop_icon.png and ", _STORE_ICON)
 	viewport.queue_free()
 
 
