@@ -73,14 +73,10 @@ var _timer_enabled: bool = false
 # screen edge.
 # The start menu on the box lid (see start_card.gd).
 @onready var _start_card: Control = $BoxLid/Box/Hinge/Lid/CardArea/Card/Items
-# Stacks BoardView above HandArea (the hand/palette/clue list, grouped so
-# they move as one) in portrait, or arranges them side by side in
-# landscape (see `_update_play_area_orientation` below). Declared as a
-# plain `BoxContainer` in main.tscn rather than `VBoxContainer` — Godot
-# specifically refuses to change `vertical` at runtime on VBoxContainer/
-# HBoxContainer (its own two fixed-orientation convenience subclasses),
-# only on their shared base class.
-@onready var _play_area: BoxContainer = $Layout/Margin/Content/PlayArea
+# The board with the hand (or palette and clue list) beside or under it:
+# its layout is play_area.gd's job, main.gd only says which orientation
+# (see `_update_play_area_orientation` below).
+@onready var _play_area: PlayArea = $Layout/Margin/Content/PlayArea
 # Their margin/position are what `_update_board_height_budget` measures.
 @onready var _margin: MarginContainer = $Layout/Margin
 @onready var _content: VBoxContainer = $Layout/Margin/Content
@@ -330,7 +326,7 @@ func _on_board_cell_size_changed(_side: float) -> void:
 # genuinely the entire difference between those two node types under the
 # hood, `BoxContainer.vertical` is just normally locked once you pick one.
 func _update_play_area_orientation() -> void:
-	_play_area.vertical = _is_portrait()
+	_play_area.arrange(_is_portrait())
 	# On a phone, room at the top for the status bar or camera cutout:
 	# the screen's "safe area" (what the system keeps clear of them, in
 	# screen pixels, turned into the game's own by the stretch's scale),

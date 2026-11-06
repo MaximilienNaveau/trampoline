@@ -19,7 +19,7 @@
       let
         pkgs = import nixpkgs { inherit system; };
         inherit (pkgs) lib;
-        version = "4.0.1";
+        version = "4.0.2";
 
         # Building for Android needs Google's Android SDK, whose licence
         # must be accepted (and which nixpkgs marks unfree): only this
@@ -253,12 +253,15 @@
                   project="$(mktemp -d)"
                   cp -r --no-preserve=mode ${project}/. "$project"
                 fi
-                # A fresh copy has no import cache yet: build it first. (Only
-                # then — an import also re-saves project.godot, which would
-                # strip the comments of a checkout's copy.)
-                if [ ! -d "$project/.godot" ]; then
-                  godot4 --headless --import --path "$project"
-                fi
+                # Brings the import cache (.godot/) up to date first: new or
+                # changed assets, and the list of `class_name`s — without it,
+                # a script using a class added since the last import fails to
+                # load ("Could not find type"). Quick when nothing changed.
+                # An import also re-saves project.godot, stripping its
+                # comments: keep the file as it was.
+                cp "$project/project.godot" "$project/.project.godot.keep"
+                godot4 --headless --import --path "$project" > /dev/null 2>&1 || true
+                mv "$project/.project.godot.keep" "$project/project.godot"
                 # Runs the game, passing on any extra arguments, e.g.
                 # `nix run . -- --resolution 480x854` for a phone-sized window.
                 exec godot4 --path "$project" "$@"

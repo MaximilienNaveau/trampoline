@@ -5,8 +5,13 @@
 #   godot4 --path . --script tools/build_icon.gd
 #
 # Writes, in assets/icon/:
-#   app_icon.png — the whole tile: the project's icon (project.godot), and
-#     Android's before 8.0.
+#   desktop_icon.png — the window's icon (project.godot's `config/icon`)
+#     and the Linux desktop's (the nixpkgs package): the tile as it looks
+#     off the board, a block on its cork base with a lifted tile's soft
+#     shadow, filling about 80% of the square like the desktop's other
+#     icons — app_icon.png's flat, edge-to-edge square looked out of place
+#     in GNOME's dock.
+#   app_icon.png — the whole tile, flat: Android's icon before 8.0.
 #   icon_background.png, icon_foreground.png — Android's two layers (8.0
 #     and later, see export_presets.cfg): the launcher crops them to its
 #     own shape (a circle, a rounded square…) keeping only the middle two
@@ -29,6 +34,9 @@ const _MARGIN := 16
 # the 288 px wide middle the launcher shows.
 const _LAYER_SIZE := 432
 const _LAYER_TILE := 200
+# desktop_icon.png's tile, in a `_SIZE` px square: the rest is room for the
+# cork base and the shadow, and the margin desktop icons keep.
+const _DESKTOP_TILE := 400
 
 
 func _initialize() -> void:
@@ -36,6 +44,7 @@ func _initialize() -> void:
 
 
 func _draw_all() -> void:
+	await _draw_desktop()
 	await _draw("app_icon.png", _SIZE, _SIZE - 2 * _MARGIN, true, true)
 	await _draw("icon_foreground.png", _LAYER_SIZE, _LAYER_TILE, false, true)
 	await _draw("icon_monochrome.png", _LAYER_SIZE, _LAYER_TILE, false, false)
@@ -46,6 +55,31 @@ func _draw_all() -> void:
 	background.save_png(_DIR + "icon_background.png")
 	print("Wrote ", _DIR, "icon_background.png")
 	quit()
+
+
+# The desktop icon (see this file's header): the tile with its cork base,
+# a little up and left of centre, so the block and the shadow (down and to
+# the right, the game's oblique view) leave even margins.
+func _draw_desktop() -> void:
+	var viewport := SubViewport.new()
+	viewport.size = Vector2i.ONE * _SIZE
+	viewport.transparent_bg = true
+	viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	root.add_child(viewport)
+	var tile := TileView.build_tile_visual(Tile.new("M", "C", true), Vector2.ONE * _DESKTOP_TILE)
+	tile.position = Vector2.ONE * (_SIZE - _DESKTOP_TILE) / 2 + Vector2(-6, -18)
+	# A lifted tile's shadow (as tile_view.gd's drag preview), scaled up
+	# with the tile: a copy of its style, with the shadow added.
+	var style: StyleBoxFlat = tile.get_theme_stylebox("panel").duplicate()
+	style.shadow_color = Color(0, 0, 0, 0.35)
+	style.shadow_size = 28
+	style.shadow_offset = Vector2(6, 22)
+	tile.add_theme_stylebox_override("panel", style)
+	viewport.add_child(tile)
+	await RenderingServer.frame_post_draw
+	viewport.get_texture().get_image().save_png(_DIR + "desktop_icon.png")
+	print("Wrote ", _DIR, "desktop_icon.png")
+	viewport.queue_free()
 
 
 # Draws the M/C tile, `tile_side` px wide, centred on a transparent
