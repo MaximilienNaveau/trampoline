@@ -4,7 +4,7 @@ Godot/GDScript rewrite of the "Trampoline" word game. The original Unity/C#
 version (v3.x, no longer released) lives in `../trampoline-unity` for
 reference. The user knows C++, C, Python, CMake and Nix well, and knows
 Unity/C# from the original game, but has never used Godot or GDScript.
-These rules apply to everything under this `trampoline/` directory and
+These rules apply to everything in this repository and
 override the general defaults for comments and commit granularity.
 
 ## 1. Minimalistic git commits

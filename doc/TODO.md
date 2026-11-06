@@ -91,10 +91,10 @@ hand, then a shared win.
 - [x] Android export preset (portrait, icon, package name), committed;
       fixed so it actually exports (no Gradle build, ETC2/ASTC textures,
       the dictionary included — it was missing from every export).
-- [x] A reproducible APK build: `nix build .#android` from `trampoline/`
+- [x] A reproducible APK build: `nix build .#android` from the repository root
       (Godot export templates + Android SDK from nixpkgs, in the Nix
       sandbox), also used by the release workflow on tags. Signed with a
-      committed debug key (`trampoline/keys/`).
+      committed debug key (`keys/`).
 - [x] Tested on a real phone (2026-11-05): drag and drop, flipping,
       swapping, arranging the hand, the selection box, the screen fitting.
       Fixed on the way: the layout sat against the top of a tall screen.

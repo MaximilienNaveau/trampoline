@@ -21,7 +21,7 @@ music and sound effects and the scripts that make them — EXCEPT the files
 listed below, which keep their own terms.
 
 Michel Cheenne designed the game: its rules and its crosswords (taken
-from his "GRILLE" sheets, see trampoline/scripts/crossword_puzzles.gd;
+from his "GRILLE" sheets, see scripts/crossword_puzzles.gd;
 his original documents are kept privately, not in this repository).
 He gave Maximilien Naveau his permission, orally, during his lifetime;
 his heirs' written agreement to these terms is being collected
@@ -29,12 +29,12 @@ his heirs' written agreement to these terms is being collected
 
 Third-party files
 -----------------
-- trampoline/assets/fonts/Caveat-Variable.ttf, Jost-Variable.ttf:
+- assets/fonts/Caveat-Variable.ttf, Jost-Variable.ttf:
   SIL Open Font License 1.1 (Caveat-OFL.txt, Jost-OFL.txt beside them).
-- trampoline/data/dictionaries/: the French dictionary by Olivier R.
+- data/dictionaries/: the French dictionary by Olivier R.
   (Dicollecte, "Classique" variant) and the word list made from it,
   Mozilla Public License 2.0 (README_dict_fr.txt).
 - The music and sound effects are rendered with the GeneralUser GS
   soundfont by S. Christian Collins (GeneralUser GS License v2.0, which
   allows using it to make music, commercial or not). The soundfont itself
-  is not in this repository. See trampoline/tools/audio/README.md.
+  is not in this repository. See tools/audio/README.md.

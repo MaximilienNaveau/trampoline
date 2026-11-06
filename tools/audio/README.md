@@ -1,8 +1,8 @@
 # Music and sound effects generators
 
 Everything in `assets/audio/` is generated from source by these scripts, and
-isn't committed (only Godot's `.import` files are). From the `trampoline/`
-folder:
+isn't committed (only Godot's `.import` files are). From the repository
+root:
 
 ```sh
 nix build .#audio   # the game's music and sound effects, in the Nix sandbox

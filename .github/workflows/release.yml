@@ -54,7 +54,7 @@ jobs:
       - name: Check the tag matches the version
         if: startsWith(github.ref, 'refs/tags/')
         run: |
-          preset_version=$(sed -n 's/^version\/name="\(.*\)"$/\1/p' trampoline/export_presets.cfg)
+          preset_version=$(sed -n 's/^version\/name="\(.*\)"$/\1/p' export_presets.cfg)
           if [ "v$preset_version" != "$GITHUB_REF_NAME" ]; then
             echo "::error::tag $GITHUB_REF_NAME but export_presets.cfg says $preset_version"
             exit 1
@@ -120,12 +120,12 @@ jobs:
           done
           keystore="$RUNNER_TEMP/release.keystore"
           echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > "$keystore"
-          nix run ./trampoline#apksigner -- sign \
+          nix run .#apksigner -- sign \
             --ks "$keystore" --ks-pass env:ANDROID_KEYSTORE_PASS \
             --ks-key-alias "$ANDROID_KEY_ALIAS_NAME" --key-pass env:ANDROID_KEY_ALIAS_PASS \
             --out artifacts/android-build/signed.apk artifacts/android-build/trampoline.apk
           rm -f "$keystore"
-          signer=$(nix run ./trampoline#apksigner -- verify --print-certs artifacts/android-build/signed.apk \
+          signer=$(nix run .#apksigner -- verify --print-certs artifacts/android-build/signed.apk \
             | sed -n 's/^Signer #1 certificate SHA-256 digest: //p')
           echo "signed by $signer"
           if [ "$signer" != "$FDROID_SIGNER_SHA256" ]; then

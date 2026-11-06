@@ -180,7 +180,7 @@ second row in the same turn, and never splitting that one row's own
 letters into more than one disconnected group either. This was missing
 from an earlier version of this document and from the Godot implementation
 until 2026-08-05; see `TurnValidity` in
-`trampoline/scripts/turn_validity.gd` for the current enforcement.
+`scripts/turn_validity.gd` for the current enforcement.
 
 **Every word starts in the first column. Decided by Maximilien
 (2026-11-05):** a row's word is read from its leftmost cell, and grows to
@@ -268,7 +268,7 @@ proven wrong, it's removed from the board and the offending player loses
 their turn. **Simplified for the current implementation** (confirmed by
 Maximilien): rather than building the full challenge/penalty flow now, a
 player simply cannot end their turn while any word on the board is
-invalid (`WordChallenge.can_end_turn`, in `trampoline/scripts/`) —
+invalid (`WordChallenge.can_end_turn`, in `scripts/`) —
 every turn must leave only valid words behind, no challenging needed. The
 fuller challenge/penalty mechanic — including several open questions
 (where removed tiles go, what the penalty actually is, who can challenge

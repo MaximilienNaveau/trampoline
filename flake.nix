@@ -80,8 +80,15 @@
 
         # The project as the exports and tests see it: the committed
         # files plus the generated audio dropped into assets/audio/.
+        #
+        # Without doc/ and .github/: the game doesn't use them, and leaving
+        # them out means a new screenshot or workflow edit rebuilds nothing.
+        gameSource = lib.fileset.toSource {
+          root = ./.;
+          fileset = lib.fileset.difference ./. (lib.fileset.unions [ ./doc ./.github ]);
+        };
         project = pkgs.runCommand "trampoline-project-${version}" { } ''
-          cp -r --no-preserve=mode ${./.} "$out"
+          cp -r --no-preserve=mode ${gameSource} "$out"
           cp -r --no-preserve=mode ${audio}/. "$out/assets/audio/"
         '';
 
@@ -271,14 +278,14 @@
             ''}";
           };
 
-          # `nix run .#screenshots` (from trampoline/): pictures of the game
+          # `nix run .#screenshots` (from the repository root): pictures of the game
           # for the F-Droid page and the readme, drawn by the game itself
           # (tools/capture_media.gd) in a virtual screen (Xvfb) with
           # software OpenGL (Mesa's llvmpipe), so no GPU or display needed:
-          # - ../doc/screenshots/NN_*.jpg: the start card, then a still of
+          # - doc/screenshots/NN_*.jpg: the start card, then a still of
           #   each "Comment jouer" card (F-Droid's phone screenshots: the
           #   F-Droid repo takes any picture with "screenshot" in its path);
-          # - ../doc/how_to_play.gif: every card's animation, one after the
+          # - doc/how_to_play.gif: every card's animation, one after the
           #   other.
           # A few minutes: software drawing is slow, the pictures aren't (the
           # game steps exactly 1/15 s per frame, see capture_media.gd).
@@ -290,10 +297,10 @@
               runtimeInputs = [ pkgs.godot_4 pkgs.xvfb-run pkgs.imagemagick pkgs.ffmpeg ];
               text = ''
                 if [ ! -f project.godot ]; then
-                  echo "run this from the trampoline/ folder" >&2
+                  echo "run this from the repository root" >&2
                   exit 1
                 fi
-                doc="$(cd .. && pwd)/doc"
+                doc="$PWD/doc"
                 work="$(mktemp -d)"
                 trap 'rm -rf "$work"' EXIT
                 # The project as the exports see it (generated audio
@@ -344,7 +351,7 @@
             }}/bin/trampoline-screenshots";
           };
 
-          # `nix run .#audio` (from trampoline/): copies the built music and
+          # `nix run .#audio` (from the repository root): copies the built music and
           # sound effects into assets/audio/, for the Godot editor.
           audio = {
             type = "app";
@@ -352,7 +359,7 @@
             program = "${pkgs.writeShellScript "trampoline-audio" ''
               set -e
               if [ ! -f project.godot ]; then
-                echo "run this from the trampoline/ folder" >&2
+                echo "run this from the repository root" >&2
                 exit 1
               fi
               cp -r --no-preserve=mode ${audio}/. assets/audio/

@@ -1,6 +1,6 @@
 name: CI
 
-# Everything is built by the flake in trampoline/, the same commands as
+# Everything is built by the repository's flake, the same commands as
 # locally: `nix flake check -L` runs formatting, lint, the audio pipeline
 # (tools/audio/), the unit tests on Linux, and every export (Linux,
 # Windows, macOS, Web, Android). The builds are then uploaded as workflow
@@ -16,9 +16,6 @@ jobs:
   check:
     name: nix flake check
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: trampoline
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -55,30 +52,30 @@ jobs:
         uses: actions/upload-artifact@v6
         with:
           name: linux-build
-          path: trampoline/build/linux
+          path: build/linux
 
       - name: Upload Windows build
         uses: actions/upload-artifact@v6
         with:
           name: windows-build
-          path: trampoline/build/windows
+          path: build/windows
 
       - name: Upload macOS build
         uses: actions/upload-artifact@v6
         with:
           name: macos-build
-          path: trampoline/build/macos
+          path: build/macos
 
       - name: Upload Web build
         uses: actions/upload-artifact@v6
         with:
           name: web-build
-          path: trampoline/build/web
+          path: build/web
 
-      # Signed with the project's debug key (trampoline/keys/): fine to
+      # Signed with the project's debug key (keys/): fine to
       # install by hand, not for a store (see doc/TODO.md, F-Droid).
       - name: Upload Android build
         uses: actions/upload-artifact@v6
         with:
           name: android-build
-          path: trampoline/build/android/trampoline.apk
+          path: build/android/trampoline.apk
