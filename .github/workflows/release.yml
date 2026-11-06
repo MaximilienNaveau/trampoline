@@ -81,6 +81,20 @@ jobs:
           fi
           echo "FDROID_TRIGGER_TOKEN works and can see magamajo."
 
+      # The release's text (doc/release_notes/<tag>.md) is what F-Droid shows
+      # as "what's new": a tag without one stops here, before publishing.
+      - name: Check the release notes exist
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          notes="doc/release_notes/$GITHUB_REF_NAME.md"
+          if [ ! -s "$notes" ]; then
+            echo "::error::$notes is missing: write the release notes first"
+            exit 1
+          fi
+          if [ "$(wc -m < "$notes")" -gt 500 ]; then
+            echo "::warning::$notes is over 500 characters: F-Droid cuts it"
+          fi
+
       - name: Download all artifacts
         uses: actions/download-artifact@v7
         with:
@@ -147,6 +161,7 @@ jobs:
         uses: softprops/action-gh-release@v3
         with:
           files: artifacts/trampoline-*
+          body_path: doc/release_notes/${{ github.ref_name }}.md
 
       - name: Deploy Web build to GitHub Pages
         if: startsWith(github.ref, 'refs/tags/')
