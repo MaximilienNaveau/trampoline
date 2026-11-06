@@ -1,4 +1,4 @@
-[gd_scene load_steps=34 format=3]
+[gd_scene load_steps=35 format=3]
 
 [ext_resource type="Script" path="res://scripts/main.gd" id="1"]
 [ext_resource type="PackedScene" path="res://scenes/board_view.tscn" id="2"]
@@ -28,6 +28,7 @@
 [ext_resource type="AudioStream" path="res://assets/audio/music/original_la_grille.ogg" id="26"]
 [ext_resource type="Script" path="res://scripts/sound_effects.gd" id="27"]
 [ext_resource type="Script" path="res://scripts/fading_music.gd" id="28"]
+[ext_resource type="Script" path="res://scripts/play_area.gd" id="29"]
 
 [sub_resource type="StyleBoxFlat" id="EndTurnBannerStyle"]
 bg_color = Color(0.75, 0.16, 0.16, 1)
@@ -245,6 +246,7 @@ visible=false
 
 [node name="PlayArea" type="BoxContainer" parent="Layout/Margin/Content"]
 layout_mode=2
+script=ExtResource("29")
 size_flags_vertical=3
 vertical=true
 theme_override_constants/separation=10

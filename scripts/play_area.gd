@@ -1,0 +1,81 @@
+# Lays out the board and, beside or under it, HandArea (the hand, or free
+# play's palette and clue list, on their felt mat): stacked in portrait (a
+# phone held upright), side by side in landscape. Side by side, the mat is
+# sized like the board — as tall, and as wide (9 tiles a line, like a board
+# row) — and the two sit together in the middle of the screen, where the
+# player looks. Without that, on a big screen the mat stretched over all the
+# width the board didn't use, and the hand ran along one long line far from
+# the board. Pure layout: main.gd says which orientation, nothing here knows
+# the game.
+class_name PlayArea
+# A BoxContainer, not a VBoxContainer/HBoxContainer: Godot only lets its
+# `vertical` (stacked or side by side) change at runtime on this base class.
+extends BoxContainer
+
+# The two children, as main.tscn lays them out, and the "À rendre" tray
+# beside the hand (see discard_tray.gd), which the mat makes room for.
+@onready var _board_view: Control = $BoardView
+@onready var _hand_area: Control = $HandArea
+@onready var _discard_tray: Control = $HandArea/HandBar/DiscardTray
+# Free play's palette and a crossword's clue list, on the same mat.
+@onready var _palette_view: HandView = $HandArea/PaletteView
+@onready var _clue_list: Control = $HandArea/ClueListView
+
+
+func _ready() -> void:
+	# `resized`: a Control's signal, emitted when its size changes — here
+	# the board's (its cells re-fit on every window resize, see
+	# board_view.gd), which the mat copies.
+	_board_view.resized.connect(_fit_hand_area)
+	# The tray only shows during a turn-based game (not in free play).
+	_discard_tray.visibility_changed.connect(_fit_hand_area)
+	# Nor the clue list outside a crossword.
+	_clue_list.visibility_changed.connect(_fit_hand_area)
+
+
+# Stacks the board and the mat (`portrait`) or puts them side by side.
+func arrange(portrait: bool) -> void:
+	vertical = portrait
+	# Where a BoxContainer puts its children when they don't fill it: side
+	# by side, together in the middle; stacked, from the top as before.
+	alignment = ALIGNMENT_BEGIN if portrait else ALIGNMENT_CENTER
+	_fit_hand_area()
+
+
+# Side by side: the mat as tall as the board and as wide — plus the tray
+# when it's shown, so a line of the hand still holds 9 tiles; twice as wide
+# for a crossword, so the palette takes half the height and leaves the
+# other half to the clues — or narrower if the window leaves less room.
+# Stacked: the mat back to the full width.
+func _fit_hand_area() -> void:
+	if vertical:
+		_palette_view.fixed_columns = 0
+		_hand_area.custom_minimum_size = Vector2.ZERO
+		_hand_area.size_flags_horizontal = SIZE_EXPAND_FILL
+		_hand_area.size_flags_vertical = SIZE_FILL
+		return
+	# The board's own size (its 13x9 cells and frame), not its current one:
+	# side by side, the board is stretched to this container's height, and
+	# copying that would feed back (the mat's height raising this
+	# container's, which stretches the board further...).
+	var board := _board_view.get_combined_minimum_size()
+	var width := board.x
+	var columns := Board.COLUMNS
+	if _clue_list.visible:
+		width *= 2
+		columns *= 2
+	if _discard_tray.visible:
+		var hand_bar := _discard_tray.get_parent() as Control
+		width += _discard_tray.get_combined_minimum_size().x
+		width += hand_bar.get_theme_constant("separation")
+	# The width left beside the board: this container's, minus the board's
+	# and the gap between them (`separation`, set in main.tscn).
+	var room := size.x - board.x - get_theme_constant("separation")
+	var fitted := minf(width, maxf(room, 0.0))
+	_hand_area.custom_minimum_size = Vector2(fitted, board.y)
+	# Fewer palette tiles a line when the mat had to be narrower.
+	_palette_view.fixed_columns = maxi(1, floori(columns * fitted / width))
+	# SHRINK: take exactly that minimum size, instead of growing (EXPAND)
+	# into all the space the container has.
+	_hand_area.size_flags_horizontal = SIZE_SHRINK_BEGIN
+	_hand_area.size_flags_vertical = SIZE_SHRINK_BEGIN

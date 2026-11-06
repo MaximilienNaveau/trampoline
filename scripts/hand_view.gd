@@ -34,6 +34,19 @@ signal tile_unmarked(tile: Tile)
 # A hand tile dropped elsewhere in the hand (see hand_row.gd).
 signal tile_reordered(tile: Tile, before: Tile)
 
+# The palette's tiles a line, set by play_area.gd beside the board so they
+# fill its mat (0, stacked: as many as fit across the page).
+# A property with a `set` function, called on every assignment (like a
+# Python @property setter): it re-fits the palette straight away.
+var fixed_columns := 0:
+	set(value):
+		fixed_columns = value
+		if _tile_side > 0.0 and "columns" in _row:
+			_update_palette_columns(_tile_side)
+# The tile size of the last `refresh`, for re-fitting when `fixed_columns`
+# changes.
+var _tile_side := 0.0
+
 # `$Row` looks up the child node named "Row" declared in hand_view.tscn,
 # same `@onready`/`$Name` pattern as BoardView's `_grid`.
 @onready var _row: HandRow = $Row
@@ -73,6 +86,7 @@ func refresh(hand: Array[Tile], tile_side: float) -> void:
 	# HandRow and GridContainer are unrelated branches from its point of
 	# view, even though the actual node underneath genuinely is one in the
 	# palette's case — so this checks/sets `columns` dynamically instead.
+	_tile_side = tile_side
 	if "columns" in _row:
 		_update_palette_columns(tile_side)
 
@@ -96,6 +110,8 @@ func _update_palette_columns(tile_side: float) -> void:
 	if viewport_size.x > viewport_size.y:
 		content_width *= 1.0 - BoardView.LANDSCAPE_BOARD_WIDTH_FRACTION
 	var columns := int(floor((content_width + separation) / (tile_side + separation)))
+	if fixed_columns > 0:
+		columns = fixed_columns
 	# `.set()` — a plain Object method, valid on any type — reaches
 	# `columns` dynamically, the same reasoning as the `in` check above.
 	_row.set("columns", max(1, columns))
