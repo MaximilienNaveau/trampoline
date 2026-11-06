@@ -154,6 +154,11 @@ jobs:
         with:
           branch: gh-pages
           folder: artifacts/web-build
+          # gh-pages keeps one commit: the site as it is now. Each Web build
+          # is ~45 MB, and keeping the old ones made gh-pages 80% of the
+          # repository (every clone downloaded them). The builds of every
+          # version stay on their GitHub Release.
+          single-commit: true
 
       # magamajo's fdroid.yml listens for this event: it fetches the APK of
       # the new GitHub Release and publishes it in the F-Droid repo.
