@@ -14,7 +14,7 @@ run/main_scene="res://scenes/main.tscn"
 ; app (see scripts/quit_game_button.gd).
 config/quit_on_go_back=false
 config/features=PackedStringArray("4.7", "GL Compatibility")
-config/icon="res://assets/icon/app_icon.png"
+config/icon="res://assets/icon/desktop_icon.png"
 ; The image shown while the game loads: TRAMPOLINE's tiles bouncing off a
 ; trampoline (drawn by tools/build_splash.gd), on the felt's color (see
 ; doc/ART_DIRECTION.md), scaled to fit the screen keeping its shape.
