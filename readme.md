@@ -6,6 +6,8 @@ Maximilien Naveau.
 Built with [Godot](https://godotengine.org/) (an earlier Unity version,
 no longer released, lives on in `trampoline-unity/` for reference).
 
+<p align="center"><img src="doc/how_to_play.gif" alt="Comment jouer : les règles en animations" width="300"></p>
+
 ## Installation
 
 ### :robot: Android
