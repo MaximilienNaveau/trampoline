@@ -19,7 +19,7 @@
       let
         pkgs = import nixpkgs { inherit system; };
         inherit (pkgs) lib;
-        version = "4.0.0";
+        version = "4.0.1";
 
         # Building for Android needs Google's Android SDK, whose licence
         # must be accepted (and which nixpkgs marks unfree): only this
