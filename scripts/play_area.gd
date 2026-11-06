@@ -15,7 +15,7 @@ extends BoxContainer
 # The two children, as main.tscn lays them out, and the "À rendre" tray
 # beside the hand (see discard_tray.gd), which the mat makes room for.
 @onready var _board_view: Control = $BoardView
-@onready var _hand_area: Control = $HandArea
+@onready var _hand_area: PlayMat = $HandArea
 @onready var _discard_tray: Control = $HandArea/HandBar/DiscardTray
 # Free play's palette and a crossword's clue list, on the same mat.
 @onready var _palette_view: HandView = $HandArea/PaletteView
@@ -23,10 +23,10 @@ extends BoxContainer
 
 
 func _ready() -> void:
-	# `resized`: a Control's signal, emitted when its size changes — here
-	# the board's (its cells re-fit on every window resize, see
-	# board_view.gd), which the mat copies.
-	_board_view.resized.connect(_fit_hand_area)
+	# `minimum_size_changed`: a Control's signal, emitted when its own
+	# natural size changes — here the board's (its cells re-fit on every
+	# window resize, see board_view.gd), which the mat copies.
+	_board_view.minimum_size_changed.connect(_fit_hand_area)
 	# The tray only shows during a turn-based game (not in free play).
 	_discard_tray.visibility_changed.connect(_fit_hand_area)
 	# Nor the clue list outside a crossword.
@@ -39,6 +39,10 @@ func arrange(portrait: bool) -> void:
 	# Where a BoxContainer puts its children when they don't fill it: side
 	# by side, together in the middle; stacked, from the top as before.
 	alignment = ALIGNMENT_BEGIN if portrait else ALIGNMENT_CENTER
+	# Side by side, the board keeps its own height instead of stretching to
+	# this container's: the mat copies that height, and a stretched board
+	# would hold on to an outdated one (a too-tall mat, the page scrolling).
+	_board_view.size_flags_vertical = SIZE_FILL if portrait else SIZE_SHRINK_BEGIN
 	_fit_hand_area()
 
 
@@ -54,10 +58,7 @@ func _fit_hand_area() -> void:
 		_hand_area.size_flags_horizontal = SIZE_EXPAND_FILL
 		_hand_area.size_flags_vertical = SIZE_FILL
 		return
-	# The board's own size (its 13x9 cells and frame), not its current one:
-	# side by side, the board is stretched to this container's height, and
-	# copying that would feed back (the mat's height raising this
-	# container's, which stretches the board further...).
+	# The board's own size: its 13x9 cells and frame.
 	var board := _board_view.get_combined_minimum_size()
 	var width := board.x
 	var columns := Board.COLUMNS
@@ -72,10 +73,15 @@ func _fit_hand_area() -> void:
 	# and the gap between them (`separation`, set in main.tscn).
 	var room := size.x - board.x - get_theme_constant("separation")
 	var fitted := minf(width, maxf(room, 0.0))
-	_hand_area.custom_minimum_size = Vector2(fitted, board.y)
+	# The felt is drawn `bleed` beyond the mat's box (see play_mat.gd):
+	# shorter by that much at the top and bottom, and centred (SHRINK_CENTER)
+	# on the board's height, the felt as drawn covers exactly the board's
+	# height — not reaching up into the scores — and the hand starts inside
+	# it, not on its edge.
+	_hand_area.custom_minimum_size = Vector2(fitted, board.y - 2.0 * _hand_area.bleed.y)
 	# Fewer palette tiles a line when the mat had to be narrower.
 	_palette_view.fixed_columns = maxi(1, floori(columns * fitted / width))
 	# SHRINK: take exactly that minimum size, instead of growing (EXPAND)
 	# into all the space the container has.
 	_hand_area.size_flags_horizontal = SIZE_SHRINK_BEGIN
-	_hand_area.size_flags_vertical = SIZE_SHRINK_BEGIN
+	_hand_area.size_flags_vertical = SIZE_SHRINK_CENTER
