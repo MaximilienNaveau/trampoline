@@ -85,7 +85,13 @@
         # them out means a new screenshot or workflow edit rebuilds nothing.
         gameSource = lib.fileset.toSource {
           root = ./.;
-          fileset = lib.fileset.difference ./. (lib.fileset.unions [ ./doc ./.github ]);
+          fileset = lib.fileset.difference ./. (
+            lib.fileset.unions [
+              ./doc
+              ./.github
+              ./fastlane
+            ]
+          );
         };
         project = pkgs.runCommand "trampoline-project-${version}" { } ''
           cp -r --no-preserve=mode ${gameSource} "$out"
@@ -285,9 +291,11 @@
           # for the F-Droid page and the readme, drawn by the game itself
           # (tools/capture_media.gd) in a virtual screen (Xvfb) with
           # software OpenGL (Mesa's llvmpipe), so no GPU or display needed:
-          # - doc/screenshots/NN_*.jpg: the start card, then a still of
-          #   each "Comment jouer" card (F-Droid's phone screenshots: the
-          #   F-Droid repo takes any picture with "screenshot" in its path);
+          # - fastlane/metadata/android/en-US/images/phoneScreenshots/NN_*.jpg:
+          #   the start card, then a still of
+          #   each "Comment jouer" card (F-Droid's phone screenshots, in its
+          #   fastlane layout; magamajo takes any picture with "screenshot"
+          #   in its path);
           # - doc/how_to_play.gif: every card's animation, one after the
           #   other.
           # A few minutes: software drawing is slow, the pictures aren't (the
@@ -326,11 +334,12 @@
                     --script res://tools/capture_media.gd -- "$@" 2>&1 \
                     | { grep -E "SCRIPT ERROR|^ERROR: [^0-9]" || true; }
                 }
-                mkdir -p "$doc/screenshots"
-                rm -f "$doc/screenshots"/*.jpg
+                shots="$PWD/fastlane/metadata/android/en-US/images/phoneScreenshots"
+                mkdir -p "$shots"
+                rm -f "$shots"/*.jpg
                 echo "start card"
                 shot start "$work/start"
-                magick "$work/start/still.png" -strip -quality 85 "$doc/screenshots/01_start.jpg"
+                magick "$work/start/still.png" -strip -quality 85 "$shots/01_start.jpg"
                 # Every card's frames, numbered on, make the GIF's.
                 mkdir "$work/gif"
                 frame=0
@@ -339,7 +348,7 @@
                   echo "card $((card + 1))/$cards"
                   shot howto "$card" "$work/card$card"
                   magick "$work/card$card/still.png" -strip -quality 85 \
-                    "$doc/screenshots/$(printf '%02d' $((card + 2)))_comment_jouer.jpg"
+                    "$shots/$(printf '%02d' $((card + 2)))_comment_jouer.jpg"
                   for f in "$work/card$card"/[0-9]*.png; do
                     mv "$f" "$work/gif/$(printf '%05d' "$frame").png"
                     frame=$((frame + 1))
@@ -349,7 +358,7 @@
                 ffmpeg -loglevel error -y -framerate 15 -i "$work/gif/%05d.png" -vf \
                   "fps=10,scale=360:-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=96[p];[b][p]paletteuse=dither=bayer" \
                   "$doc/how_to_play.gif"
-                ls -l "$doc/screenshots" "$doc/how_to_play.gif"
+                ls -l "$shots" "$doc/how_to_play.gif"
               '';
             }}/bin/trampoline-screenshots";
           };

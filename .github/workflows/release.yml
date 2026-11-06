@@ -81,12 +81,18 @@ jobs:
           fi
           echo "FDROID_TRIGGER_TOKEN works and can see magamajo."
 
-      # The release's text (doc/release_notes/<tag>.md) is what F-Droid shows
-      # as "what's new": a tag without one stops here, before publishing.
-      - name: Check the release notes exist
+      # The release's text is the version's changelog, in F-Droid's own
+      # layout (fastlane/metadata/android/, named by the APK's versionCode
+      # from export_presets.cfg): f-droid.org shows that file as "what's
+      # new", magamajo shows the GitHub Release's text — the same words. A
+      # tag without one stops here, before publishing.
+      - name: Find the release notes
+        id: notes
         if: startsWith(github.ref, 'refs/tags/')
         run: |
-          notes="doc/release_notes/$GITHUB_REF_NAME.md"
+          code=$(sed -n 's/^version\/code=//p' export_presets.cfg)
+          notes="fastlane/metadata/android/fr-FR/changelogs/$code.txt"
+          echo "path=$notes" >> "$GITHUB_OUTPUT"
           if [ ! -s "$notes" ]; then
             echo "::error::$notes is missing: write the release notes first"
             exit 1
@@ -161,7 +167,7 @@ jobs:
         uses: softprops/action-gh-release@v3
         with:
           files: artifacts/trampoline-*
-          body_path: doc/release_notes/${{ github.ref_name }}.md
+          body_path: ${{ steps.notes.outputs.path }}
 
       - name: Deploy Web build to GitHub Pages
         if: startsWith(github.ref, 'refs/tags/')
