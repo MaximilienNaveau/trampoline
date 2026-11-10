@@ -17,6 +17,7 @@ import argparse
 import os
 
 from arrange import ACCORDION, FLUTE, PIANO, Pass, Tune, build_loop
+from crossword_tunes import CROSSWORD_TUNES
 
 OUT = os.path.join(os.path.dirname(__file__), "..", "..", "assets", "audio", "music")
 
@@ -161,7 +162,8 @@ FLANERIE = Tune(
     seed=5,
 )
 
-TUNES = {t.name: t for t in (VALSE_DES_LETTRES, LE_BOUQUINISTE, FLANERIE)}
+# The crosswords' tunes are in crossword_tunes.py.
+TUNES = {t.name: t for t in (VALSE_DES_LETTRES, LE_BOUQUINISTE, FLANERIE, *CROSSWORD_TUNES)}
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])

@@ -516,7 +516,8 @@ func _show_free_play(session: FreePlaySession, puzzle_index: int) -> void:
 	_new_game_button.visible = true
 	_refresh_views()
 	_box_lid.open()
-	_start_game_music(MusicTracks.FREE_PLAY)
+	# A crossword has its own tune; plain free play, free play's.
+	_start_game_music(MusicTracks.free_play(puzzle_index))
 
 
 # Crossfades from the menu's music to the mode's tune, `music` ("Rejouer"

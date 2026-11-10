@@ -38,6 +38,7 @@ Two runs don't give bit-identical files (sfizz's round robins and random variati
 - `make_music.py`: the tunes, one per place in the game. Edit the melody
   strings (`note:beats`, `r` for a rest, bars separated by `|`) or the
   chord strings to change them.
+- `crossword_tunes.py`: the ten crosswords' tunes, in the same notation.
 - `make_sfx.py`: synthesised physical sounds (trampoline, wooden tiles) and
   short musical cues played by the same band.
 - `slice_guitar.py`: cuts the Iowa guitar recordings (long chromatic runs)
@@ -54,8 +55,10 @@ Two runs don't give bit-identical files (sfizz's round robins and random variati
 All the tunes are original, written for Trampoline:
 - `menu_valse_des_lettres` (start menu): a musette waltz,
 - `multi_le_bouquiniste` (multiplayer): a swinging chanson,
-- `libre_flanerie` (free play, and the crosswords for now): a fingerpicked
-  ballad.
+- `libre_flanerie` (free play): a fingerpicked ballad,
+- `croise_01_...` to `croise_10_...` (one per crossword): slow and lively
+  waltzes, swing, minor swing, fingerpicked ballads, each with its own key
+  and lead instruments (see crossword_tunes.py).
 
 Nothing is taken from Brassens's own songs, which stay under copyright
 until the end of 2051 (he died in 1981). Only the general style is
