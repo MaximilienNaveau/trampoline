@@ -15,7 +15,7 @@ import numpy as np
 from scipy.io import wavfile
 from scipy.signal import butter, sosfilt
 
-from arrange import CLARINET, NYLON_GUITAR, Note, build_stinger
+from arrange import Note, build_stinger
 
 OUT = os.path.join(os.path.dirname(__file__), "..", "..", "assets", "audio", "sfx")
 SR = 44100
@@ -127,5 +127,5 @@ if __name__ == "__main__":
     _save("tile_drop.wav", tile_drop(), peak_db=-4.0)
     _save("tile_flip.wav", tile_flip(), peak_db=-5.0)
     for name, notes, tempo in stingers():
-        build_stinger(notes, tempo, {NYLON_GUITAR, CLARINET}, os.path.join(out, name))
+        build_stinger(notes, tempo, os.path.join(out, name))
         print(name)

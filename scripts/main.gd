@@ -113,15 +113,15 @@ var _discard_tray: DiscardTray = $Layout/Margin/Content/PlayArea/HandArea/HandBa
 # "Comment jouer": the animated rules (see how_to_play_view.gd), opened
 # from the start menu or the ☰ menu, drawn over everything else.
 @onready var _how_to_play: HowToPlayView = $HowToPlay
-# The music played during a game, "Le Rebond" (made by
-# tools/audio/make_music.py). An AudioStreamPlayer is the node that plays a
-# sound not placed anywhere on screen (no left/right panning by position):
-# `play()` starts its `stream` from the top, `stop()` stops it. Its file
-# is imported as a loop (see original_le_rebond.ogg.import), so it goes
-# round until stopped. FadingMusic (see fading_music.gd) adds fading in
-# and out.
+# The music played during a game — a tune per mode (see music_tracks.gd,
+# made by tools/audio/make_music.py). An AudioStreamPlayer is the node
+# that plays a sound not placed anywhere on screen (no left/right panning
+# by position): `play()` starts its `stream` from the top, `stop()` stops
+# it. Each file is imported as a loop (see e.g.
+# multi_le_bouquiniste.ogg.import), so it goes round until stopped.
+# FadingMusic (see fading_music.gd) adds fading in and out.
 @onready var _game_music: FadingMusic = $GameMusic
-# The start menu's music, "La Grille", a waltz — looped the same way.
+# The start menu's music, "La Valse des lettres" — looped the same way.
 @onready var _menu_music: FadingMusic = $MenuMusic
 # Every sound effect, played by name (see sound_effects.gd).
 @onready var _sound_effects: SoundEffects = $SoundEffects
@@ -464,7 +464,7 @@ func _start_session(session: GameSession) -> void:
 	_refresh_views()
 	_begin_turn()
 	_box_lid.open()
-	_start_game_music()
+	_start_game_music(MusicTracks.MULTIPLAYER)
 
 
 # The one FrenchDictionary this whole app run ever loads (see
@@ -516,17 +516,17 @@ func _show_free_play(session: FreePlaySession, puzzle_index: int) -> void:
 	_new_game_button.visible = true
 	_refresh_views()
 	_box_lid.open()
-	_start_game_music()
+	_start_game_music(MusicTracks.FREE_PLAY)
 
 
-# Crossfades from the menu's music to the game's ("Rejouer" goes straight
-# from one game to the next: the game's tune just carries on). The tiles
-# land on the board with a bounce.
-func _start_game_music() -> void:
+# Crossfades from the menu's music to the mode's tune, `music` ("Rejouer"
+# goes straight from one game to the next: the same tune just carries on).
+# The tiles land on the board with a bounce.
+func _start_game_music(music: AudioStream) -> void:
 	if not _game_music.playing:
 		_sound_effects.play("bounce")
 	_menu_music.fade_out()
-	_game_music.fade_in()
+	_game_music.fade_in(music)
 
 
 # Built-in callback Godot calls on every node for engine-wide events

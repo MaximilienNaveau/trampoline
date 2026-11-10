@@ -34,7 +34,15 @@ Third-party files
 - data/dictionaries/: the French dictionary by Olivier R.
   (Dicollecte, "Classique" variant) and the word list made from it,
   Mozilla Public License 2.0 (README_dict_fr.txt).
-- The music and sound effects are rendered with the GeneralUser GS
-  soundfont by S. Christian Collins (GeneralUser GS License v2.0, which
-  allows using it to make music, commercial or not). The soundfont itself
-  is not in this repository. See tools/audio/README.md.
+- The music and sound effects are played by sampled instruments, none of
+  them in this repository (the build downloads them), all free to use for
+  making music: the classical guitar from the University of Iowa Musical
+  Instrument Samples ("without restrictions"); the Salamander Grand Piano
+  by Alexander Holm (CC-BY 3.0); the double bass, Meatbass by Karoryfer
+  Samples (CC0); the clarinet and the flute from VSCO 2 Community Edition
+  by Versilian Studios (CC0); the button accordion from FreePats (CC0). Their
+  reverberation is the Brahmssaal of the Detmold University of Music,
+  from the "Open Database of Spatial Room Impulse Responses at Detmold
+  University of Music" by S. V. Amengual Gari, J. M. Arend,
+  P. T. Calamia and P. W. Robinson (Zenodo, doi:10.5281/zenodo.4116247),
+  CC-BY 4.0. See tools/audio/README.md.

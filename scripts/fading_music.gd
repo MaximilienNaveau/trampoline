@@ -21,8 +21,11 @@ func _ready() -> void:
 
 
 # Starts the music from silence, or, if it's still fading out, turns it
-# back up from where it is.
-func fade_in() -> void:
+# back up from where it is. Given another tune (`new_stream`), switches to
+# it first, from silence: setting `stream` stops the one playing.
+func fade_in(new_stream: AudioStream = stream) -> void:
+	if new_stream != stream:
+		stream = new_stream
 	if not playing:
 		volume_db = SILENT_DB
 		play()
