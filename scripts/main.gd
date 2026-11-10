@@ -129,8 +129,11 @@ var _discard_tray: DiscardTray = $Layout/Margin/Content/PlayArea/HandArea/HandBa
 @onready var _options_button: Button = $Layout/Margin/Content/TopBar/OptionsButton
 @onready var _options_panel: PanelContainer = $Layout/Margin/Content/OptionsPanel
 @onready var _timer_toggle: CheckButton = $Layout/Margin/Content/OptionsPanel/MenuItems/TimerToggle
-# The ☰ menu's "Son" switch: music and sound effects on/off.
-@onready var _sound_toggle: CheckButton = $Layout/Margin/Content/OptionsPanel/MenuItems/SoundToggle
+# The speaker button beside ☰, and the sound menu it opens (volumes and
+# mutes for everything, the music and the sound effects: see
+# sound_panel.gd).
+@onready var _sound_button: Button = $Layout/Margin/Content/TopBar/SoundButton
+@onready var _sound_panel: SoundPanel = $Layout/Margin/Content/SoundPanel
 @onready var _turn_timer_label: Label = $Layout/Margin/Content/TopBar/TurnTimerLabel
 # The game's one-hour clock in the header (see game_clock.gd).
 @onready var _game_clock: GameClock = $Layout/Margin/Content/TopBar/GameClock
@@ -246,7 +249,9 @@ func _ready() -> void:
 	_how_to_play_menu_button.pressed.connect(_on_how_to_play_menu_pressed)
 	_options_button.pressed.connect(_on_options_pressed)
 	_timer_toggle.toggled.connect(_on_timer_toggle_toggled)
-	_sound_toggle.toggled.connect(_on_sound_toggle_toggled)
+	_sound_button.pressed.connect(_on_sound_pressed)
+	_sound_panel.changed.connect(_update_sound_icon)
+	_update_sound_icon()
 	_end_turn_message_timer.timeout.connect(_on_end_turn_message_timer_timeout)
 	# `confirmed` fires when the dialog's own built-in OK button (relabeled
 	# "Quitter" — see scenes/main.tscn) is pressed.
@@ -351,8 +356,9 @@ func _update_play_area_orientation() -> void:
 func _update_board_height_budget() -> void:
 	var overhead := _content.position.y + _play_area.position.y
 	overhead += _margin.get_theme_constant("margin_bottom")
-	if _options_panel.visible:
-		overhead -= _options_panel.size.y + _content.get_theme_constant("separation")
+	for panel: Control in [_options_panel, _sound_panel]:
+		if panel.visible:
+			overhead -= panel.size.y + _content.get_theme_constant("separation")
 	# As many rows as the hand needs, at least 2 (the tray's height): a
 	# hand starts at 9-14 tiles (see draw_plan.gd), but swaps and tiles
 	# taken back off the board can make it longer. Only in turn-based
@@ -556,6 +562,7 @@ func _is_crossword() -> bool:
 # confirmation dialog.
 func _on_new_game_pressed() -> void:
 	_options_panel.visible = false
+	_sound_panel.visible = false
 	_new_game_confirm_dialog.popup_centered()
 
 
@@ -577,6 +584,20 @@ func _start_new_game() -> void:
 # actually starts (see `_start_session`/`_return_to_start_menu`).
 func _on_options_pressed() -> void:
 	_options_panel.visible = not _options_panel.visible
+	_sound_panel.visible = false
+
+
+# Called when the speaker button is pressed: shows/hides the sound menu
+# (one dropdown at a time, so it closes ☰'s).
+func _on_sound_pressed() -> void:
+	_sound_panel.visible = not _sound_panel.visible
+	_options_panel.visible = false
+
+
+# The speaker button shows a crossed-out speaker while nothing can be heard.
+func _update_sound_icon() -> void:
+	var silent := _sound_panel.settings.is_all_silent()
+	_sound_button.icon = SoundPanel.SPEAKER_MUTED if silent else SoundPanel.SPEAKER
 
 
 # Called when OptionsPanel's timer CheckButton is switched. Turning it on
@@ -590,15 +611,6 @@ func _on_timer_toggle_toggled(enabled: bool) -> void:
 	else:
 		_turn_timer.stop()
 		_turn_timer_label.visible = false
-
-
-# Called when OptionsPanel's "Son" CheckButton is switched. Every sound
-# Godot plays goes through an audio bus — a mixer channel, like a mixing
-# desk's — and they all end up in bus 0, "Master". Muting Master silences
-# the music and every sound effect at once; the music keeps running
-# underneath, so switching back on picks it up where it is now.
-func _on_sound_toggle_toggled(enabled: bool) -> void:
-	AudioServer.set_bus_mute(0, not enabled)
 
 
 # Restarts the 3-minute countdown from the top — called whenever a new
@@ -641,6 +653,7 @@ func _is_play_clock_running() -> bool:
 		not _handoff_screen.visible
 		and not _input_blocker.visible
 		and not _options_panel.visible
+		and not _sound_panel.visible
 		and not _how_to_play.visible
 		and not _box_lid.visible
 		and not _new_game_confirm_dialog.visible
@@ -715,6 +728,7 @@ func _on_hand_tile_reordered(tile: Tile, before: Tile) -> void:
 # "Comment jouer" from the ☰ menu: closes the menu, then shows the rules.
 func _on_how_to_play_menu_pressed() -> void:
 	_options_panel.visible = false
+	_sound_panel.visible = false
 	_how_to_play.open()
 
 
@@ -963,6 +977,7 @@ func _return_to_start_menu() -> void:
 	_clue_markers.visible = false
 	_board_view.reserved_right_width = 0.0
 	_options_panel.visible = false
+	_sound_panel.visible = false
 	_handoff_screen.visible = false
 	_end_screen.visible = false
 	_set_end_turn_message("")
