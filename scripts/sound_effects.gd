@@ -37,6 +37,9 @@ func _ready() -> void:
 		player.volume_db = VOLUME_DB
 		# Lets the same sound overlap itself too, e.g. quick tile drops.
 		player.max_polyphony = 3
+		# Sent to the "Effects" bus (see audio_settings.gd), so the sound
+		# menu can set its volume apart from the music.
+		player.bus = &"Effects"
 		# A node made in code joins the scene tree like one from a .tscn.
 		add_child(player)
 		_players[sound_name] = player

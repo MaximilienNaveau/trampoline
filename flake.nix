@@ -19,7 +19,7 @@
       let
         pkgs = import nixpkgs { inherit system; };
         inherit (pkgs) lib;
-        version = "4.0.2";
+        version = "4.1.0";
 
         # Building for Android needs Google's Android SDK, whose licence
         # must be accepted (and which nixpkgs marks unfree): only this
@@ -42,22 +42,109 @@
         # The tools to make the game's music and sound effects from
         # scripts, all open source:
         # - python3 with mido (writes MIDI) and numpy/scipy (synthesises
-        #   sound effects sample by sample, writes .wav),
-        # - lilypond: music as text, rendered to MIDI and sheet music,
-        # - fluidsynth + a free General MIDI soundfont: MIDI -> .wav,
-        # - sox and ffmpeg: trim, mix, normalise, encode to .ogg.
+        #   sound effects sample by sample, mixes, writes .wav),
+        # - sfizz: plays MIDI through sampled instruments (SFZ) -> .wav,
+        # - sox and ffmpeg: trim, normalise, encode to .ogg.
         audioTools = [
           (pkgs.python3.withPackages (ps: [ ps.mido ps.numpy ps.scipy ]))
-          pkgs.lilypond
-          pkgs.fluidsynth
+          pkgs.sfizz
           pkgs.sox
           pkgs.ffmpeg
         ];
-        # The soundfont paths, exported so scripts needn't hunt for them.
-        soundfonts = {
-          SF2_FLUID = "${pkgs.soundfont-fluid}/share/soundfonts/FluidR3_GM2-2.sf2";
-          SF2_GENERALUSER = "${pkgs.soundfont-generaluser-gs}/share/soundfonts/GeneralUser-GS.sf2";
+
+        # Only some files out of a zip archive on the web, read in slices
+        # (HTTP range requests, see tools/audio/fetch_zip.py) rather than
+        # downloading the whole archive. A fixed-output derivation: like
+        # fetchurl, it may use the network because `hash` pins its result
+        # (the files, unpacked under their paths in the archive).
+        fetchZipMembers = { name, url, members, hash }:
+          pkgs.runCommand name {
+            nativeBuildInputs = [ pkgs.python3 ];
+            NIX_SSL_CERT_FILE = "${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt";
+            SSL_CERT_FILE = "${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt";
+            outputHashMode = "recursive";
+            outputHash = hash;
+          } ''
+            python3 ${./tools/audio/fetch_zip.py} "${url}" "$out" ${pkgs.lib.escapeShellArgs members}
+          '';
+
+        # The band's sampled instruments, all free (see tools/audio/README.md),
+        # laid out as tools/audio/arrange.py expects: guitar/, bass/, vsco/
+        # (clarinet and flute), accordion/, piano/, room/ (the hall), each with its
+        # .sfz files. About 1 GB to download: only the build needs them, the game
+        # ships the rendered music.
+        samples = pkgs.stdenvNoCC.mkDerivation {
+          pname = "trampoline-samples";
+          version = "6";
+          dontUnpack = true;
+          nativeBuildInputs = [
+            pkgs.p7zip
+            pkgs.unzip
+            pkgs.sox
+            (pkgs.python3.withPackages (ps: [ ps.numpy ps.scipy ]))
+          ];
+          # The University of Iowa's classical guitar, stereo: chromatic
+          # runs, cut into notes by slice_guitar.py.
+          guitar = pkgs.fetchurl {
+            url = "https://theremin.music.uiowa.edu/sound%20files/MIS/Piano_Other/guitar/Guitar.stereo.1644.1.zip";
+            hash = "sha256-Og6Lbl+7XQMSxpf3woB87r6Ic8jIUKegbBb6pJAbv0I=";
+          };
+          sliceGuitar = ./tools/audio/slice_guitar.py;
+          accordion = pkgs.fetchurl {
+            url = "https://github.com/freepats/button-accordion-HN/releases/download/2024-03-29/ButtonAccordionHN-SFZ+FLAC-20240329.7z";
+            hash = "sha256-5TJqiDDwNY+qGVYJ/SHQwduriZ45vX9EsVkOvyzlA14=";
+          };
+          # Karoryfer's Meatbass: a double bass, its pizzicato played at 4
+          # strengths with 4 takes of each (CC0). Only the pizzicato: 127 MB
+          # of the 255 MB archive.
+          bass = fetchZipMembers {
+            name = "meatbass-pizz";
+            url = "https://github.com/sfzinstruments/karoryfer.meatbass/releases/download/v1.001/Karoryfer.Meatbass.v1.001.zip";
+            members = [ "Meatbass/Programs/pizz_basic.sfz" "Meatbass/Samples/pizz/*" "Meatbass/LICENSE" "Meatbass/readme.txt" ];
+            hash = "sha256-Sq3mCoI1ScygPSWginOtqichkVkADMkdS1po54ZRKuc=";
+          };
+          # Only the clarinet and the flute out of the 3 GB VSCO 2
+          # Community Edition.
+          vsco = pkgs.fetchgit {
+            url = "https://github.com/sgossner/VSCO-2-CE.git";
+            rev = "1.1.0";
+            sparseCheckout = [ "Woodwinds/Clarinet" "ClarinetSus.sfz" "Woodwinds/Flute" "FluteSusVib.sfz" ];
+            nonConeMode = true;
+            hash = "sha256-68ryCgFoxTW3+GP1A9ZiyWLBHTyi4rv9nGV64urdu04=";
+          };
+          # Salamander Grand Piano V3 (Alexander Holm, CC-BY 3.0).
+          piano = pkgs.fetchurl {
+            url = "https://freepats.zenvoid.org/Piano/SalamanderGrandPiano/SalamanderGrandPiano-SFZ+FLAC-V3+20200602.tar.gz";
+            hash = "sha256-t3YOFoSUzwlTROIXsK8BP8RJrQM6u73xxlIRzxHcA4s=";
+          };
+          # The Brahmssaal (a small concert hall) of the Detmold University
+          # of Music, its impulse response recorded by a dummy head: the
+          # band's room (CC BY 4.0). Only its one file used: 2 MB of this
+          # 1 GB archive.
+          room = fetchZipMembers {
+            name = "detmold-brahmssaal";
+            url = "https://zenodo.org/api/records/4116247/files/DetmoldSRIR_v01.zip/content";
+            members = [ "SetA_SingleSources/Data/Brahmssaal/DummyHead/C1S1R3.wav" ];
+            hash = "sha256-elveLYg4QrLKQkP7nsNuNJfngYeAsDTqlLxfu5u9CnI=";
+          };
+          installPhase = ''
+            runHook preInstall
+            mkdir -p "$out"
+            unzip -q "$guitar" -d "$TMPDIR/guitar" -x "__MACOSX/*"
+            python3 "$sliceGuitar" "$TMPDIR/guitar/1644stereo" "$out/guitar"
+            7z x -o"$TMPDIR/accordion" "$accordion" >/dev/null
+            mv "$TMPDIR"/accordion/"Button Accordion HN SFZ+FLAC-20240329" "$out/accordion"
+            cp -r "$bass/Meatbass" "$out/bass"
+            cp -r "$vsco" "$out/vsco"
+            tar xzf "$piano" -C "$TMPDIR"
+            mv "$TMPDIR"/SalamanderGrandPiano-SFZ+FLAC-V3+20200602 "$out/piano"
+            mkdir "$out/room"
+            cp "$room"/SetA_SingleSources/Data/Brahmssaal/DummyHead/C1S1R3.wav "$out/room/brahmssaal.wav"
+            runHook postInstall
+          '';
         };
+        # Where the scripts find the samples.
+        sampleEnv = { TRAMPOLINE_SAMPLES = "${samples}"; };
 
         # The music and sound effects the game plays, made from
         # tools/audio/ (they aren't committed: only their .import files
@@ -71,12 +158,12 @@
           buildPhase = ''
             runHook preBuild
             export HOME="$TMPDIR"
-            python3 make_music.py --out "$out/music" original_le_rebond original_la_grille
+            python3 make_music.py --out "$out/music"
             python3 make_sfx.py --out "$out/sfx"
             runHook postBuild
           '';
           dontInstall = true;
-        } // soundfonts);
+        } // sampleEnv);
 
         # The project as the exports and tests see it: the committed
         # files plus the generated audio dropped into assets/audio/.
@@ -199,7 +286,7 @@
 
         # `nix develop .#audio`: the tools to edit and rerun
         # tools/audio/*.py by hand (see tools/audio/README.md).
-        devShells.audio = pkgs.mkShell ({ buildInputs = audioTools; } // soundfonts);
+        devShells.audio = pkgs.mkShell ({ buildInputs = audioTools; } // sampleEnv);
 
         packages = exports // {
           inherit audio;

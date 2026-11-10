@@ -14,8 +14,6 @@ __pycache__/
 # Godot's .import files for the ones the game uses are committed.
 assets/audio/**/*.ogg
 assets/audio/**/*.wav
-# Music candidates make_music.py makes but the game doesn't use.
-assets/audio/music/folk_*
 
 # PDFs compiled from doc/*.typ (typst compile doc/<name>.typ).
 doc/*.pdf

@@ -1,4 +1,4 @@
-[gd_scene load_steps=35 format=3]
+[gd_scene load_steps=37 format=3]
 
 [ext_resource type="Script" path="res://scripts/main.gd" id="1"]
 [ext_resource type="PackedScene" path="res://scenes/board_view.tscn" id="2"]
@@ -24,11 +24,13 @@
 [ext_resource type="Texture2D" path="res://assets/textures/menu_icon.svg" id="22"]
 [ext_resource type="Script" path="res://scripts/play_mat.gd" id="23"]
 [ext_resource type="Script" path="res://scripts/start_card.gd" id="24"]
-[ext_resource type="AudioStream" path="res://assets/audio/music/original_le_rebond.ogg" id="25"]
-[ext_resource type="AudioStream" path="res://assets/audio/music/original_la_grille.ogg" id="26"]
+[ext_resource type="AudioStream" path="res://assets/audio/music/multi_le_bouquiniste.ogg" id="25"]
+[ext_resource type="AudioStream" path="res://assets/audio/music/menu_valse_des_lettres.ogg" id="26"]
 [ext_resource type="Script" path="res://scripts/sound_effects.gd" id="27"]
 [ext_resource type="Script" path="res://scripts/fading_music.gd" id="28"]
 [ext_resource type="Script" path="res://scripts/play_area.gd" id="29"]
+[ext_resource type="Texture2D" path="res://assets/textures/speaker_icon.svg" id="30"]
+[ext_resource type="Script" path="res://scripts/sound_panel.gd" id="31"]
 
 [sub_resource type="StyleBoxFlat" id="EndTurnBannerStyle"]
 bg_color = Color(0.75, 0.16, 0.16, 1)
@@ -171,6 +173,12 @@ layout_mode=2
 icon=ExtResource("22")
 icon_alignment=1
 
+[node name="SoundButton" type="Button" parent="Layout/Margin/Content/TopBar"]
+custom_minimum_size=Vector2(44, 0)
+layout_mode=2
+icon=ExtResource("30")
+icon_alignment=1
+
 [node name="GameClock" type="Label" parent="Layout/Margin/Content/TopBar"]
 visible=false
 layout_mode=2
@@ -227,10 +235,11 @@ text="Comment jouer"
 layout_mode=2
 text="Minuteur (3 min)"
 
-[node name="SoundToggle" type="CheckButton" parent="Layout/Margin/Content/OptionsPanel/MenuItems"]
+[node name="SoundPanel" type="PanelContainer" parent="Layout/Margin/Content"]
 layout_mode=2
-button_pressed=true
-text="Son"
+size_flags_horizontal=4
+visible=false
+script=ExtResource("31")
 
 [node name="Scoreboard" type="HFlowContainer" parent="Layout/Margin/Content"]
 layout_mode=2
@@ -345,11 +354,13 @@ wait_time=180.0
 one_shot=true
 
 [node name="GameMusic" type="AudioStreamPlayer" parent="."]
+bus=&"Music"
 script=ExtResource("28")
 stream=ExtResource("25")
 volume_db=-22.0
 
 [node name="MenuMusic" type="AudioStreamPlayer" parent="."]
+bus=&"Music"
 script=ExtResource("28")
 stream=ExtResource("26")
 volume_db=-22.0
