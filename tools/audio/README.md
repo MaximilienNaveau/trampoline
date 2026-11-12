@@ -18,7 +18,13 @@ python3 tools/audio/make_music.py   # -> assets/audio/music/*.ogg (seamless loop
 python3 tools/audio/make_sfx.py     # -> assets/audio/sfx/*.wav
 ```
 
-Two runs don't give bit-identical files (sfizz's round robins and random variations), but they sound the same.
+Two runs give bit-identical files, which F-Droid's reproducible build
+needs: the arrangements' randomness is seeded per tune (`seed=`), sfizz's
+random variations start from a fixed state, sfizz loads the samples whole
+into memory instead of streaming them (`hint_ram_based`, about 2.5 GB for
+the piano), and sox's dither (`-R`) and the Ogg stream serial (ffmpeg's
+`bitexact`) are made repeatable. Check with
+`nix build .#audio --rebuild`.
 
 - `arrange.py`: turns a lead sheet (melody + chord symbols) into a small
   band in Brassens's way, no drums: a classical guitar on the chords (the

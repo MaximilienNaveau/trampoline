@@ -32,6 +32,7 @@ sox, ffmpeg).
 
 import os
 import random
+import shutil
 import subprocess
 import tempfile
 from dataclasses import dataclass
@@ -580,8 +581,30 @@ def _bends(note, on, off):
     return events
 
 
+_RAM_SAMPLES = None  # see _sfz
+
+
 def _sfz(stem):
-    return os.path.join(os.environ["TRAMPOLINE_SAMPLES"], STEMS[stem].sfz)
+    """The stem's instrument, set to load its samples whole into memory.
+
+    Otherwise sfizz streams long samples from disk in the background, and a
+    note whose data isn't loaded yet when it starts plays what is (more often
+    on a busy machine): two renders could differ, which F-Droid's
+    reproducible build can't have. The hint (hint_ram_based) goes in a
+    wrapper next to the instrument, as its sample paths are relative to the
+    file sfizz opens, in a symlinked copy of the read-only $TRAMPOLINE_SAMPLES."""
+    global _RAM_SAMPLES
+    if _RAM_SAMPLES is None:
+        _RAM_SAMPLES = tempfile.TemporaryDirectory(prefix="trampoline-samples-")
+        shutil.copytree(os.environ["TRAMPOLINE_SAMPLES"], os.path.join(_RAM_SAMPLES.name, "s"),
+                        copy_function=os.symlink)
+    original = os.path.join(_RAM_SAMPLES.name, "s", STEMS[stem].sfz)
+    wrapper = original[: -len(".sfz")] + ".ram.sfz"
+    if not os.path.exists(wrapper):
+        os.chmod(os.path.dirname(wrapper), 0o755)  # copied read-only from the store
+        with open(wrapper, "w") as f:
+            f.write(f'<control> hint_ram_based=1\n#include "{os.path.basename(original)}"\n')
+    return wrapper
 
 
 def _sfizz(sfz, midi, wav):
@@ -738,7 +761,9 @@ def build_loop(tune, ogg_path):
         loop = _master(loop)
         wav = os.path.join(tmp, "loop.wav")
         _save(wav, loop)
-        subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", wav, "-c:a", "libvorbis", "-q:a", "4", ogg_path], check=True)
+        # bitexact: no random Ogg stream serial, so two builds give the same file.
+        subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", wav, "-c:a", "libvorbis", "-q:a", "4",
+                        "-fflags", "+bitexact", "-flags:a", "+bitexact", ogg_path], check=True)
     return times[-1]
 
 
@@ -751,5 +776,6 @@ def build_stinger(notes, tempo, wav_path, tail_beats=3.0, swing=0.5):
         _save(mix, _master(audio, rms_db=-16.0))
         # Mono, drop the silent tail (below -50 dB); then normalise and fade
         # the last 0.3 s (a second pass: fade needs the trimmed length).
-        subprocess.run(["sox", mix, "-c", "1", trimmed, "reverse", "silence", "1", "0.02", "-50d", "reverse"], check=True)
-        subprocess.run(["sox", trimmed, wav_path, "gain", "-n", "-1", "fade", "0", "-0", "0.3"], check=True)
+        # -R: sox's dither from a fixed seed, so two builds give the same file.
+        subprocess.run(["sox", "-R", mix, "-c", "1", trimmed, "reverse", "silence", "1", "0.02", "-50d", "reverse"], check=True)
+        subprocess.run(["sox", "-R", trimmed, wav_path, "gain", "-n", "-1", "fade", "0", "-0", "0.3"], check=True)
