@@ -1,7 +1,7 @@
 # French dictionary word-validity check, ported from the Unity project's
 # `FrenchDictionary.cs`. Wraps the "classique" Dicollecte word list
 # (data/dictionaries/fr-classique.dic, MPL 2.0 — see the accompanying
-# README_dict_fr.txt) as a set of normalized words, checked against
+# licence/README_dict_fr.txt) as a set of normalized words, checked against
 # whatever word a row currently spells (see doc/RULES.md: any dictionary
 # word is legal, including all grammatical forms — the word list already
 # contains every inflected form as its own line, there's no on-the-fly

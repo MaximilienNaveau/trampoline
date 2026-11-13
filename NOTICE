@@ -33,7 +33,7 @@ Third-party files
   SIL Open Font License 1.1 (Caveat-OFL.txt, Jost-OFL.txt beside them).
 - data/dictionaries/: the French dictionary by Olivier R.
   (Dicollecte, "Classique" variant) and the word list made from it,
-  Mozilla Public License 2.0 (README_dict_fr.txt).
+  Mozilla Public License 2.0 (data/dictionaries/licence/README_dict_fr.txt).
 - The music and sound effects (assets/audio/, rendered by tools/audio/)
   are played by sampled instruments, none of them in this repository
   (`nix build .#audio` downloads them), all free to use for
