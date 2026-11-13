@@ -231,38 +231,46 @@
           # No iOS: Godot refuses to export even the unsigned Xcode project
           # without an App Store Team ID, which needs an Apple account.
 
-          # result/trampoline.apk: a release build (not debuggable, as it
-          # ships), signed with the project's own debug key
-          # (keys/debug.keystore) so each build installs over the previous
-          # one: adb install -r result/trampoline.apk
-          # The real key never enters a Nix build (the store is pushed to a
-          # public cache): release.yml re-signs this APK with
-          # `nix run .#apksigner`, outside Nix, for the GitHub Release and
-          # F-Droid.
-          android = godotExport {
-            name = "android";
-            preset = "Android";
-            file = "trampoline.apk";
-            extraInputs = [ pkgs.jdk17_headless ];
-            setup = ''
+          # result/trampoline.apk: the release build, unsigned, made exactly
+          # as F-Droid's build recipe makes it (fdroiddata,
+          # metadata/com.magamajo.trampoline.yml): Godot built from source
+          # (nix/godot-android.nix), the same export commands, then the
+          # zip's dates made fixed (tools/apk_fix_timestamps.py). F-Droid
+          # rebuilds it, finds it identical, and serves our signed APK.
+          # release.yml signs it with the release key, outside Nix (the
+          # store is pushed to a public cache). To install a local build,
+          # sign it with the debug key first:
+          #   nix run .#apksigner -- sign --alignment-preserved true \
+          #     --v1-signing-enabled false --ks keys/debug.keystore \
+          #     --ks-pass pass:android --out signed.apk result/trampoline.apk
+          android = pkgs.stdenvNoCC.mkDerivation {
+            pname = "trampoline-android";
+            inherit version;
+            src = project;
+            nativeBuildInputs = [ godotAndroid.editor pkgs.python3 ];
+            buildPhase = ''
+              runHook preBuild
+              export HOME="$TMPDIR/home"
               # Read by Godot as the default Android SDK and Java paths.
-              export ANDROID_HOME=${androidSdk}/libexec/android-sdk
-              export JAVA_HOME=${pkgs.jdk17_headless.home}
-              # A flake only sees files git tracks: an uncommitted key isn't here.
-              if [ ! -f keys/debug.keystore ]; then
-                echo "keys/debug.keystore is missing: is it tracked by git?" >&2
-                exit 1
-              fi
-              # A release export reads the RELEASE key variables: point them
-              # at the debug key too.
-              for kind in DEBUG RELEASE; do
-                export GODOT_ANDROID_KEYSTORE_''${kind}_PATH="$PWD/keys/debug.keystore"
-                export GODOT_ANDROID_KEYSTORE_''${kind}_USER=androiddebugkey
-                export GODOT_ANDROID_KEYSTORE_''${kind}_PASSWORD=android
-              done
+              export ANDROID_HOME=${godotAndroid.androidSdk}/libexec/android-sdk
+              export JAVA_HOME=${pkgs.jdk21_headless.home}
+              cp ${godotAndroid.template}/android_release.apk ./android_release.apk
+              sed -i -e 's|^package/signed=.*|package/signed=false|' export_presets.cfg
+              sed -i -e 's|^custom_template/release=.*|custom_template/release="./android_release.apk"|' \
+                export_presets.cfg
+              godot --headless --import
+              godot --headless --export-release Android trampoline.apk
+              python3 tools/apk_fix_timestamps.py trampoline.apk
+              install -D -m 644 trampoline.apk "$out/trampoline.apk"
+              runHook postBuild
             '';
+            dontInstall = true;
           };
         };
+
+        # Godot built from source as F-Droid builds it: the Android export
+        # uses its editor and template (see nix/godot-android.nix).
+        godotAndroid = import ./nix/godot-android.nix { inherit pkgs androidPkgs; };
 
         # A check that runs a command over the committed sources and
         # passes if it exits 0 (its output is an empty marker file).
@@ -290,6 +298,8 @@
 
         packages = exports // {
           inherit audio;
+          godot-editor-fdroid = godotAndroid.editor;
+          godot-android-template = godotAndroid.template;
           default = exports.linux;
         };
 
@@ -309,16 +319,6 @@
           '';
           format = sourceCheck "format" [ pkgs.gdtoolkit_4 ] "gdformat --check scripts/*.gd";
           lint = sourceCheck "lint" [ pkgs.gdtoolkit_4 ] "gdlint scripts/*.gd";
-          # Each tests/*.gd is a standalone script Godot runs headless; all
-          # of them run, then the check fails if any one did.
-          tests = pkgs.stdenvNoCC.mkDerivation {
-            pname = "trampoline-tests";
-            inherit version;
-            src = project;
-            nativeBuildInputs = [ pkgs.godot_4 ];
-            buildPhase = ''
-              runHook preBuild
-              ${godotEnv}
           # Every node of a scene has its own unique_id: Godot (4.7) draws a
           # random one for a node without, at each load, and the export
           # (scenes made binary) would differ from build to build, so not
@@ -330,6 +330,16 @@
               exit 1
             fi
           '';
+          # Each tests/*.gd is a standalone script Godot runs headless; all
+          # of them run, then the check fails if any one did.
+          tests = pkgs.stdenvNoCC.mkDerivation {
+            pname = "trampoline-tests";
+            inherit version;
+            src = project;
+            nativeBuildInputs = [ pkgs.godot_4 ];
+            buildPhase = ''
+              runHook preBuild
+              ${godotEnv}
               status=0
               for test_file in tests/*.gd; do
                 echo "=== $test_file"

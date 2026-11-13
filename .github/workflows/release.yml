@@ -106,10 +106,13 @@ jobs:
         with:
           path: artifacts
 
-      # The APK from ci.yml is signed with the debug key (the Nix build
-      # never sees the real one: its store is pushed to a public cache).
-      # Re-signed here with the release key, the same one as the Unity
-      # builds F-Droid serves, from the repo's secrets.
+      # The APK from ci.yml is unsigned (the Nix build never sees the real
+      # key: its store is pushed to a public cache). Signed here with the
+      # release key, the same one as the Unity builds F-Droid serves, from
+      # the repo's secrets. Signing only adds the signature (v2/v3: the
+      # app needs Android 7, v1 is for older ones), the rest of the APK
+      # stays byte for byte as built: F-Droid's reproducible build checks
+      # that its own unsigned build plus this signature verifies.
       - name: Sign the APK with the release key
         env:
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
@@ -127,6 +130,7 @@ jobs:
           keystore="$RUNNER_TEMP/release.keystore"
           echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > "$keystore"
           nix run .#apksigner -- sign \
+            --alignment-preserved true --v1-signing-enabled false \
             --ks "$keystore" --ks-pass env:ANDROID_KEYSTORE_PASS \
             --ks-key-alias "$ANDROID_KEY_ALIAS_NAME" --key-pass env:ANDROID_KEY_ALIAS_PASS \
             --out artifacts/android-build/signed.apk artifacts/android-build/trampoline.apk

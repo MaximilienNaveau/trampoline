@@ -107,8 +107,8 @@ jobs:
           name: web-build
           path: build/web
 
-      # Signed with the project's debug key (keys/): fine to
-      # install by hand, not for a store (see doc/TODO.md, F-Droid).
+      # Unsigned (release.yml signs it): to install it by hand, sign it
+      # with the debug key first (see `android` in flake.nix).
       - name: Upload Android build
         uses: actions/upload-artifact@v6
         with:
