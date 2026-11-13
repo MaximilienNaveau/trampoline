@@ -319,6 +319,17 @@
             buildPhase = ''
               runHook preBuild
               ${godotEnv}
+          # Every node of a scene has its own unique_id: Godot (4.7) draws a
+          # random one for a node without, at each load, and the export
+          # (scenes made binary) would differ from build to build, so not
+          # match F-Droid's (reproducible build). Any number, but unique
+          # within the scene.
+          scene-node-ids = sourceCheck "scene-node-ids" [ ] ''
+            if grep -n '^\[node ' scenes/*.tscn | grep -v ' unique_id=[0-9]'; then
+              echo "these scene nodes have no unique_id=<number>: add one" >&2
+              exit 1
+            fi
+          '';
               status=0
               for test_file in tests/*.gd; do
                 echo "=== $test_file"
