@@ -95,7 +95,7 @@ corner_radius_top_right = 8
 corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
 
-[node name="Main" type="Control"]
+[node name="Main" type="Control" unique_id=588536394]
 layout_mode=3
 anchors_preset=15
 anchor_right=1.0
@@ -105,7 +105,7 @@ grow_vertical=2
 theme=ExtResource("6")
 script=ExtResource("1")
 
-[node name="Background" type="Panel" parent="."]
+[node name="Background" type="Panel" parent="." unique_id=1290168696]
 layout_mode=1
 anchors_preset=15
 anchor_right=1.0
@@ -115,7 +115,7 @@ grow_vertical=2
 mouse_filter=2
 script=ExtResource("23")
 
-[node name="Layout" type="ScrollContainer" parent="."]
+[node name="Layout" type="ScrollContainer" parent="." unique_id=1459403866]
 layout_mode=1
 script=ExtResource("19")
 anchors_preset=15
@@ -125,7 +125,7 @@ grow_horizontal=2
 grow_vertical=2
 horizontal_scroll_mode=0
 
-[node name="EndTurnMessage" type="PanelContainer" parent="."]
+[node name="EndTurnMessage" type="PanelContainer" parent="." unique_id=2081548558]
 layout_mode=1
 anchors_preset=10
 anchor_right=1.0
@@ -137,18 +137,18 @@ grow_horizontal=2
 theme_override_styles/panel=SubResource("EndTurnBannerStyle")
 visible=false
 
-[node name="Text" type="Label" parent="EndTurnMessage"]
+[node name="Text" type="Label" parent="EndTurnMessage" unique_id=1839264936]
 layout_mode=2
 theme_override_colors/font_color=Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size=20
 horizontal_alignment=1
 autowrap_mode=2
 
-[node name="EndTurnMessageTimer" type="Timer" parent="."]
+[node name="EndTurnMessageTimer" type="Timer" parent="." unique_id=1085401138]
 wait_time=4.0
 one_shot=true
 
-[node name="Margin" type="MarginContainer" parent="Layout"]
+[node name="Margin" type="MarginContainer" parent="Layout" unique_id=1513232202]
 layout_mode=2
 size_flags_horizontal=3
 size_flags_vertical=3
@@ -157,120 +157,120 @@ theme_override_constants/margin_top=12
 theme_override_constants/margin_right=4
 theme_override_constants/margin_bottom=12
 
-[node name="Content" type="VBoxContainer" parent="Layout/Margin"]
+[node name="Content" type="VBoxContainer" parent="Layout/Margin" unique_id=1310829626]
 layout_mode=2
 size_flags_horizontal=3
 theme_override_constants/separation=8
 
-[node name="TopBar" type="HBoxContainer" parent="Layout/Margin/Content"]
+[node name="TopBar" type="HBoxContainer" parent="Layout/Margin/Content" unique_id=687934519]
 layout_mode=2
 size_flags_horizontal=3
 theme_override_constants/separation=10
 
-[node name="OptionsButton" type="Button" parent="Layout/Margin/Content/TopBar"]
+[node name="OptionsButton" type="Button" parent="Layout/Margin/Content/TopBar" unique_id=1663183895]
 custom_minimum_size=Vector2(44, 0)
 layout_mode=2
 icon=ExtResource("22")
 icon_alignment=1
 
-[node name="SoundButton" type="Button" parent="Layout/Margin/Content/TopBar"]
+[node name="SoundButton" type="Button" parent="Layout/Margin/Content/TopBar" unique_id=458609287]
 custom_minimum_size=Vector2(44, 0)
 layout_mode=2
 icon=ExtResource("30")
 icon_alignment=1
 
-[node name="GameClock" type="Label" parent="Layout/Margin/Content/TopBar"]
+[node name="GameClock" type="Label" parent="Layout/Margin/Content/TopBar" unique_id=62784574]
 visible=false
 layout_mode=2
 vertical_alignment=1
 script=ExtResource("16")
 
-[node name="TopBarSpacer" type="Control" parent="Layout/Margin/Content/TopBar"]
+[node name="TopBarSpacer" type="Control" parent="Layout/Margin/Content/TopBar" unique_id=1128848838]
 layout_mode=2
 size_flags_horizontal=3
 
-[node name="TurnTimerLabel" type="Label" parent="Layout/Margin/Content/TopBar"]
+[node name="TurnTimerLabel" type="Label" parent="Layout/Margin/Content/TopBar" unique_id=668692961]
 layout_mode=2
 horizontal_alignment=1
 vertical_alignment=1
 visible=false
 
-[node name="ResetTurnButton" type="Button" parent="Layout/Margin/Content/TopBar"]
+[node name="ResetTurnButton" type="Button" parent="Layout/Margin/Content/TopBar" unique_id=662547395]
 visible=false
 layout_mode=2
 text="Recommencer"
 
-[node name="EndTurnButton" type="Button" parent="Layout/Margin/Content/TopBar"]
+[node name="EndTurnButton" type="Button" parent="Layout/Margin/Content/TopBar" unique_id=1879466738]
 theme_type_variation=&"PrimaryButton"
 layout_mode=2
 text="Fin du tour"
 
-[node name="OptionsPanel" type="PanelContainer" parent="Layout/Margin/Content"]
+[node name="OptionsPanel" type="PanelContainer" parent="Layout/Margin/Content" unique_id=2017306061]
 layout_mode=2
 size_flags_horizontal=4
 visible=false
 
-[node name="MenuItems" type="VBoxContainer" parent="Layout/Margin/Content/OptionsPanel"]
+[node name="MenuItems" type="VBoxContainer" parent="Layout/Margin/Content/OptionsPanel" unique_id=2086982904]
 layout_mode=2
 theme_override_constants/separation=6
 
-[node name="SaveCopyButton" type="Button" parent="Layout/Margin/Content/OptionsPanel/MenuItems"]
+[node name="SaveCopyButton" type="Button" parent="Layout/Margin/Content/OptionsPanel/MenuItems" unique_id=98873369]
 visible=false
 unique_name_in_owner=true
 layout_mode=2
 text="Sauvegarder la partie"
 
-[node name="NewGameButton" type="Button" parent="Layout/Margin/Content/OptionsPanel/MenuItems" node_paths=PackedStringArray("blocked_by")]
+[node name="NewGameButton" type="Button" parent="Layout/Margin/Content/OptionsPanel/MenuItems" node_paths=PackedStringArray("blocked_by") unique_id=550771163]
 layout_mode=2
 text="Quitter la partie"
 script=ExtResource("20")
 blocked_by=NodePath("../../../../../../InputBlocker")
 
-[node name="HowToPlayMenuButton" type="Button" parent="Layout/Margin/Content/OptionsPanel/MenuItems"]
+[node name="HowToPlayMenuButton" type="Button" parent="Layout/Margin/Content/OptionsPanel/MenuItems" unique_id=1910869433]
 unique_name_in_owner=true
 layout_mode=2
 text="Comment jouer"
 
-[node name="TimerToggle" type="CheckButton" parent="Layout/Margin/Content/OptionsPanel/MenuItems"]
+[node name="TimerToggle" type="CheckButton" parent="Layout/Margin/Content/OptionsPanel/MenuItems" unique_id=484174279]
 layout_mode=2
 text="Minuteur (3 min)"
 
-[node name="SoundPanel" type="PanelContainer" parent="Layout/Margin/Content"]
+[node name="SoundPanel" type="PanelContainer" parent="Layout/Margin/Content" unique_id=839414239]
 layout_mode=2
 size_flags_horizontal=4
 visible=false
 script=ExtResource("31")
 
-[node name="Scoreboard" type="HFlowContainer" parent="Layout/Margin/Content"]
+[node name="Scoreboard" type="HFlowContainer" parent="Layout/Margin/Content" unique_id=1239103839]
 layout_mode=2
 visible=false
 script=ExtResource("18")
 
-[node name="GameOverBanner" type="Label" parent="Layout/Margin/Content"]
+[node name="GameOverBanner" type="Label" parent="Layout/Margin/Content" unique_id=1104289837]
 layout_mode=2
 theme_override_colors/font_color=Color(0.96, 0.4, 0.4, 1)
 theme_override_font_sizes/font_size=20
 horizontal_alignment=1
 visible=false
 
-[node name="PlayArea" type="BoxContainer" parent="Layout/Margin/Content"]
+[node name="PlayArea" type="BoxContainer" parent="Layout/Margin/Content" unique_id=1176680686]
 layout_mode=2
 script=ExtResource("29")
 size_flags_vertical=3
 vertical=true
 theme_override_constants/separation=10
 
-[node name="BoardView" parent="Layout/Margin/Content/PlayArea" instance=ExtResource("2")]
+[node name="BoardView" parent="Layout/Margin/Content/PlayArea" instance=ExtResource("2") unique_id=617732352]
 layout_mode=2
 size_flags_horizontal=4
 
-[node name="ClueMarkers" type="Control" parent="Layout/Margin/Content/PlayArea/BoardView"]
+[node name="ClueMarkers" type="Control" parent="Layout/Margin/Content/PlayArea/BoardView" unique_id=614432253]
 layout_mode=2
 mouse_filter=2
 script=ExtResource("7")
 visible=false
 
-[node name="HandArea" type="VBoxContainer" parent="Layout/Margin/Content/PlayArea"]
+[node name="HandArea" type="VBoxContainer" parent="Layout/Margin/Content/PlayArea" unique_id=1473266666]
 layout_mode=2
 size_flags_horizontal=3
 script=ExtResource("23")
@@ -282,22 +282,22 @@ rim_width=6.0
 rim_color=Color(0.07, 0.075, 0.08, 1)
 theme_override_constants/separation=10
 
-[node name="HandBar" type="HBoxContainer" parent="Layout/Margin/Content/PlayArea/HandArea"]
+[node name="HandBar" type="HBoxContainer" parent="Layout/Margin/Content/PlayArea/HandArea" unique_id=50674003]
 layout_mode=2
 theme_override_constants/separation=8
 
-[node name="HandView" parent="Layout/Margin/Content/PlayArea/HandArea/HandBar" instance=ExtResource("3")]
+[node name="HandView" parent="Layout/Margin/Content/PlayArea/HandArea/HandBar" instance=ExtResource("3") unique_id=888114282]
 layout_mode=2
 size_flags_horizontal=3
 
-[node name="DiscardTray" type="PanelContainer" parent="Layout/Margin/Content/PlayArea/HandArea/HandBar"]
+[node name="DiscardTray" type="PanelContainer" parent="Layout/Margin/Content/PlayArea/HandArea/HandBar" unique_id=1485963586]
 visible=false
 layout_mode=2
 size_flags_vertical=0
 theme_override_styles/panel=SubResource("TrayStyle")
 script=ExtResource("14")
 
-[node name="Hint" type="Label" parent="Layout/Margin/Content/PlayArea/HandArea/HandBar/DiscardTray"]
+[node name="Hint" type="Label" parent="Layout/Margin/Content/PlayArea/HandArea/HandBar/DiscardTray" unique_id=2050371251]
 layout_mode=2
 mouse_filter=2
 theme_override_colors/font_color=Color(0.953, 0.937, 0.847, 0.45)
@@ -306,69 +306,69 @@ text="À rendre"
 horizontal_alignment=1
 vertical_alignment=1
 
-[node name="Scroll" type="ScrollContainer" parent="Layout/Margin/Content/PlayArea/HandArea/HandBar/DiscardTray"]
+[node name="Scroll" type="ScrollContainer" parent="Layout/Margin/Content/PlayArea/HandArea/HandBar/DiscardTray" unique_id=454770721]
 script=ExtResource("19")
 layout_mode=2
 mouse_filter=1
 vertical_scroll_mode=0
 
-[node name="Tiles" type="GridContainer" parent="Layout/Margin/Content/PlayArea/HandArea/HandBar/DiscardTray/Scroll"]
+[node name="Tiles" type="GridContainer" parent="Layout/Margin/Content/PlayArea/HandArea/HandBar/DiscardTray/Scroll" unique_id=1769475668]
 layout_mode=2
 mouse_filter=1
 theme_override_constants/h_separation=4
 theme_override_constants/v_separation=4
 
-[node name="HandTools" type="HBoxContainer" parent="Layout/Margin/Content/PlayArea/HandArea"]
+[node name="HandTools" type="HBoxContainer" parent="Layout/Margin/Content/PlayArea/HandArea" unique_id=661353337]
 visible=false
 layout_mode=2
 theme_override_constants/separation=8
 
-[node name="SortButton" type="Button" parent="Layout/Margin/Content/PlayArea/HandArea/HandTools"]
+[node name="SortButton" type="Button" parent="Layout/Margin/Content/PlayArea/HandArea/HandTools" unique_id=857696582]
 layout_mode=2
 theme_override_font_sizes/font_size=14
 text="Trier"
 
-[node name="AllYellowButton" type="Button" parent="Layout/Margin/Content/PlayArea/HandArea/HandTools"]
+[node name="AllYellowButton" type="Button" parent="Layout/Margin/Content/PlayArea/HandArea/HandTools" unique_id=1386059479]
 layout_mode=2
 theme_override_font_sizes/font_size=14
 text="Tout jaune"
 
-[node name="AllGreenButton" type="Button" parent="Layout/Margin/Content/PlayArea/HandArea/HandTools"]
+[node name="AllGreenButton" type="Button" parent="Layout/Margin/Content/PlayArea/HandArea/HandTools" unique_id=1777110497]
 layout_mode=2
 theme_override_font_sizes/font_size=14
 text="Tout vert"
 
-[node name="PaletteView" parent="Layout/Margin/Content/PlayArea/HandArea" instance=ExtResource("4")]
+[node name="PaletteView" parent="Layout/Margin/Content/PlayArea/HandArea" instance=ExtResource("4") unique_id=1497049964]
 layout_mode=2
 size_flags_horizontal=4
 size_flags_vertical=3
 visible=false
 
-[node name="ClueListView" parent="Layout/Margin/Content/PlayArea/HandArea" instance=ExtResource("5")]
+[node name="ClueListView" parent="Layout/Margin/Content/PlayArea/HandArea" instance=ExtResource("5") unique_id=751012257]
 layout_mode=2
 size_flags_vertical=3
 visible=false
 
-[node name="TurnTimer" type="Timer" parent="."]
+[node name="TurnTimer" type="Timer" parent="." unique_id=1601797031]
 wait_time=180.0
 one_shot=true
 
-[node name="GameMusic" type="AudioStreamPlayer" parent="."]
+[node name="GameMusic" type="AudioStreamPlayer" parent="." unique_id=291345816]
 bus=&"Music"
 script=ExtResource("28")
 stream=ExtResource("25")
 volume_db=-22.0
 
-[node name="MenuMusic" type="AudioStreamPlayer" parent="."]
+[node name="MenuMusic" type="AudioStreamPlayer" parent="." unique_id=1365866595]
 bus=&"Music"
 script=ExtResource("28")
 stream=ExtResource("26")
 volume_db=-22.0
 
-[node name="SoundEffects" type="Node" parent="."]
+[node name="SoundEffects" type="Node" parent="." unique_id=969103082]
 script=ExtResource("27")
 
-[node name="NewGameConfirmDialog" type="ConfirmationDialog" parent="."]
+[node name="NewGameConfirmDialog" type="ConfirmationDialog" parent="." unique_id=726541793]
 title="Quitter la partie"
 initial_position=2
 size=Vector2i(320, 170)
@@ -377,7 +377,7 @@ ok_button_text="Quitter"
 cancel_button_text="Annuler"
 dialog_text="Quitter la partie et revenir au menu ? Elle est sauvegardée."
 
-[node name="InputBlocker" type="Control" parent="."]
+[node name="InputBlocker" type="Control" parent="." unique_id=2044585788]
 layout_mode=1
 focus_mode=2
 anchors_preset=15
@@ -387,7 +387,7 @@ grow_horizontal=2
 grow_vertical=2
 visible=false
 
-[node name="HandoffScreen" type="Panel" parent="."]
+[node name="HandoffScreen" type="Panel" parent="." unique_id=793449920]
 layout_mode=1
 anchors_preset=15
 anchor_right=1.0
@@ -397,7 +397,7 @@ grow_vertical=2
 visible=false
 script=ExtResource("23")
 
-[node name="Center" type="CenterContainer" parent="HandoffScreen"]
+[node name="Center" type="CenterContainer" parent="HandoffScreen" unique_id=1280192764]
 layout_mode=1
 anchors_preset=15
 anchor_right=1.0
@@ -405,37 +405,37 @@ anchor_bottom=1.0
 grow_horizontal=2
 grow_vertical=2
 
-[node name="Items" type="VBoxContainer" parent="HandoffScreen/Center"]
+[node name="Items" type="VBoxContainer" parent="HandoffScreen/Center" unique_id=1045364351]
 layout_mode=2
 theme_override_constants/separation=16
 
-[node name="Prompt" type="Label" parent="HandoffScreen/Center/Items"]
+[node name="Prompt" type="Label" parent="HandoffScreen/Center/Items" unique_id=1257804192]
 layout_mode=2
 horizontal_alignment=1
 text="Au tour de"
 
-[node name="PlayerName" type="Label" parent="HandoffScreen/Center/Items"]
+[node name="PlayerName" type="Label" parent="HandoffScreen/Center/Items" unique_id=2077041448]
 layout_mode=2
 theme_override_font_sizes/font_size=40
 horizontal_alignment=1
 
-[node name="PlayButton" type="Button" parent="HandoffScreen/Center/Items"]
+[node name="PlayButton" type="Button" parent="HandoffScreen/Center/Items" unique_id=1746969326]
 theme_type_variation=&"PrimaryButton"
 custom_minimum_size=Vector2(160, 52)
 layout_mode=2
 size_flags_horizontal=4
 text="C'est moi !"
 
-[node name="Gap" type="Control" parent="HandoffScreen/Center/Items"]
+[node name="Gap" type="Control" parent="HandoffScreen/Center/Items" unique_id=1016540498]
 custom_minimum_size=Vector2(0, 24)
 layout_mode=2
 
-[node name="ScoreRecap" type="VBoxContainer" parent="HandoffScreen/Center/Items"]
+[node name="ScoreRecap" type="VBoxContainer" parent="HandoffScreen/Center/Items" unique_id=1546848386]
 layout_mode=2
 theme_override_constants/separation=10
 script=ExtResource("17")
 
-[node name="EndScreen" type="Panel" parent="."]
+[node name="EndScreen" type="Panel" parent="." unique_id=580654628]
 visible=false
 layout_mode=1
 anchors_preset=15
@@ -445,7 +445,7 @@ grow_horizontal=2
 grow_vertical=2
 script=ExtResource("21")
 
-[node name="Center" type="CenterContainer" parent="EndScreen"]
+[node name="Center" type="CenterContainer" parent="EndScreen" unique_id=703336094]
 layout_mode=1
 anchors_preset=15
 anchor_right=1.0
@@ -453,54 +453,54 @@ anchor_bottom=1.0
 grow_horizontal=2
 grow_vertical=2
 
-[node name="Card" type="PanelContainer" parent="EndScreen/Center"]
+[node name="Card" type="PanelContainer" parent="EndScreen/Center" unique_id=2005832157]
 layout_mode=2
 theme_override_styles/panel=SubResource("EndCardStyle")
 
-[node name="Items" type="VBoxContainer" parent="EndScreen/Center/Card"]
+[node name="Items" type="VBoxContainer" parent="EndScreen/Center/Card" unique_id=1186800999]
 layout_mode=2
 theme_override_constants/separation=16
 
-[node name="Title" type="Label" parent="EndScreen/Center/Card/Items"]
+[node name="Title" type="Label" parent="EndScreen/Center/Card/Items" unique_id=1366291543]
 layout_mode=2
 horizontal_alignment=1
 
-[node name="Winners" type="Label" parent="EndScreen/Center/Card/Items"]
+[node name="Winners" type="Label" parent="EndScreen/Center/Card/Items" unique_id=1925371938]
 custom_minimum_size=Vector2(380, 0)
 layout_mode=2
 theme_override_font_sizes/font_size=34
 horizontal_alignment=1
 autowrap_mode=3
 
-[node name="Note" type="Label" parent="EndScreen/Center/Card/Items"]
+[node name="Note" type="Label" parent="EndScreen/Center/Card/Items" unique_id=344149760]
 visible=false
 custom_minimum_size=Vector2(380, 0)
 layout_mode=2
 horizontal_alignment=1
 autowrap_mode=3
 
-[node name="ScoreRecap" type="VBoxContainer" parent="EndScreen/Center/Card/Items"]
+[node name="ScoreRecap" type="VBoxContainer" parent="EndScreen/Center/Card/Items" unique_id=123956238]
 layout_mode=2
 theme_override_constants/separation=10
 script=ExtResource("17")
 
-[node name="Buttons" type="HBoxContainer" parent="EndScreen/Center/Card/Items"]
+[node name="Buttons" type="HBoxContainer" parent="EndScreen/Center/Card/Items" unique_id=463164198]
 layout_mode=2
 size_flags_horizontal=4
 theme_override_constants/separation=16
 
-[node name="ReplayButton" type="Button" parent="EndScreen/Center/Card/Items/Buttons"]
+[node name="ReplayButton" type="Button" parent="EndScreen/Center/Card/Items/Buttons" unique_id=1504015083]
 theme_type_variation=&"PrimaryButton"
 custom_minimum_size=Vector2(140, 52)
 layout_mode=2
 text="Rejouer"
 
-[node name="MenuButton" type="Button" parent="EndScreen/Center/Card/Items/Buttons"]
+[node name="MenuButton" type="Button" parent="EndScreen/Center/Card/Items/Buttons" unique_id=84217977]
 custom_minimum_size=Vector2(140, 52)
 layout_mode=2
 text="Menu"
 
-[node name="BoxLid" type="Control" parent="."]
+[node name="BoxLid" type="Control" parent="." unique_id=1039616409]
 layout_mode=1
 anchors_preset=15
 anchor_right=1.0
@@ -509,7 +509,7 @@ grow_horizontal=2
 grow_vertical=2
 script=ExtResource("8")
 
-[node name="Box" type="Control" parent="BoxLid"]
+[node name="Box" type="Control" parent="BoxLid" unique_id=1105123425]
 layout_mode=1
 anchors_preset=15
 anchor_right=1.0
@@ -518,7 +518,7 @@ grow_horizontal=2
 grow_vertical=2
 mouse_filter=2
 
-[node name="Frame" type="NinePatchRect" parent="BoxLid/Box"]
+[node name="Frame" type="NinePatchRect" parent="BoxLid/Box" unique_id=455908275]
 layout_mode=1
 anchors_preset=15
 anchor_right=1.0
@@ -534,7 +534,7 @@ patch_margin_top=30
 patch_margin_right=30
 patch_margin_bottom=30
 
-[node name="Inside" type="NinePatchRect" parent="BoxLid/Box"]
+[node name="Inside" type="NinePatchRect" parent="BoxLid/Box" unique_id=739779867]
 layout_mode=1
 anchors_preset=15
 anchor_right=1.0
@@ -545,7 +545,7 @@ mouse_filter=2
 texture=ExtResource("9")
 region_rect=Rect2(40, 40, 460, 880)
 
-[node name="LidEdges" type="Control" parent="BoxLid/Box"]
+[node name="LidEdges" type="Control" parent="BoxLid/Box" unique_id=542528512]
 layout_mode=1
 anchors_preset=15
 anchor_right=1.0
@@ -554,15 +554,15 @@ grow_horizontal=2
 grow_vertical=2
 mouse_filter=2
 
-[node name="Hinge" type="Node2D" parent="BoxLid/Box"]
+[node name="Hinge" type="Node2D" parent="BoxLid/Box" unique_id=2128900896]
 
-[node name="Lid" type="Control" parent="BoxLid/Box/Hinge"]
+[node name="Lid" type="Control" parent="BoxLid/Box/Hinge" unique_id=70331144]
 layout_mode=3
 anchors_preset=0
 mouse_filter=2
 theme=ExtResource("6")
 
-[node name="Paint" type="NinePatchRect" parent="BoxLid/Box/Hinge/Lid"]
+[node name="Paint" type="NinePatchRect" parent="BoxLid/Box/Hinge/Lid" unique_id=100781755]
 layout_mode=1
 anchors_preset=15
 anchor_right=1.0
@@ -573,7 +573,7 @@ mouse_filter=2
 texture=ExtResource("9")
 region_rect=Rect2(40, 40, 460, 880)
 
-[node name="CardArea" type="VBoxContainer" parent="BoxLid/Box/Hinge/Lid"]
+[node name="CardArea" type="VBoxContainer" parent="BoxLid/Box/Hinge/Lid" unique_id=583803443]
 layout_mode=1
 anchor_top=0.11
 anchor_right=1.0
@@ -586,18 +586,18 @@ grow_horizontal=2
 grow_vertical=2
 mouse_filter=2
 
-[node name="Card" type="PanelContainer" parent="BoxLid/Box/Hinge/Lid/CardArea"]
+[node name="Card" type="PanelContainer" parent="BoxLid/Box/Hinge/Lid/CardArea" unique_id=901726176]
 custom_minimum_size=Vector2(340, 0)
 layout_mode=2
 size_flags_horizontal=4
 theme_override_styles/panel=SubResource("CardStyle")
 
-[node name="Items" type="VBoxContainer" parent="BoxLid/Box/Hinge/Lid/CardArea/Card"]
+[node name="Items" type="VBoxContainer" parent="BoxLid/Box/Hinge/Lid/CardArea/Card" unique_id=2000971800]
 layout_mode=2
 script=ExtResource("24")
 theme_override_constants/separation=12
 
-[node name="Title" type="Label" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items"]
+[node name="Title" type="Label" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items" unique_id=1662648973]
 theme_type_variation=&"InkLabel"
 theme_override_fonts/font=ExtResource("11")
 layout_mode=2
@@ -605,7 +605,7 @@ theme_override_font_sizes/font_size=48
 horizontal_alignment=1
 text="Trampoline"
 
-[node name="Tagline" type="Label" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items"]
+[node name="Tagline" type="Label" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items" unique_id=1575252619]
 theme_type_variation=&"InkLabel"
 theme_override_fonts/font=ExtResource("12")
 theme_override_font_sizes/font_size=24
@@ -613,195 +613,195 @@ layout_mode=2
 horizontal_alignment=1
 text="Un jeu pour faire rebondir les mots"
 
-[node name="StartMenu" type="VBoxContainer" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items"]
+[node name="StartMenu" type="VBoxContainer" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items" unique_id=739857727]
 unique_name_in_owner=true
 layout_mode=2
 theme_override_constants/separation=12
 
-[node name="ResumeButton" type="Button" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/StartMenu"]
+[node name="ResumeButton" type="Button" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/StartMenu" unique_id=1800147982]
 visible=false
 theme_type_variation=&"PrimaryButton"
 layout_mode=2
 size_flags_horizontal=4
 text="Reprendre la partie"
 
-[node name="LoadButton" type="Button" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/StartMenu"]
+[node name="LoadButton" type="Button" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/StartMenu" unique_id=974128054]
 visible=false
 layout_mode=2
 size_flags_horizontal=4
 text="Charger une partie"
 
-[node name="Prompt" type="Label" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/StartMenu"]
+[node name="Prompt" type="Label" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/StartMenu" unique_id=1427638285]
 theme_type_variation=&"InkLabel"
 layout_mode=2
 horizontal_alignment=1
 text="Combien de joueurs ?"
 
-[node name="Players" type="HBoxContainer" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/StartMenu"]
+[node name="Players" type="HBoxContainer" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/StartMenu" unique_id=2115460325]
 layout_mode=2
 size_flags_horizontal=4
 theme_override_constants/separation=10
 
-[node name="Button1" type="Button" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/StartMenu/Players"]
+[node name="Button1" type="Button" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/StartMenu/Players" unique_id=1406146753]
 custom_minimum_size=Vector2(64, 48)
 layout_mode=2
 text="1"
 
-[node name="Button2" type="Button" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/StartMenu/Players"]
+[node name="Button2" type="Button" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/StartMenu/Players" unique_id=1066685005]
 custom_minimum_size=Vector2(64, 48)
 layout_mode=2
 text="2"
 
-[node name="Button3" type="Button" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/StartMenu/Players"]
+[node name="Button3" type="Button" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/StartMenu/Players" unique_id=1589651162]
 custom_minimum_size=Vector2(64, 48)
 layout_mode=2
 text="3"
 
-[node name="Button4" type="Button" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/StartMenu/Players"]
+[node name="Button4" type="Button" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/StartMenu/Players" unique_id=1491202530]
 custom_minimum_size=Vector2(64, 48)
 layout_mode=2
 text="4"
 
-[node name="FreePlayButton" type="Button" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/StartMenu"]
+[node name="FreePlayButton" type="Button" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/StartMenu" unique_id=465296612]
 layout_mode=2
 size_flags_horizontal=4
 text="Jeu libre"
 
-[node name="CrosswordPrompt" type="Label" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/StartMenu"]
+[node name="CrosswordPrompt" type="Label" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/StartMenu" unique_id=122975196]
 theme_type_variation=&"InkLabel"
 layout_mode=2
 horizontal_alignment=1
 text="Mots croisés :"
 
-[node name="CrosswordGrid" type="GridContainer" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/StartMenu"]
+[node name="CrosswordGrid" type="GridContainer" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/StartMenu" unique_id=1000813534]
 layout_mode=2
 size_flags_horizontal=4
 theme_override_constants/h_separation=8
 theme_override_constants/v_separation=8
 columns=5
 
-[node name="CrosswordPuzzle1Button" type="Button" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/StartMenu/CrosswordGrid"]
+[node name="CrosswordPuzzle1Button" type="Button" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/StartMenu/CrosswordGrid" unique_id=838199972]
 custom_minimum_size=Vector2(52, 44)
 layout_mode=2
 text="1"
 
-[node name="CrosswordPuzzle2Button" type="Button" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/StartMenu/CrosswordGrid"]
+[node name="CrosswordPuzzle2Button" type="Button" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/StartMenu/CrosswordGrid" unique_id=1166832793]
 custom_minimum_size=Vector2(52, 44)
 layout_mode=2
 text="2"
 
-[node name="CrosswordPuzzle3Button" type="Button" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/StartMenu/CrosswordGrid"]
+[node name="CrosswordPuzzle3Button" type="Button" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/StartMenu/CrosswordGrid" unique_id=277681624]
 custom_minimum_size=Vector2(52, 44)
 layout_mode=2
 text="3"
 
-[node name="CrosswordPuzzle4Button" type="Button" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/StartMenu/CrosswordGrid"]
+[node name="CrosswordPuzzle4Button" type="Button" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/StartMenu/CrosswordGrid" unique_id=1832635482]
 custom_minimum_size=Vector2(52, 44)
 layout_mode=2
 text="4"
 
-[node name="CrosswordPuzzle5Button" type="Button" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/StartMenu/CrosswordGrid"]
+[node name="CrosswordPuzzle5Button" type="Button" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/StartMenu/CrosswordGrid" unique_id=26285490]
 custom_minimum_size=Vector2(52, 44)
 layout_mode=2
 text="5"
 
-[node name="CrosswordPuzzle6Button" type="Button" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/StartMenu/CrosswordGrid"]
+[node name="CrosswordPuzzle6Button" type="Button" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/StartMenu/CrosswordGrid" unique_id=1202360363]
 custom_minimum_size=Vector2(52, 44)
 layout_mode=2
 text="6"
 
-[node name="CrosswordPuzzle7Button" type="Button" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/StartMenu/CrosswordGrid"]
+[node name="CrosswordPuzzle7Button" type="Button" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/StartMenu/CrosswordGrid" unique_id=299025017]
 custom_minimum_size=Vector2(52, 44)
 layout_mode=2
 text="7"
 
-[node name="CrosswordPuzzle8Button" type="Button" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/StartMenu/CrosswordGrid"]
+[node name="CrosswordPuzzle8Button" type="Button" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/StartMenu/CrosswordGrid" unique_id=970003459]
 custom_minimum_size=Vector2(52, 44)
 layout_mode=2
 text="8"
 
-[node name="CrosswordPuzzle9Button" type="Button" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/StartMenu/CrosswordGrid"]
+[node name="CrosswordPuzzle9Button" type="Button" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/StartMenu/CrosswordGrid" unique_id=1678214697]
 custom_minimum_size=Vector2(52, 44)
 layout_mode=2
 text="9"
 
-[node name="CrosswordPuzzle10Button" type="Button" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/StartMenu/CrosswordGrid"]
+[node name="CrosswordPuzzle10Button" type="Button" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/StartMenu/CrosswordGrid" unique_id=360926999]
 custom_minimum_size=Vector2(52, 44)
 layout_mode=2
 text="10"
 
-[node name="HowToPlayButton" type="Button" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/StartMenu"]
+[node name="HowToPlayButton" type="Button" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/StartMenu" unique_id=1340224473]
 layout_mode=2
 size_flags_horizontal=4
 text="Comment jouer"
 
-[node name="NameEntry" type="VBoxContainer" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items"]
+[node name="NameEntry" type="VBoxContainer" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items" unique_id=219240416]
 unique_name_in_owner=true
 layout_mode=2
 theme_override_constants/separation=10
 visible=false
 
-[node name="Prompt" type="Label" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/NameEntry"]
+[node name="Prompt" type="Label" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/NameEntry" unique_id=1926766043]
 theme_type_variation=&"InkLabel"
 layout_mode=2
 horizontal_alignment=1
 text="Noms des joueurs :"
 
-[node name="Name1Edit" type="LineEdit" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/NameEntry"]
+[node name="Name1Edit" type="LineEdit" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/NameEntry" unique_id=1175962345]
 custom_minimum_size=Vector2(0, 44)
 layout_mode=2
 placeholder_text="Joueur 1"
 
-[node name="Name2Edit" type="LineEdit" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/NameEntry"]
+[node name="Name2Edit" type="LineEdit" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/NameEntry" unique_id=2046008906]
 custom_minimum_size=Vector2(0, 44)
 layout_mode=2
 placeholder_text="Joueur 2"
 
-[node name="Name3Edit" type="LineEdit" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/NameEntry"]
+[node name="Name3Edit" type="LineEdit" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/NameEntry" unique_id=1171506530]
 custom_minimum_size=Vector2(0, 44)
 layout_mode=2
 placeholder_text="Joueur 3"
 
-[node name="Name4Edit" type="LineEdit" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/NameEntry"]
+[node name="Name4Edit" type="LineEdit" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/NameEntry" unique_id=3137906]
 custom_minimum_size=Vector2(0, 44)
 layout_mode=2
 placeholder_text="Joueur 4"
 
-[node name="Buttons" type="HBoxContainer" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/NameEntry"]
+[node name="Buttons" type="HBoxContainer" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/NameEntry" unique_id=141939694]
 layout_mode=2
 size_flags_horizontal=4
 theme_override_constants/separation=10
 
-[node name="StartButton" type="Button" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/NameEntry/Buttons"]
+[node name="StartButton" type="Button" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/NameEntry/Buttons" unique_id=378388364]
 theme_type_variation=&"PrimaryButton"
 layout_mode=2
 text="Commencer"
 
-[node name="BackButton" type="Button" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/NameEntry/Buttons"]
+[node name="BackButton" type="Button" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/NameEntry/Buttons" unique_id=464716010]
 layout_mode=2
 text="Retour"
 
-[node name="SavedGames" type="VBoxContainer" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items"]
+[node name="SavedGames" type="VBoxContainer" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items" unique_id=947420905]
 visible=false
 layout_mode=2
 theme_override_constants/separation=10
 
-[node name="Prompt" type="Label" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/SavedGames"]
+[node name="Prompt" type="Label" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/SavedGames" unique_id=60308794]
 theme_type_variation=&"InkLabel"
 layout_mode=2
 horizontal_alignment=1
 text="Parties sauvegardées :"
 
-[node name="List" type="VBoxContainer" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/SavedGames"]
+[node name="List" type="VBoxContainer" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/SavedGames" unique_id=1606703700]
 layout_mode=2
 theme_override_constants/separation=6
 
-[node name="BackButton" type="Button" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/SavedGames"]
+[node name="BackButton" type="Button" parent="BoxLid/Box/Hinge/Lid/CardArea/Card/Items/SavedGames" unique_id=667260683]
 layout_mode=2
 size_flags_horizontal=4
 text="Retour"
 
-[node name="Signature" type="Label" parent="BoxLid/Box/Hinge/Lid"]
+[node name="Signature" type="Label" parent="BoxLid/Box/Hinge/Lid" unique_id=1990365074]
 layout_mode=1
 anchor_left=1.0
 anchor_top=1.0
@@ -821,7 +821,7 @@ theme_override_font_sizes/font_size=34
 horizontal_alignment=2
 text="M. Cheenne"
 
-[node name="Underside" type="TextureRect" parent="BoxLid/Box/Hinge/Lid"]
+[node name="Underside" type="TextureRect" parent="BoxLid/Box/Hinge/Lid" unique_id=1385502651]
 visible=false
 layout_mode=1
 anchors_preset=15
@@ -833,7 +833,7 @@ mouse_filter=2
 texture=ExtResource("13")
 expand_mode=1
 
-[node name="Ribbon" type="Control" parent="BoxLid"]
+[node name="Ribbon" type="Control" parent="BoxLid" unique_id=1301097554]
 layout_mode=1
 anchors_preset=15
 anchor_right=1.0
@@ -842,7 +842,7 @@ grow_horizontal=2
 grow_vertical=2
 mouse_filter=2
 
-[node name="Band" type="TextureRect" parent="BoxLid/Ribbon"]
+[node name="Band" type="TextureRect" parent="BoxLid/Ribbon" unique_id=1735707964]
 layout_mode=1
 anchor_top=0.11
 anchor_right=1.0
@@ -854,7 +854,7 @@ mouse_filter=2
 texture=SubResource("RibbonBand")
 expand_mode=1
 
-[node name="Bow" type="TextureRect" parent="BoxLid/Ribbon"]
+[node name="Bow" type="TextureRect" parent="BoxLid/Ribbon" unique_id=1738360699]
 layout_mode=1
 anchor_left=0.5
 anchor_top=0.11
@@ -870,7 +870,7 @@ texture=ExtResource("10")
 expand_mode=1
 stretch_mode=5
 
-[node name="HowToPlay" type="Panel" parent="."]
+[node name="HowToPlay" type="Panel" parent="." unique_id=1677317712]
 visible=false
 layout_mode=1
 anchors_preset=15
@@ -880,7 +880,7 @@ grow_horizontal=2
 grow_vertical=2
 script=ExtResource("15")
 
-[node name="Layout" type="VBoxContainer" parent="HowToPlay"]
+[node name="Layout" type="VBoxContainer" parent="HowToPlay" unique_id=1482781389]
 layout_mode=1
 anchors_preset=15
 anchor_right=1.0
@@ -893,15 +893,15 @@ grow_horizontal=2
 grow_vertical=2
 theme_override_constants/separation=12
 
-[node name="Top" type="HBoxContainer" parent="HowToPlay/Layout"]
+[node name="Top" type="HBoxContainer" parent="HowToPlay/Layout" unique_id=1849358964]
 layout_mode=2
 alignment=2
 
-[node name="CloseButton" type="Button" parent="HowToPlay/Layout/Top"]
+[node name="CloseButton" type="Button" parent="HowToPlay/Layout/Top" unique_id=509423192]
 layout_mode=2
 text="Fermer"
 
-[node name="Caption" type="Label" parent="HowToPlay/Layout"]
+[node name="Caption" type="Label" parent="HowToPlay/Layout" unique_id=331097914]
 custom_minimum_size=Vector2(0, 56)
 layout_mode=2
 theme_override_font_sizes/font_size=22
@@ -910,27 +910,27 @@ horizontal_alignment=1
 vertical_alignment=1
 autowrap_mode=3
 
-[node name="Stage" type="Control" parent="HowToPlay/Layout"]
+[node name="Stage" type="Control" parent="HowToPlay/Layout" unique_id=375887496]
 layout_mode=2
 size_flags_vertical=3
 mouse_filter=2
 
-[node name="Dots" type="Label" parent="HowToPlay/Layout"]
+[node name="Dots" type="Label" parent="HowToPlay/Layout" unique_id=271654310]
 layout_mode=2
 text="●○○○○○"
 horizontal_alignment=1
 
-[node name="Nav" type="HBoxContainer" parent="HowToPlay/Layout"]
+[node name="Nav" type="HBoxContainer" parent="HowToPlay/Layout" unique_id=911219984]
 layout_mode=2
 alignment=1
 theme_override_constants/separation=16
 
-[node name="BackButton" type="Button" parent="HowToPlay/Layout/Nav"]
+[node name="BackButton" type="Button" parent="HowToPlay/Layout/Nav" unique_id=789356921]
 custom_minimum_size=Vector2(120, 44)
 layout_mode=2
 text="Retour"
 
-[node name="NextButton" type="Button" parent="HowToPlay/Layout/Nav"]
+[node name="NextButton" type="Button" parent="HowToPlay/Layout/Nav" unique_id=762815798]
 custom_minimum_size=Vector2(120, 44)
 theme_type_variation=&"PrimaryButton"
 layout_mode=2

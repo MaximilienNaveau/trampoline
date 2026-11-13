@@ -147,9 +147,13 @@
         sampleEnv = { TRAMPOLINE_SAMPLES = "${samples}"; };
 
         # The music and sound effects the game plays, made from
-        # tools/audio/ (they aren't committed: only their .import files
-        # are). Its source is that folder alone, so it's only rebuilt
-        # when the scripts change. Lays out like assets/audio/.
+        # tools/audio/. Its source is that folder alone, so it's only
+        # rebuilt when the scripts change. Lays out like assets/audio/.
+        # The game uses the copy committed in assets/audio/ (`nix run
+        # .#audio` updates it), so that builds elsewhere (F-Droid, nixpkgs)
+        # neither need the 1 GB of samples nor sfizz, whose output depends
+        # on its compiler (-ffast-math): checks.audio-committed makes sure
+        # that copy is what these scripts render.
         audio = pkgs.stdenvNoCC.mkDerivation ({
           pname = "trampoline-audio";
           inherit version;
@@ -165,8 +169,7 @@
           dontInstall = true;
         } // sampleEnv);
 
-        # The project as the exports and tests see it: the committed
-        # files plus the generated audio dropped into assets/audio/.
+        # The project as the exports and tests see it: the committed files.
         #
         # Without doc/ and .github/: the game doesn't use them, and leaving
         # them out means a new screenshot or workflow edit rebuilds nothing.
@@ -180,10 +183,7 @@
             ]
           );
         };
-        project = pkgs.runCommand "trampoline-project-${version}" { } ''
-          cp -r --no-preserve=mode ${gameSource} "$out"
-          cp -r --no-preserve=mode ${audio}/. "$out/assets/audio/"
-        '';
+        project = gameSource;
 
         # Godot runs inside the Nix build sandbox, like a compiler: a fresh
         # copy of the project, a throwaway home folder, and only the tools
@@ -231,38 +231,46 @@
           # No iOS: Godot refuses to export even the unsigned Xcode project
           # without an App Store Team ID, which needs an Apple account.
 
-          # result/trampoline.apk: a release build (not debuggable, as it
-          # ships), signed with the project's own debug key
-          # (keys/debug.keystore) so each build installs over the previous
-          # one: adb install -r result/trampoline.apk
-          # The real key never enters a Nix build (the store is pushed to a
-          # public cache): release.yml re-signs this APK with
-          # `nix run .#apksigner`, outside Nix, for the GitHub Release and
-          # F-Droid.
-          android = godotExport {
-            name = "android";
-            preset = "Android";
-            file = "trampoline.apk";
-            extraInputs = [ pkgs.jdk17_headless ];
-            setup = ''
+          # result/trampoline.apk: the release build, unsigned, made exactly
+          # as F-Droid's build recipe makes it (fdroiddata,
+          # metadata/com.magamajo.trampoline.yml): Godot built from source
+          # (nix/godot-android.nix), the same export commands, then the
+          # zip's dates made fixed (tools/apk_fix_timestamps.py). F-Droid
+          # rebuilds it, finds it identical, and serves our signed APK.
+          # release.yml signs it with the release key, outside Nix (the
+          # store is pushed to a public cache). To install a local build,
+          # sign it with the debug key first:
+          #   nix run .#apksigner -- sign --alignment-preserved true \
+          #     --v1-signing-enabled false --ks keys/debug.keystore \
+          #     --ks-pass pass:android --out signed.apk result/trampoline.apk
+          android = pkgs.stdenvNoCC.mkDerivation {
+            pname = "trampoline-android";
+            inherit version;
+            src = project;
+            nativeBuildInputs = [ godotAndroid.editor pkgs.python3 ];
+            buildPhase = ''
+              runHook preBuild
+              export HOME="$TMPDIR/home"
               # Read by Godot as the default Android SDK and Java paths.
-              export ANDROID_HOME=${androidSdk}/libexec/android-sdk
-              export JAVA_HOME=${pkgs.jdk17_headless.home}
-              # A flake only sees files git tracks: an uncommitted key isn't here.
-              if [ ! -f keys/debug.keystore ]; then
-                echo "keys/debug.keystore is missing: is it tracked by git?" >&2
-                exit 1
-              fi
-              # A release export reads the RELEASE key variables: point them
-              # at the debug key too.
-              for kind in DEBUG RELEASE; do
-                export GODOT_ANDROID_KEYSTORE_''${kind}_PATH="$PWD/keys/debug.keystore"
-                export GODOT_ANDROID_KEYSTORE_''${kind}_USER=androiddebugkey
-                export GODOT_ANDROID_KEYSTORE_''${kind}_PASSWORD=android
-              done
+              export ANDROID_HOME=${godotAndroid.androidSdk}/libexec/android-sdk
+              export JAVA_HOME=${pkgs.jdk21_headless.home}
+              cp ${godotAndroid.template}/android_release.apk ./android_release.apk
+              sed -i -e 's|^package/signed=.*|package/signed=false|' export_presets.cfg
+              sed -i -e 's|^custom_template/release=.*|custom_template/release="./android_release.apk"|' \
+                export_presets.cfg
+              godot --headless --import
+              godot --headless --export-release Android trampoline.apk
+              python3 tools/apk_fix_timestamps.py trampoline.apk
+              install -D -m 644 trampoline.apk "$out/trampoline.apk"
+              runHook postBuild
             '';
+            dontInstall = true;
           };
         };
+
+        # Godot built from source as F-Droid builds it: the Android export
+        # uses its editor and template (see nix/godot-android.nix).
+        godotAndroid = import ./nix/godot-android.nix { inherit pkgs androidPkgs; };
 
         # A check that runs a command over the committed sources and
         # passes if it exits 0 (its output is an empty marker file).
@@ -290,15 +298,38 @@
 
         packages = exports // {
           inherit audio;
+          godot-editor-fdroid = godotAndroid.editor;
+          godot-android-template = godotAndroid.template;
           default = exports.linux;
         };
 
         # `nix flake check -L` runs everything CI runs: formatting, lint,
         # the audio pipeline, the unit tests on Linux, and every export.
         checks = exports // {
-          inherit audio;
+          # The committed music and sound effects are what tools/audio/
+          # renders (two renders are identical: see tools/audio/README.md).
+          audio-committed = pkgs.runCommand "trampoline-audio-committed" { } ''
+            for f in $(cd ${audio} && find . -type f | sort); do
+              if ! cmp -s "${audio}/$f" "${./assets/audio}/$f"; then
+                echo "assets/audio/$f isn't what tools/audio/ renders: run nix run .#audio" >&2
+                exit 1
+              fi
+            done
+            touch "$out"
+          '';
           format = sourceCheck "format" [ pkgs.gdtoolkit_4 ] "gdformat --check scripts/*.gd";
           lint = sourceCheck "lint" [ pkgs.gdtoolkit_4 ] "gdlint scripts/*.gd";
+          # Every node of a scene has its own unique_id: Godot (4.7) draws a
+          # random one for a node without, at each load, and the export
+          # (scenes made binary) would differ from build to build, so not
+          # match F-Droid's (reproducible build). Any number, but unique
+          # within the scene.
+          scene-node-ids = sourceCheck "scene-node-ids" [ ] ''
+            if grep -n '^\[node ' scenes/*.tscn | grep -v ' unique_id=[0-9]'; then
+              echo "these scene nodes have no unique_id=<number>: add one" >&2
+              exit 1
+            fi
+          '';
           # Each tests/*.gd is a standalone script Godot runs headless; all
           # of them run, then the check fails if any one did.
           tests = pkgs.stdenvNoCC.mkDerivation {
@@ -338,10 +369,6 @@
               text = ''
                 if [ -f project.godot ]; then
                   project="$PWD"
-                  # A fresh checkout has no audio yet: bring in the built one.
-                  if [ ! -f assets/audio/sfx/bounce.wav ]; then
-                    cp -r --no-preserve=mode ${audio}/. assets/audio/
-                  fi
                 else
                   project="$(mktemp -d)"
                   cp -r --no-preserve=mode ${project}/. "$project"
@@ -401,7 +428,7 @@
                 doc="$PWD/doc"
                 work="$(mktemp -d)"
                 trap 'rm -rf "$work"' EXIT
-                # The project as the exports see it (generated audio
+                # The project as the exports see it (committed audio
                 # included), drawn at a phone's 1080 x 1920.
                 cp -r --no-preserve=mode ${project}/. "$work/proj"
                 printf '[display]\nwindow/size/window_width_override=1080\nwindow/size/window_height_override=1920\n' \
@@ -450,11 +477,12 @@
             }}/bin/trampoline-screenshots";
           };
 
-          # `nix run .#audio` (from the repository root): copies the built music and
-          # sound effects into assets/audio/, for the Godot editor.
+          # `nix run .#audio` (from the repository root): renders the music and
+          # sound effects into assets/audio/, to commit after changing
+          # tools/audio/.
           audio = {
             type = "app";
-            meta.description = "Put the generated audio into assets/audio/";
+            meta.description = "Render the audio into assets/audio/";
             program = "${pkgs.writeShellScript "trampoline-audio" ''
               set -e
               if [ ! -f project.godot ]; then

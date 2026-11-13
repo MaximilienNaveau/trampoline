@@ -33,9 +33,10 @@ Third-party files
   SIL Open Font License 1.1 (Caveat-OFL.txt, Jost-OFL.txt beside them).
 - data/dictionaries/: the French dictionary by Olivier R.
   (Dicollecte, "Classique" variant) and the word list made from it,
-  Mozilla Public License 2.0 (README_dict_fr.txt).
-- The music and sound effects are played by sampled instruments, none of
-  them in this repository (the build downloads them), all free to use for
+  Mozilla Public License 2.0 (data/dictionaries/licence/README_dict_fr.txt).
+- The music and sound effects (assets/audio/, rendered by tools/audio/)
+  are played by sampled instruments, none of them in this repository
+  (`nix build .#audio` downloads them), all free to use for
   making music: the classical guitar from the University of Iowa Musical
   Instrument Samples ("without restrictions"); the Salamander Grand Piano
   by Alexander Holm (CC-BY 3.0); the double bass, Meatbass by Karoryfer

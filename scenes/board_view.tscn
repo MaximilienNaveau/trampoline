@@ -19,7 +19,7 @@ content_margin_bottom = 8.0
 texture = ExtResource("2")
 region_rect = Rect2(40, 40, 460, 880)
 
-[node name="BoardView" type="PanelContainer"]
+[node name="BoardView" type="PanelContainer" unique_id=1201309087]
 layout_mode=3
 anchors_preset=8
 anchor_left=0.5
@@ -31,11 +31,11 @@ grow_vertical=2
 script=ExtResource("1")
 frame_style = SubResource("StyleBoxTexture_frame")
 
-[node name="Tray" type="Panel" parent="."]
+[node name="Tray" type="Panel" parent="." unique_id=1145634739]
 layout_mode=2
 mouse_filter=2
 theme_override_styles/panel = SubResource("StyleBoxTexture_tray")
 
-[node name="Grid" type="GridContainer" parent="."]
+[node name="Grid" type="GridContainer" parent="." unique_id=261287293]
 layout_mode=2
 columns=9
