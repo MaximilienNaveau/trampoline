@@ -1,16 +1,18 @@
 # Music and sound effects generators
 
-Everything in `assets/audio/` is generated from source by these scripts, and
-isn't committed (only Godot's `.import` files are). From the repository
-root:
+Everything in `assets/audio/` is rendered by these scripts and committed,
+so that building the game (F-Droid, nixpkgs, the Godot editor) needs
+neither the 1 GB of sampled instruments nor the rendering tools. After
+changing a script, from the repository root:
 
 ```sh
-nix build .#audio   # the game's music and sound effects, in the Nix sandbox
-nix run .#audio     # the same, copied into assets/audio/ for the Godot editor
+nix run .#audio     # renders into assets/audio/ (then commit the files)
+nix build .#audio   # the same, into result/ only
 ```
 
-The exports and the tests (`nix build .#linux`, `nix flake check`, CI) use
-`.#audio` on their own. To change a sound and listen to it straight away:
+`nix flake check` (CI) fails if the committed files aren't what the
+scripts render (`checks.audio-committed`). To change a sound and listen
+to it straight away:
 
 ```sh
 nix develop .#audio
@@ -24,7 +26,9 @@ random variations start from a fixed state, sfizz loads the samples whole
 into memory instead of streaming them (`hint_ram_based`, about 2.5 GB for
 the piano), and sox's dither (`-R`) and the Ogg stream serial (ffmpeg's
 `bitexact`) are made repeatable. Check with
-`nix build .#audio --rebuild`.
+`nix build .#audio --rebuild`. Renders made by other builds of the tools
+can differ in the last bits (sfizz is compiled with -ffast-math): commit
+what `nix run .#audio` renders.
 
 - `arrange.py`: turns a lead sheet (melody + chord symbols) into a small
   band in Brassens's way, no drums: a classical guitar on the chords (the

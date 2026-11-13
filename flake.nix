@@ -147,9 +147,13 @@
         sampleEnv = { TRAMPOLINE_SAMPLES = "${samples}"; };
 
         # The music and sound effects the game plays, made from
-        # tools/audio/ (they aren't committed: only their .import files
-        # are). Its source is that folder alone, so it's only rebuilt
-        # when the scripts change. Lays out like assets/audio/.
+        # tools/audio/. Its source is that folder alone, so it's only
+        # rebuilt when the scripts change. Lays out like assets/audio/.
+        # The game uses the copy committed in assets/audio/ (`nix run
+        # .#audio` updates it), so that builds elsewhere (F-Droid, nixpkgs)
+        # neither need the 1 GB of samples nor sfizz, whose output depends
+        # on its compiler (-ffast-math): checks.audio-committed makes sure
+        # that copy is what these scripts render.
         audio = pkgs.stdenvNoCC.mkDerivation ({
           pname = "trampoline-audio";
           inherit version;
@@ -165,8 +169,7 @@
           dontInstall = true;
         } // sampleEnv);
 
-        # The project as the exports and tests see it: the committed
-        # files plus the generated audio dropped into assets/audio/.
+        # The project as the exports and tests see it: the committed files.
         #
         # Without doc/ and .github/: the game doesn't use them, and leaving
         # them out means a new screenshot or workflow edit rebuilds nothing.
@@ -180,10 +183,7 @@
             ]
           );
         };
-        project = pkgs.runCommand "trampoline-project-${version}" { } ''
-          cp -r --no-preserve=mode ${gameSource} "$out"
-          cp -r --no-preserve=mode ${audio}/. "$out/assets/audio/"
-        '';
+        project = gameSource;
 
         # Godot runs inside the Nix build sandbox, like a compiler: a fresh
         # copy of the project, a throwaway home folder, and only the tools
@@ -296,7 +296,17 @@
         # `nix flake check -L` runs everything CI runs: formatting, lint,
         # the audio pipeline, the unit tests on Linux, and every export.
         checks = exports // {
-          inherit audio;
+          # The committed music and sound effects are what tools/audio/
+          # renders (two renders are identical: see tools/audio/README.md).
+          audio-committed = pkgs.runCommand "trampoline-audio-committed" { } ''
+            for f in $(cd ${audio} && find . -type f | sort); do
+              if ! cmp -s "${audio}/$f" "${./assets/audio}/$f"; then
+                echo "assets/audio/$f isn't what tools/audio/ renders: run nix run .#audio" >&2
+                exit 1
+              fi
+            done
+            touch "$out"
+          '';
           format = sourceCheck "format" [ pkgs.gdtoolkit_4 ] "gdformat --check scripts/*.gd";
           lint = sourceCheck "lint" [ pkgs.gdtoolkit_4 ] "gdlint scripts/*.gd";
           # Each tests/*.gd is a standalone script Godot runs headless; all
@@ -338,10 +348,6 @@
               text = ''
                 if [ -f project.godot ]; then
                   project="$PWD"
-                  # A fresh checkout has no audio yet: bring in the built one.
-                  if [ ! -f assets/audio/sfx/bounce.wav ]; then
-                    cp -r --no-preserve=mode ${audio}/. assets/audio/
-                  fi
                 else
                   project="$(mktemp -d)"
                   cp -r --no-preserve=mode ${project}/. "$project"
@@ -401,7 +407,7 @@
                 doc="$PWD/doc"
                 work="$(mktemp -d)"
                 trap 'rm -rf "$work"' EXIT
-                # The project as the exports see it (generated audio
+                # The project as the exports see it (committed audio
                 # included), drawn at a phone's 1080 x 1920.
                 cp -r --no-preserve=mode ${project}/. "$work/proj"
                 printf '[display]\nwindow/size/window_width_override=1080\nwindow/size/window_height_override=1920\n' \
@@ -450,11 +456,12 @@
             }}/bin/trampoline-screenshots";
           };
 
-          # `nix run .#audio` (from the repository root): copies the built music and
-          # sound effects into assets/audio/, for the Godot editor.
+          # `nix run .#audio` (from the repository root): renders the music and
+          # sound effects into assets/audio/, to commit after changing
+          # tools/audio/.
           audio = {
             type = "app";
-            meta.description = "Put the generated audio into assets/audio/";
+            meta.description = "Render the audio into assets/audio/";
             program = "${pkgs.writeShellScript "trampoline-audio" ''
               set -e
               if [ ! -f project.godot ]; then
