@@ -196,10 +196,11 @@ if upstream_has https://gitlab.com/fdroid/fdroiddata/-/raw/master "$fdroid_file"
 else
   git switch -q "$fdroid_branch"
   git diff --quiet -- . ":!$fdroid_file" || die "$fdroiddata has unrelated changes"
-  # The recipe's only build, and the version F-Droid offers.
+  # The recipe's only build (F-Droid wants the full commit hash, not the
+  # tag), and the version F-Droid offers.
   sed -i -e "s/^  - versionName: .*/  - versionName: $version/" \
     -e "s/^    versionCode: .*/    versionCode: $code/" \
-    -e "s/^    commit: .*/    commit: v$version/" \
+    -e "s/^    commit: .*/    commit: $(git -C "$game" rev-parse "v$version^{commit}")/" \
     -e "s/^CurrentVersion: .*/CurrentVersion: $version/" \
     -e "s/^CurrentVersionCode: .*/CurrentVersionCode: $code/" "$fdroid_file"
   git add "$fdroid_file"
